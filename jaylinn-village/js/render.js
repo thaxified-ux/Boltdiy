@@ -66,6 +66,13 @@
   }
 
   // --- grond (in een buffer, opnieuw als de stad verandert) ------------------
+  const SEASON_LOOK = [
+    { g: ['#93CF73', '#8BC86B'], leaf: ['#4E9F4A', '#5DAE5B', '#3F8E45', '#6BB85A'], fruit: '#E2483D', hill: '#B9845A' },
+    { g: ['#8CCB62', '#83C45A'], leaf: ['#4A9A3E', '#58A94C', '#3A8838', '#66B44E'], fruit: '#F6C445', hill: '#B9845A' },
+    { g: ['#CDBC68', '#C3B25E'], leaf: ['#E2832F', '#D9602A', '#E8A93A', '#C84A2B'], fruit: '#8A4B2A', hill: '#A97650' },
+    { g: ['#EDF4F7', '#E2EDF2'], leaf: ['#DDE8EC', '#CFDDE3', '#E8F0F3', '#C5D6DD'], fruit: '#FFFFFF', hill: '#9C8E86' },
+  ];
+  const look = () => SEASON_LOOK[JV.season()];
   let ground = null, groundScale = 2;
   const MINX = -G * TW / 2 - 8, MINY = -TH / 2 - 8, GW = G * TW + 16, GH = G * TH + 16;
   function roadCenterline(ctx, gx, gy) {
@@ -90,8 +97,8 @@
     const S = JV.state();
     // zijkant van het eiland
     const fAll = footprint(0, 0, G, G, 0);
-    poly(ctx, [fAll.L, fAll.B, up(fAll.B, -10), up(fAll.L, -10)], '#B9845A');
-    poly(ctx, [fAll.B, fAll.R, up(fAll.R, -10), up(fAll.B, -10)], '#9C6B47');
+    poly(ctx, [fAll.L, fAll.B, up(fAll.B, -10), up(fAll.L, -10)], look().hill);
+    poly(ctx, [fAll.B, fAll.R, up(fAll.R, -10), up(fAll.B, -10)], JV.shade(look().hill, -22));
     for (let gy = 0; gy < G; gy++) for (let gx = 0; gx < G; gx++) {
       const f = footprint(gx, gy, 1, 1, 0);
       const water = S.terrain[gy * G + gx] === 1;
@@ -99,7 +106,8 @@
       if (water) {
         poly(ctx, [f.T, f.R, f.B, f.L], '#7CC7E8');
       } else {
-        poly(ctx, [f.T, f.R, f.B, f.L], (gx + gy) % 2 ? '#93CF73' : '#8BC86B');
+        poly(ctx, [f.T, f.R, f.B, f.L], (gx + gy) % 2 ? look().g[0] : look().g[1]);
+        if (!JV.inLand(gx, gy)) poly(ctx, [f.T, f.R, f.B, f.L], 'rgba(58,72,96,0.30)');
       }
       if (road && water) {
         const fi = footprint(gx, gy, 1, 1, 0.08);
@@ -126,6 +134,15 @@
       }
     }
     for (let gy = 0; gy < G; gy++) for (let gx = 0; gx < G; gx++) if (JV.isRoad(gx, gy) && !JV.isWater(gx, gy)) roadCenterline(ctx, gx, gy);
+    // hek om je eigen grond
+    const L = JV.land();
+    const fl = footprint(L.x0, L.y0, L.x1 - L.x0, L.y1 - L.y0, 0);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 4; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(fl.T.x, fl.T.y); ctx.lineTo(fl.R.x, fl.R.y); ctx.lineTo(fl.B.x, fl.B.y); ctx.lineTo(fl.L.x, fl.L.y); ctx.closePath(); ctx.stroke();
+    ctx.strokeStyle = 'rgba(150,110,70,0.9)'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]); ctx.stroke();
+    ctx.restore();
+    R.seasonDrawn = JV.season();
   }
 
   // --- volgorde van tekenen (achter naar voor) ------------------------------
@@ -170,7 +187,7 @@
   // --- objecten -------------------------------------------------------------
   function drawHouse(ctx, f, wall, roof, o, lights, opts) {
     opts = opts || {};
-    const H = 34;
+    const H = opts.H || 34;
     const wallL = JV.shade(wall, -26), wallR = JV.shade(wall, -8);
     box(ctx, f, H, { left: wallL, right: wallR, top: wall });
     const doorFace = o.flip ? 'L' : 'R', winFace = o.flip ? 'R' : 'L';
@@ -186,7 +203,7 @@
     const e = { T: up(f.T, H), R: up(f.R, H), B: up(f.B, H), L: up(f.L, H) };
     const c = { x: (e.T.x + e.B.x) / 2, y: (e.T.y + e.B.y) / 2 };
     for (const k of ['T', 'R', 'B', 'L']) { e[k] = { x: c.x + (e[k].x - c.x) * 1.12, y: c.y + (e[k].y - c.y) * 1.12 + 2 }; }
-    const apex = { x: c.x, y: c.y - 30 };
+    const apex = { x: c.x, y: c.y - (opts.apex || 30) };
     poly(ctx, [e.T, e.R, apex], JV.shade(roof, 10));
     poly(ctx, [e.L, e.T, apex], JV.shade(roof, -5));
     poly(ctx, [e.L, e.B, apex], JV.shade(roof, -18));
@@ -199,67 +216,191 @@
   }
 
   const WORK_STYLE = {
-    super: { wall: '#F4F1E6', a1: '#4DAA57', a2: '#FFFFFF', sign: '#3E8E48', roof: '#C9D7C2' },
-    restaurant: { wall: '#FBE6D4', a1: '#E2483D', a2: '#FFFFFF', sign: '#A8322B', roof: '#E3C7B4' },
-    opvang: { wall: '#FFF3C4', a1: '#9B6FD6', a2: '#F6C445', sign: '#7B4FB8', roof: '#E9DDB0' },
+    super: { wall: '#F4F1E6', a1: '#4DAA57', a2: '#FFFFFF', sign: '#3E8E48', roof: '#C9D7C2', H: 46 },
+    restaurant: { wall: '#FBE6D4', a1: '#E2483D', a2: '#FFFFFF', sign: '#A8322B', roof: '#E3C7B4', H: 46 },
+    opvang: { wall: '#FFF3C4', a1: '#9B6FD6', a2: '#F6C445', sign: '#7B4FB8', roof: '#E9DDB0', H: 46 },
+    bakkerij: { wall: '#FCEBD2', a1: '#E8A040', a2: '#FFFFFF', sign: '#B66A1E', roof: '#E7CFA8', H: 38 },
+    kapper: { wall: '#F8E0F0', a1: '#E8708A', a2: '#FFFFFF', sign: '#B5476B', roof: '#E9CCE0', H: 38 },
+    cafe: { wall: '#EFE3D3', a1: '#8B5A3C', a2: '#F1E7D8', sign: '#5E3B28', roof: '#D5C3AE', H: 38 },
+    dierenopvang: { wall: '#E6F2E0', a1: '#4DAA57', a2: '#F6C445', sign: '#3A7D42', roof: '#C8DEC0', H: 44 },
+    bloemen: { wall: '#FFF0F5', a1: '#E8708A', a2: '#4DAA57', sign: '#B5476B', roof: '#F0D5DD', H: 38 },
+    ziekenhuis: { wall: '#F2F6FA', a1: '#3F7FD8', a2: '#FFFFFF', sign: '#2F5FA8', roof: '#D5E0EE', H: 70 },
+    school: { wall: '#EBB48F', a1: '#F6C445', a2: '#FFFFFF', sign: '#B8402F', roof: '#C97A62', H: 50 },
+    dierenarts: { wall: '#E3F5F3', a1: '#33B7B0', a2: '#FFFFFF', sign: '#1F8A84', roof: '#C5E3E0', H: 44 },
+    ijssalon: { wall: '#FFF3F8', a1: '#F28BA8', a2: '#9EE0F0', sign: '#C2527A', roof: '#F5DCE6', H: 38 },
+    brandweer: { wall: '#F5D5D0', a1: '#E2483D', a2: '#FFFFFF', sign: '#A8322B', roof: '#C45A50', H: 54 },
+    bus: { wall: '#E8F0F8', a1: '#F6C445', a2: '#3F7FD8', sign: '#2F5FA8', roof: '#C9D6E6', H: 40 },
   };
+  function isoMat(ctx, p) { ctx.transform(0.5, 0.25, -0.5, 0.25, p.x, p.y); }
   function drawWork(ctx, o, f, lights) {
-    const st = WORK_STYLE[o.type];
-    const H = 46;
+    const st = WORK_STYLE[o.type], d = C[o.type];
+    const lvl = o.lvl || 1;
+    const H = st.H + (lvl - 1) * 3;
     box(ctx, f, H, { left: JV.shade(st.wall, -28), right: JV.shade(st.wall, -10), top: st.roof });
-    const inner = footprint(o.gx, o.gy, 3, 3, 0.12);
+    const inner = footprint(o.gx, o.gy, d.w, d.h, 0.12);
     poly(ctx, [up(inner.T, H), up(inner.R, H), up(inner.B, H), up(inner.L, H)], JV.shade(st.roof, -14));
     const doorFace = o.flip ? 'L' : 'R', winFace = o.flip ? 'R' : 'L';
-    lights.push(faceQuad(ctx, f, winFace, 0.08, 0.46, 6, 27, '#9FD3EA', '#FFFFFF'));
-    lights.push(faceQuad(ctx, f, winFace, 0.54, 0.92, 6, 27, '#9FD3EA', '#FFFFFF'));
-    lights.push(faceQuad(ctx, f, doorFace, 0.08, 0.32, 6, 27, '#9FD3EA', '#FFFFFF'));
-    faceQuad(ctx, f, doorFace, 0.42, 0.6, 0, 26, '#B7DDEE', '#FFFFFF');
-    lights.push(faceQuad(ctx, f, doorFace, 0.7, 0.92, 6, 27, '#9FD3EA', '#FFFFFF'));
+    const wTop = Math.min(27, H - 14);
+    lights.push(faceQuad(ctx, f, winFace, 0.08, 0.46, 6, wTop, '#9FD3EA', '#FFFFFF'));
+    lights.push(faceQuad(ctx, f, winFace, 0.54, 0.92, 6, wTop, '#9FD3EA', '#FFFFFF'));
+    if (H > 52) { // hoge gebouwen: een tweede rij ramen
+      lights.push(faceQuad(ctx, f, winFace, 0.08, 0.46, 32, H - 10, '#9FD3EA', '#FFFFFF'));
+      lights.push(faceQuad(ctx, f, winFace, 0.54, 0.92, 32, H - 10, '#9FD3EA', '#FFFFFF'));
+      lights.push(faceQuad(ctx, f, doorFace, 0.08, 0.32, 32, H - 10, '#9FD3EA', '#FFFFFF'));
+      lights.push(faceQuad(ctx, f, doorFace, 0.7, 0.92, 32, H - 10, '#9FD3EA', '#FFFFFF'));
+    }
+    lights.push(faceQuad(ctx, f, doorFace, 0.08, 0.32, 6, wTop, '#9FD3EA', '#FFFFFF'));
+    if (o.type === 'brandweer') {
+      faceQuad(ctx, f, doorFace, 0.38, 0.9, 0, 26, '#D9453A', '#FFFFFF');
+      for (let i = 1; i < 5; i++) faceQuad(ctx, f, doorFace, 0.38, 0.9, i * 5, i * 5 + 0.8, '#B23A31');
+    } else {
+      faceQuad(ctx, f, doorFace, 0.42, 0.6, 0, wTop - 1, '#B7DDEE', '#FFFFFF');
+      lights.push(faceQuad(ctx, f, doorFace, 0.7, 0.92, 6, wTop, '#9FD3EA', '#FFFFFF'));
+    }
     // luifel
+    const a0 = Math.min(30, H - 16), a1 = a0 + 9;
     for (const face of ['L', 'R']) {
-      for (let i = 0; i < 10; i++) {
-        faceQuad(ctx, f, face, i / 10, (i + 1) / 10, 30, 39, i % 2 ? st.a2 : st.a1);
-      }
+      const n = Math.max(6, Math.round((face === 'L' ? d.h : d.w) * 3));
+      for (let i = 0; i < n; i++) faceQuad(ctx, f, face, i / n, (i + 1) / n, a0, a1, i % 2 ? st.a2 : st.a1);
+    }
+    const top = up(f.B, H);
+    const roofC = { x: (up(f.T, H).x + top.x) / 2, y: (up(f.T, H).y + top.y) / 2 };
+    if (o.type === 'ziekenhuis') {
+      ctx.save(); isoMat(ctx, roofC); ctx.fillStyle = '#E2483D'; ctx.fillRect(-5, -16, 10, 32); ctx.fillRect(-16, -5, 32, 10); ctx.restore();
+    }
+    if (o.type === 'school') {
+      ctx.fillStyle = '#6B4B33'; ctx.fillRect(roofC.x - 1, roofC.y - 40, 2.4, 40);
+      poly(ctx, [{ x: roofC.x + 1, y: roofC.y - 40 }, { x: roofC.x + 17, y: roofC.y - 34 }, { x: roofC.x + 1, y: roofC.y - 28 }], '#E2483D');
+    }
+    if (o.type === 'brandweer') {
+      const tw = footprint(o.gx, o.gy, 1, 1, 0.1);
+      const dx = f.R.x - f.L.x, k = 0.5;
+      ctx.save(); ctx.translate(roofC.x - 14 * k, roofC.y - 6); ctx.fillStyle = '#8A2A22'; ctx.fillRect(-9, -24, 18, 24);
+      ctx.fillStyle = '#E8B84A'; ctx.fillRect(-5, -18, 10, 8); ctx.restore(); void tw; void dx;
+    }
+    if (o.type === 'bus') {
+      ctx.save(); ctx.translate(roofC.x, roofC.y - 4);
+      ctx.fillStyle = '#F6C445'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-22, -14, 44, 18, 6) : ctx.rect(-22, -14, 44, 18); ctx.fill();
+      ctx.fillStyle = '#9FD3EA'; ctx.fillRect(-18, -11, 8, 7); ctx.fillRect(-7, -11, 8, 7); ctx.fillRect(4, -11, 8, 7);
+      circ(ctx, -12, 5, 4, '#3A3A48'); circ(ctx, 12, 5, 4, '#3A3A48'); ctx.restore();
     }
     // bord op het dak
-    const top = up(f.B, H);
-    const label = C[o.type].icon + ' ' + C[o.type].name;
+    const label = d.icon + ' ' + d.name;
     ctx.font = '700 11px Fredoka, Nunito, system-ui, sans-serif';
     const w = ctx.measureText(label).width + 16;
     const x = top.x - w / 2, y = top.y - 34;
     ctx.fillStyle = JV.shade(st.sign, -30); ctx.fillRect(top.x - 9, y + 18, 3, 14); ctx.fillRect(top.x + 6, y + 18, 3, 14);
     ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, 20, 7) : ctx.rect(x, y, w, 20); ctx.fillStyle = st.sign; ctx.fill();
     ctx.fillStyle = '#FFFFFF'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, top.x, y + 10.5);
+    if (lvl > 1) { ctx.font = '700 10px Fredoka, system-ui, sans-serif'; ctx.fillStyle = '#FFE08A'; ctx.fillText('★'.repeat(lvl - 1), top.x, y - 7); }
     if (o.type === 'opvang') {
-      // klein speeltuintje: glijbaan naast de deur
       const p = fp(f, doorFace === 'R' ? 'L' : 'R', 0.5, 0);
       ctx.strokeStyle = '#E8708A'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(p.x - 8, p.y + 6); ctx.lineTo(p.x + 6, p.y - 8); ctx.stroke();
     }
   }
 
+  function drawApartment(ctx, f, o, lights) {
+    const H = 68;
+    const wall = o.wall || '#EFE2D2';
+    box(ctx, f, H, { left: JV.shade(wall, -26), right: JV.shade(wall, -8), top: JV.shade(wall, -34) });
+    const inner = footprint(o.gx, o.gy, 2, 2, 0.14);
+    poly(ctx, [up(inner.T, H), up(inner.R, H), up(inner.B, H), up(inner.L, H)], JV.shade(wall, -46));
+    for (const face of ['L', 'R']) for (let row = 0; row < 3; row++) for (let col = 0; col < 2; col++) {
+      const t1 = 0.12 + col * 0.42, h1 = 8 + row * 19;
+      if (face === (o.flip ? 'L' : 'R') && row === 0 && col === 1) { faceQuad(ctx, f, face, 0.52, 0.72, 0, 16, o.roof || '#7A5A44', '#FFFFFF'); continue; }
+      lights.push(faceQuad(ctx, f, face, t1, t1 + 0.3, h1, h1 + 12, '#9FD3EA', '#FFFFFF'));
+    }
+    const top = up(f.B, H);
+    ctx.fillStyle = '#7A7488'; ctx.fillRect(top.x - 12, top.y - 20, 8, 12); ctx.fillRect(top.x + 6, top.y - 22, 8, 14);
+  }
+
+  function drawVilla(ctx, f, o, lights) {
+    const wall = o.wall || '#F5EBD3', roof = o.roof || '#E8708A';
+    drawHouse(ctx, f, wall, roof, o, lights, { H: 40, apex: 42 });
+    const top = up(f.B, 40);
+    ctx.fillStyle = JV.shade(wall, -30); ctx.fillRect(top.x + 18, top.y - 52, 9, 24);
+    ctx.fillStyle = '#6B4B33'; ctx.fillRect(top.x + 17, top.y - 54, 11, 3);
+  }
+
+  function drawSpeeltuin(ctx, o, t) {
+    const f = footprint(o.gx, o.gy, 2, 2, 0.06);
+    poly(ctx, [f.T, f.R, f.B, f.L], '#E8D3A8');
+    const c = { x: (f.T.x + f.B.x) / 2, y: (f.T.y + f.B.y) / 2 };
+    // glijbaan
+    ctx.strokeStyle = '#8A6A4A'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(c.x - 24, c.y + 2); ctx.lineTo(c.x - 24, c.y - 26); ctx.moveTo(c.x - 10, c.y + 8); ctx.lineTo(c.x - 10, c.y - 22); ctx.stroke();
+    ctx.fillStyle = '#E8708A'; ctx.fillRect(c.x - 28, c.y - 30, 22, 6);
+    poly(ctx, [{ x: c.x - 10, y: c.y - 26 }, { x: c.x - 3, y: c.y - 26 }, { x: c.x + 17, y: c.y + 8 }, { x: c.x + 8, y: c.y + 8 }], '#F6C445');
+    // schommel
+    const sw = Math.sin(t * 2.2) * 5;
+    ctx.strokeStyle = '#5A6A8A'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(c.x + 12, c.y - 6); ctx.lineTo(c.x + 16, c.y - 38); ctx.lineTo(c.x + 38, c.y - 28); ctx.lineTo(c.x + 34, c.y + 2); ctx.stroke();
+    ctx.strokeStyle = '#8A8A9A'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(c.x + 24 + sw * 0.2, c.y - 34); ctx.lineTo(c.x + 24 + sw, c.y - 12); ctx.stroke();
+    ctx.fillStyle = '#E2483D'; ctx.fillRect(c.x + 19 + sw, c.y - 13, 11, 3);
+  }
+
+  function drawPark(ctx, o) {
+    const f = footprint(o.gx, o.gy, 3, 3, 0.04);
+    poly(ctx, [f.T, f.R, f.B, f.L], JV.season() === 3 ? '#E2EEF2' : '#7FC264');
+    const c = { x: (f.T.x + f.B.x) / 2, y: (f.T.y + f.B.y) / 2 };
+    ctx.strokeStyle = '#E8DCC0'; ctx.lineWidth = 9; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(f.L.x + 24, f.L.y); ctx.quadraticCurveTo(c.x, c.y + 26, f.R.x - 24, f.R.y); ctx.stroke();
+    ctx.fillStyle = JV.season() === 3 ? '#C7E4F0' : '#7CC7E8'; ctx.beginPath(); ctx.ellipse(c.x - 8, c.y - 18, 22, 10, 0, 0, Math.PI * 2); ctx.fill();
+    for (const [dx, dy, id] of [[-44, 4, 1], [40, -8, 5], [10, 30, 8]]) drawTree(ctx, { id: o.id * 7 + id, gx: 0, gy: 0, _c: { x: c.x + dx, y: c.y + dy } });
+    drawBench(ctx, { id: o.id, flip: false, _c: { x: c.x + 30, y: c.y + 14 } });
+  }
+
+  function drawStrand(ctx, o, t) {
+    const f = footprint(o.gx, o.gy, 4, 4, 0.03);
+    poly(ctx, [f.T, f.R, f.B, f.L], '#F3DEAA');
+    const wl = footprint(o.gx, o.gy, 4, 1.4, 0.03);
+    poly(ctx, [wl.T, wl.R, { x: wl.R.x - 22, y: wl.R.y + 12 + Math.sin(t) * 2 }, { x: wl.L.x + 22, y: wl.L.y - 12 + Math.sin(t) * 2 }], JV.season() === 3 ? '#C7E4F0' : '#7CC7E8');
+    const c = { x: (f.T.x + f.B.x) / 2, y: (f.T.y + f.B.y) / 2 };
+    for (const [dx, dy, col] of [[-26, 18, '#E8708A'], [30, 30, '#F6C445'], [4, 56, '#4F8FD8']]) {
+      ctx.fillStyle = '#8A6A4A'; ctx.fillRect(c.x + dx - 1, c.y + dy - 30, 2, 30);
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(c.x + dx, c.y + dy - 30, 17, Math.PI, 0); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.beginPath(); ctx.arc(c.x + dx, c.y + dy - 30, 17, Math.PI * 1.25, Math.PI * 1.5); ctx.lineTo(c.x + dx, c.y + dy - 30); ctx.fill();
+    }
+    ctx.font = '16px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('🏖️', c.x + 52, c.y + 6); ctx.fillText('🐚', c.x - 52, c.y + 38);
+  }
+
+  function drawStandbeeld(ctx, o) {
+    const c = center(o.gx, o.gy);
+    ctx.fillStyle = '#B8B4C4'; ctx.fillRect(c.x - 11, c.y - 14, 22, 14);
+    ctx.fillStyle = '#D7D3E0'; ctx.fillRect(c.x - 9, c.y - 16, 18, 4);
+    ctx.fillStyle = '#E0B84A'; ctx.beginPath(); ctx.ellipse(c.x, c.y - 24, 6, 8, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillRect(c.x - 7, c.y - 36, 14, 18); circ(ctx, c.x, c.y - 42, 6.5, '#E0B84A');
+    ctx.fillStyle = '#F2D470'; ctx.fillRect(c.x - 12, c.y - 36, 5, 3); ctx.fillRect(c.x + 7, c.y - 50, 5, 14);
+  }
+
   function hash(n) { return ((n * 2654435761) >>> 0) / 4294967296; }
 
   function drawTree(ctx, o) {
-    const c = center(o.gx, o.gy);
+    const c = o._c || center(o.gx, o.gy);
     const h = hash(o.id);
     ctx.fillStyle = 'rgba(40,70,30,0.18)'; ctx.beginPath(); ctx.ellipse(c.x, c.y + 2, 16, 7, 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#8A5A3A'; ctx.fillRect(c.x - 3, c.y - 16, 6, 18);
-    const g = ['#4E9F4A', '#5DAE5B', '#3F8E45', '#6BB85A'][Math.floor(h * 4)];
+    const g = look().leaf[Math.floor(h * 4)];
+    const season = JV.season();
     if (h > 0.8) {
-      // dennenboom
+      // dennenboom (blijft het hele jaar groen, 's winters met sneeuw)
       poly(ctx, [{ x: c.x, y: c.y - 54 }, { x: c.x + 15, y: c.y - 22 }, { x: c.x - 15, y: c.y - 22 }], '#3F8E45');
       poly(ctx, [{ x: c.x, y: c.y - 40 }, { x: c.x + 19, y: c.y - 12 }, { x: c.x - 19, y: c.y - 12 }], '#357D3B');
+      if (season === 3) { poly(ctx, [{ x: c.x, y: c.y - 54 }, { x: c.x + 7, y: c.y - 40 }, { x: c.x - 7, y: c.y - 40 }], '#FFFFFF'); poly(ctx, [{ x: c.x, y: c.y - 40 }, { x: c.x + 9, y: c.y - 27 }, { x: c.x - 9, y: c.y - 27 }], '#F2F7F9'); }
       return;
     }
     circ(ctx, c.x - 8, c.y - 22, 11, JV.shade(g, -14));
     circ(ctx, c.x + 8, c.y - 22, 11, JV.shade(g, -6));
     circ(ctx, c.x, c.y - 34, 13, g);
     circ(ctx, c.x - 4, c.y - 38, 5, JV.shade(g, 25));
-    if (h < 0.25) { circ(ctx, c.x + 6, c.y - 26, 2.5, '#E2483D'); circ(ctx, c.x - 7, c.y - 30, 2.5, '#E2483D'); }
+    if (h < 0.25 && season !== 3) { circ(ctx, c.x + 6, c.y - 26, 2.5, look().fruit); circ(ctx, c.x - 7, c.y - 30, 2.5, look().fruit); }
+    if (season === 3) { ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.ellipse(c.x, c.y - 44, 9, 3.5, 0, 0, Math.PI * 2); ctx.fill(); }
   }
   function drawBush(ctx, o) {
     const c = center(o.gx, o.gy);
-    circ(ctx, c.x - 7, c.y - 4, 8, '#4E9F4A'); circ(ctx, c.x + 7, c.y - 4, 8, '#3F8E45'); circ(ctx, c.x, c.y - 10, 9, '#5DAE5B');
+    circ(ctx, c.x - 7, c.y - 4, 8, look().leaf[0]); circ(ctx, c.x + 7, c.y - 4, 8, look().leaf[2]); circ(ctx, c.x, c.y - 10, 9, look().leaf[1]);
   }
   function drawRock(ctx, o) {
     const c = center(o.gx, o.gy);
@@ -280,7 +421,7 @@
     }
   }
   function drawBench(ctx, o) {
-    const c = center(o.gx, o.gy);
+    const c = o._c || center(o.gx, o.gy);
     const s = o.flip ? -1 : 1;
     ctx.save(); ctx.translate(c.x, c.y); ctx.scale(s, 1);
     ctx.fillStyle = '#6B4B33'; ctx.fillRect(-12, -4, 2, 8); ctx.fillRect(10, -10, 2, 8);
@@ -337,10 +478,16 @@
       case 'bench': drawBench(ctx, o); break;
       case 'lantern': drawLantern(ctx, o); break;
       case 'fountain': drawFountain(ctx, o, t); break;
-      case 'super': case 'restaurant': case 'opvang': drawWork(ctx, o, f, lights); break;
+      case 'speeltuin': drawSpeeltuin(ctx, o, t); break;
+      case 'park': drawPark(ctx, o); break;
+      case 'strand': drawStrand(ctx, o, t); break;
+      case 'standbeeld': drawStandbeeld(ctx, o); break;
+      case 'apartment': drawApartment(ctx, f, o, lights); break;
+      case 'villa': drawVilla(ctx, f, o, lights); break;
       case 'playerhouse': {
         const hs = JV.STARTER_HOUSES.find((h) => h.id === S.houseStyle) || JV.STARTER_HOUSES[0];
-        drawHouse(ctx, f, hs.wall, hs.roof, o, lights, { heart: true, door: '#E8708A' });
+        const hc = S.houseColors || { wall: hs.wall, roof: hs.roof };
+        drawHouse(ctx, f, hc.wall, hc.roof, o, lights, { heart: true, door: '#E8708A' });
         break;
       }
       case 'road': {
@@ -349,7 +496,8 @@
         break;
       }
       default:
-        drawHouse(ctx, f, o.wall || '#F5EBD3', o.roof || '#E8708A', o, lights);
+        if (WORK_STYLE[o.type]) drawWork(ctx, o, f, lights);
+        else drawHouse(ctx, f, o.wall || '#F5EBD3', o.roof || '#E8708A', o, lights);
     }
     if (ghost) return;
     // bewoners bij hun huis, huisdieren en de speler
@@ -357,6 +505,11 @@
     if (o.type === 'playerhouse' && dark < 0.6) {
       const p = fp(footprint(o.gx, o.gy, 2, 2, 0), o.flip ? 'L' : 'R', 0.15, -6);
       JV.drawPerson(ctx, p.x + 4, p.y + 6, 0.3, S.player.look, { sash: true });
+      if (S.player.pet) {
+        const pet = JV.PETS.find((x) => x.id === S.player.pet);
+        ctx.font = '15px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        ctx.fillText(pet.icon, p.x + 24, p.y + 8 + Math.abs(Math.sin(t * 2)) * -2);
+      }
     }
     if (d.cat === 'woning') {
       const fam = JV.familyOf(o.id);
@@ -385,7 +538,7 @@
     if (d.cat === 'woning') {
       const fam = JV.familyOf(o.id);
       if (o.movedIn && Date.now() - o.movedIn < 9000) bubble(ctx, cx, topY, '📦 Nieuw!', '#FFFFFF');
-      else if (fam && fam.giftReady) bubble(ctx, cx, topY, '🎁', '#FFE3EC');
+      else if (fam && fam.giftReady) bubble(ctx, cx, topY, fam.birthday ? '🎂' : '🎁', '#FFE3EC');
     }
   }
 
@@ -393,7 +546,7 @@
   JV.render = function (ctx, t, ui) {
     const S = JV.state();
     const v = JV.view, cam = JV.cam, dpr = v.dpr;
-    if (R.dirty) { buildGround(); sortObjects(); R.dirty = false; }
+    if (R.dirty || R.seasonDrawn !== JV.season()) { buildGround(); sortObjects(); R.dirty = false; }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const sky = ctx.createLinearGradient(0, 0, 0, v.h);
     sky.addColorStop(0, '#CDEFFB'); sky.addColorStop(1, '#FBE7EF');
@@ -414,11 +567,14 @@
 
     // bouwmodus: raster + plaats-voorbeeld
     if (ui.build) {
+      const L = JV.land();
       ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1;
-      for (let i = 0; i <= G; i++) {
-        let a = center(i - 0.5, -0.5), b = center(i - 0.5, G - 0.5);
+      for (let i = L.x0; i <= L.x1; i++) {
+        const a = center(i - 0.5, L.y0 - 0.5), b = center(i - 0.5, L.y1 - 0.5);
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-        a = center(-0.5, i - 0.5); b = center(G - 0.5, i - 0.5);
+      }
+      for (let i = L.y0; i <= L.y1; i++) {
+        const a = center(L.x0 - 0.5, i - 0.5), b = center(L.x1 - 0.5, i - 0.5);
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
       }
     }
@@ -497,6 +653,20 @@
       ctx.globalAlpha = 1;
     }
 
+    // sneeuw 's winters, vallende blaadjes in de herfst
+    const sea = JV.season();
+    if (sea === 3 || sea === 2) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const n = sea === 3 ? 70 : 24;
+      for (let i = 0; i < n; i++) {
+        const seed = hash(i + 1);
+        const x = ((seed * 1237 + t * (sea === 3 ? 14 : 22) * (0.5 + seed)) % (v.w + 40)) - 20 + Math.sin(t * 0.8 + i) * 12;
+        const y = ((hash(i + 91) * 997 + t * (sea === 3 ? 38 : 30) * (0.6 + seed * 0.8)) % (v.h + 30)) - 15;
+        ctx.fillStyle = sea === 3 ? 'rgba(255,255,255,0.9)' : ['#E2832F', '#D9602A', '#E8A93A'][i % 3];
+        ctx.beginPath(); ctx.arc(x, y, sea === 3 ? 2 + seed * 1.6 : 3, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.setTransform(dpr * z, 0, 0, dpr * z, dpr * (v.w / 2 - cam.x * z), dpr * (v.h / 2 - cam.y * z));
+    }
     // tekstballonnen + zwevende teksten
     if (!ui.build) for (const o of order) drawBubbles(ctx, o, t);
     for (let i = JV.floaters.length - 1; i >= 0; i--) {

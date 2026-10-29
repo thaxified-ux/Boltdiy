@@ -2,7 +2,8 @@
 window.JV = window.JV || {};
 
 (function (JV) {
-  JV.GRID = 20;
+  JV.GRID = 28;   // hele kaart; je begint met 20 × 20 en koopt grond erbij
+  JV.LAND_OFF = 4;
   JV.DAY_SECONDS = 720; // één dag-en-nachtcyclus = 12 minuten
   JV.START_COINS = 500;
 
@@ -27,13 +28,30 @@ window.JV = window.JV || {};
     tree: { name: 'Boom', cat: 'deco', w: 1, h: 1, price: 20, level: 1, icon: '🌳' },
     flowers: { name: 'Bloemperk', cat: 'deco', w: 1, h: 1, price: 30, level: 2, icon: '🌷' },
     bench: { name: 'Bankje', cat: 'deco', w: 1, h: 1, price: 40, level: 2, icon: '🪑' },
-    lantern: { name: 'Lantaarn', cat: 'deco', w: 1, h: 1, price: 50, level: 4, icon: '🏮' },
+    lantern: { name: 'Lantaarn', cat: 'deco', w: 1, h: 1, price: 50, level: 3, icon: '🏮' },
     fountain: { name: 'Fontein', cat: 'deco', w: 2, h: 2, price: 800, level: 5, icon: '⛲' },
-    house_small: { name: 'Rijtjeshuis', cat: 'woning', w: 2, h: 2, price: 300, level: 1, icon: '🏠', maxAdults: 2, maxKids: 2 },
-    house_big: { name: 'Vrijstaand huis', cat: 'woning', w: 2, h: 2, price: 450, level: 3, icon: '🏡', maxAdults: 2, maxKids: 3 },
+    speeltuin: { name: 'Speeltuin', cat: 'deco', w: 2, h: 2, price: 400, level: 6, icon: '🛝' },
+    park: { name: 'Park', cat: 'deco', w: 3, h: 3, price: 1500, level: 10, icon: '🏞️' },
+    standbeeld: { name: 'Standbeeld', cat: 'deco', w: 1, h: 1, price: 1200, level: 15, icon: '🗿' },
+    strand: { name: 'Strand', cat: 'deco', w: 4, h: 4, price: 2500, level: 15, icon: '🏖️' },
+    house_small: { name: 'Rijtjeshuis', cat: 'woning', w: 2, h: 2, price: 300, level: 1, icon: '🏠', maxKids: 2 },
+    house_big: { name: 'Vrijstaand huis', cat: 'woning', w: 2, h: 2, price: 450, level: 3, icon: '🏡', maxKids: 3 },
+    apartment: { name: 'Appartement', cat: 'woning', w: 2, h: 2, price: 600, level: 8, icon: '🏢', maxKids: 1 },
+    villa: { name: 'Villa', cat: 'woning', w: 3, h: 3, price: 1500, level: 15, icon: '🏰', maxKids: 3, minKids: 1 },
     super: { name: 'Supermarkt', cat: 'werk', w: 3, h: 3, price: 500, level: 1, icon: '🛒', slots: 2, game: 'super', mult: 1, jobs: ['Kassamedewerker', 'Vakkenvuller'] },
+    bakkerij: { name: 'Bakkerij', cat: 'werk', w: 2, h: 2, price: 400, level: 2, icon: '🥐', slots: 2, game: 'bakkerij', mult: 1.1, jobs: ['Bakker', 'Verkoper'] },
+    kapper: { name: 'Kapper', cat: 'werk', w: 2, h: 2, price: 450, level: 3, icon: '💇', slots: 2, game: 'kapper', mult: 1.1, jobs: ['Kapper', 'Kapster'] },
+    cafe: { name: 'Café', cat: 'werk', w: 2, h: 2, price: 700, level: 4, icon: '☕', slots: 2, game: 'cafe', mult: 1.2, jobs: ['Barista', 'Bediening'] },
+    dierenopvang: { name: 'Dierenopvang', cat: 'werk', w: 3, h: 3, price: 800, level: 4, icon: '🐾', slots: 2, game: 'dierenopvang', mult: 1.2, jobs: ['Dierenverzorger', 'Dierenverzorger'] },
     restaurant: { name: 'Restaurant', cat: 'werk', w: 3, h: 3, price: 1200, level: 5, icon: '🍽️', slots: 3, game: 'restaurant', mult: 1.3, jobs: ['Kok', 'Ober', 'Kok'] },
     opvang: { name: 'Kinderopvang', cat: 'werk', w: 3, h: 3, price: 1000, level: 5, icon: '🧸', slots: 3, game: 'opvang', mult: 1.2, jobs: ['Pedagogisch medewerker', 'Leidster', 'Pedagogisch medewerker'], childSlots: 8 },
+    bloemen: { name: 'Bloemenwinkel', cat: 'werk', w: 2, h: 2, price: 600, level: 6, icon: '💐', slots: 2, game: 'bloemen', mult: 1.2, jobs: ['Bloemist', 'Bloemist'] },
+    ziekenhuis: { name: 'Ziekenhuis', cat: 'werk', w: 4, h: 4, price: 3000, level: 8, icon: '🏥', slots: 4, game: 'ziekenhuis', mult: 1.5, jobs: ['Arts', 'Verpleegkundige', 'Verpleegkundige', 'Arts'] },
+    school: { name: 'School', cat: 'werk', w: 4, h: 3, price: 2200, level: 8, icon: '🏫', slots: 3, game: 'school', mult: 1.4, jobs: ['Juf', 'Meester', 'Juf'], childSlots: 12 },
+    dierenarts: { name: 'Dierenarts', cat: 'werk', w: 3, h: 3, price: 2500, level: 10, icon: '🩺', slots: 2, game: 'dierenarts', mult: 1.4, jobs: ['Dierenarts', 'Assistent'] },
+    ijssalon: { name: 'IJssalon', cat: 'werk', w: 2, h: 2, price: 900, level: 10, icon: '🍦', slots: 2, game: 'ijssalon', mult: 1.2, jobs: ['IJsverkoper', 'Verkoper'] },
+    brandweer: { name: 'Brandweer', cat: 'werk', w: 3, h: 3, price: 3500, level: 12, icon: '🚒', slots: 3, game: 'brandweer', mult: 1.6, jobs: ['Brandweerman', 'Brandweervrouw', 'Brandweerman'] },
+    bus: { name: 'Busstation', cat: 'werk', w: 3, h: 2, price: 3000, level: 12, icon: '🚌', slots: 2, game: 'bus', mult: 1.5, jobs: ['Buschauffeur', 'Buschauffeuse'] },
     playerhouse: { name: 'Jouw huis', cat: 'eigen', w: 2, h: 2, price: 0, level: 999, icon: '💖' },
     rock: { name: 'Rots', cat: 'natuur', w: 1, h: 1, price: 0, level: 999, clear: 5 },
     bush: { name: 'Struik', cat: 'natuur', w: 1, h: 1, price: 0, level: 999, clear: 5 },
@@ -45,7 +63,19 @@ window.JV = window.JV || {};
     { id: 'woning', label: 'Woningen', icon: '🏠' },
     { id: 'werk', label: 'Werk', icon: '🏪' },
     { id: 'deco', label: 'Versiering', icon: '🌳' },
+    { id: 'grond', label: 'Grond', icon: '🗺️' },
   ];
+  // Grond uitbreiden: elke stap maakt de stad 2 vakjes breder aan alle kanten
+  JV.LAND_STEPS = [{ size: 22, level: 6, price: 1000 }, { size: 24, level: 9, price: 2000 }, { size: 26, level: 12, price: 4000 }, { size: 28, level: 15, price: 8000 }];
+  // Upgrades van werkgebouwen: aantal keer werken dat nodig is om naar het volgende niveau te gaan
+  JV.UPGRADE_WORK = [3, 6, 10, 15];
+  JV.MAX_BUILDING_LEVEL = 5;
+  JV.SEASONS = [
+    { id: 'lente', name: 'Lente', icon: '🌸' }, { id: 'zomer', name: 'Zomer', icon: '☀️' },
+    { id: 'herfst', name: 'Herfst', icon: '🍂' }, { id: 'winter', name: 'Winter', icon: '❄️' },
+  ];
+  JV.SEASON_DAYS = 6;
+  JV.PET_PRICE = 250;
 
   JV.xpForLevel = function (n) { return 30 * n * (n - 1); }; // XP nodig om level n te bereiken
   JV.levelFromXp = function (xp) { let n = 1; while (xp >= JV.xpForLevel(n + 1)) n++; return n; };

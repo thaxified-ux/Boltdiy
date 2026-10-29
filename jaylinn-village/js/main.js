@@ -30,7 +30,7 @@
     box.innerHTML = '<p class="start-info">Laden…</p>';
     if (!JV.storage.ready) await JV.storage.init();
     const saved = await JV.storage.load();
-    JV.showStart(saved && saved.v === 1 ? saved : null);
+    JV.showStart(saved && (saved.v === 1 || saved.v === 2) ? saved : null);
   };
 
   function start() {

@@ -20,6 +20,7 @@
   }
   function shake(node) { node.classList.remove('shake'); void node.offsetWidth; node.classList.add('shake'); }
   function pop(node) { node.classList.remove('pop'); void node.offsetWidth; node.classList.add('pop'); }
+  JV.mg = { el, pick, shuffle, shake, pop, customer, rnd };
 
   // ------------------------------------------------------------------------
   // Supermarkt: verzamel de boodschappen van het lijstje
@@ -371,7 +372,7 @@
       body.innerHTML = '';
       timerEl.hidden = true; score.textContent = '';
       const card = el('div', 'mg-intro');
-      card.innerHTML = '<h2>' + game.title + '</h2>' + game.intro + '<p class="mg-reward">Je verdient 🪙 ' + Math.round(JV.STAR_COINS[0] * d.mult) + ' tot ' + Math.round(JV.STAR_COINS[2] * d.mult) + ' munten.</p>';
+      card.innerHTML = '<h2>' + game.title + '</h2>' + game.intro + '<p class="mg-reward">Je verdient 🪙 ' + Math.round(JV.STAR_COINS[0] * JV.multOf(building)) + ' tot ' + Math.round(JV.STAR_COINS[2] * JV.multOf(building)) + ' munten.</p>';
       const go = el('button', 'btn btn-primary btn-big', 'Start!'); go.type = 'button';
       go.addEventListener('click', run);
       card.append(go);
@@ -389,7 +390,8 @@
       cleanup = game.start(body, api, JV.state().worked[d.game] || worked);
     }
     function showResult(stars) {
-      const r = JV.finishWork(d.game, stars, d.mult);
+      building.worked = (building.worked || 0) + 1;
+      const r = JV.finishWork(d.game, stars, JV.multOf(building));
       JV.sfx(stars === 3 ? 'win' : 'good');
       body.innerHTML = '';
       timerEl.hidden = true;

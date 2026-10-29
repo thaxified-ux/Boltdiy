@@ -213,7 +213,7 @@
   function enterGame(isNew) {
     show('game');
     const S = JV.state();
-    JV.focusOn(8, 10);
+    JV.focusOn(JV.LAND_OFF + 8, JV.LAND_OFF + 10);
     JV.cam.zoom = Math.min(1.25, Math.max(0.7, window.innerWidth / 900));
     refreshHud();
     if (isNew) setTimeout(() => JV.tip('welcome', 'Welkom in jouw stad, burgemeester ' + S.player.name + '! Ik ben Jaylinn. Tik op de supermarkt om te werken en munten te verdienen.'), 500);
@@ -238,7 +238,7 @@
       badge.hidden = !done; badge.textContent = done;
       if (ui.build) renderShop();
     }
-    $('#clock').textContent = (JV.darkness() > 0.5 ? '🌙 ' : '☀️ ') + JV.clockText() + ' · dag ' + S.day;
+    $('#clock').textContent = (JV.darkness() > 0.5 ? '🌙 ' : JV.SEASONS[JV.season()].icon + ' ') + JV.clockText() + ' · dag ' + S.day;
   }
   JV.refreshHud = refreshHud;
 
@@ -284,7 +284,7 @@
       const b = S.objects.find((o) => o.id === m.workId);
       return m.job + ' in de ' + C[b.type].name.toLowerCase();
     }
-    if (m.workId != null) return age + ' · gaat naar de kinderopvang';
+    if (m.workId != null) { const wb = S.objects.find((o) => o.id === m.workId); return age + (wb && wb.type === 'school' ? ' · gaat naar school' : ' · gaat naar de kinderopvang'); }
     if (m.look.age === 'kind' || m.look.age === 'tiener') return age + ' · speelt graag buiten';
     return age + ' · is thuis';
   }
@@ -293,9 +293,10 @@
   function openWorkCard(b) {
     const d = C[b.type];
     openModal((s) => {
-      s.append(el('h2', '', d.icon + ' ' + esc(d.name)));
+      const lvl = b.lvl || 1;
+      s.append(el('h2', '', d.icon + ' ' + esc(d.name) + (lvl > 1 ? ' <span class="stars-inline">' + '★'.repeat(lvl - 1) + '</span>' : '')));
       const workers = JV.workersOf(b);
-      s.append(el('p', 'muted', 'Werkplekken: ' + workers.length + ' van ' + d.slots + ' · je werkte hier ' + (JV.state().worked[d.game] || 0) + ' keer'));
+      s.append(el('p', 'muted', 'Niveau ' + lvl + ' · werkplekken: ' + workers.length + ' van ' + JV.slotsOf(b) + ' · je werkte hier ' + (b.worked || 0) + ' keer'));
       const go = el('button', 'btn btn-primary btn-big', '▶ Ga werken'); go.type = 'button';
       go.addEventListener('click', () => { closeModal(); JV.openMinigame(b, () => { refreshHud(); checkTips(); }); });
       s.append(go);
@@ -308,15 +309,34 @@
         closeModal();
       });
       s.append(coll);
+      const up = JV.upgradeInfo(b);
+      if (up.max) s.append(el('p', 'tipline', '⭐ Dit gebouw is op het hoogste niveau!'));
+      else {
+        const ub = el('button', 'btn', '⬆️ Upgraden naar niveau ' + (up.lvl + 1) + ' (🪙 ' + up.cost + ')'); ub.type = 'button';
+        ub.disabled = !up.ready || JV.state().coins < up.cost;
+        ub.addEventListener('click', () => {
+          const r = JV.upgrade(b);
+          if (!r.ok) { JV.toast(r.reason, 'warn'); return; }
+          JV.sfx('level'); JV.floatAt(b, '⬆️ Niveau ' + r.lvl, '#7B4FB8'); JV.save(); closeModal();
+        });
+        s.append(ub);
+        s.append(el('p', 'muted small', up.ready ? 'Een hoger niveau geeft meer munten, meer werkplekken en een mooier gebouw.' : 'Werk nog ' + (up.need - up.worked) + ' keer in dit gebouw om te kunnen upgraden.'));
+      }
+      if (b.type === 'dierenopvang') {
+        const pet = JV.state().player.pet ? JV.PETS.find((x) => x.id === JV.state().player.pet) : null;
+        const ab = el('button', 'btn', '🐾 ' + (pet ? 'Ander huisdier kiezen' : 'Een huisdier adopteren') + ' (🪙 ' + JV.PET_PRICE + ')'); ab.type = 'button';
+        ab.addEventListener('click', () => { closeModal(); openAdopt(); });
+        s.append(ab);
+      }
       if (!JV.adjacentRoad(b)) s.append(el('p', 'warnline', 'Dit gebouw ligt niet aan een weg.'));
       s.append(el('h3', '', 'Personeel'));
       if (!workers.length) s.append(el('p', 'muted', 'Nog niemand werkt hier. Bouw woningen, dan komen er nieuwe bewoners die hier kunnen werken.'));
       const list = el('div', 'people');
       workers.forEach(({ m, f }) => list.append(personRow(m, f, m.job)));
       s.append(list);
-      if (b.type === 'opvang') {
+      if (d.childSlots) {
         const kids = JV.childrenAt(b);
-        s.append(el('h3', '', 'Kinderen (' + kids.length + ' van ' + d.childSlots + ')'));
+        s.append(el('h3', '', (b.type === 'school' ? 'Leerlingen (' : 'Kinderen (') + kids.length + ' van ' + JV.childSlotsOf(b) + ')'));
         const kl = el('div', 'people');
         kids.forEach(({ m, f }) => kl.append(personRow(m, f, JV.AGE_LABEL[m.look.age])));
         s.append(kl);
@@ -328,8 +348,11 @@
   function openHouseCard(h) {
     const fam = JV.familyOf(h.id);
     if (!fam) return;
+    let gift = null;
     if (fam.giftReady) {
+      const bday = fam.birthday;
       const r = JV.openGift(fam);
+      gift = { birthday: bday };
       if (r) {
         JV.sfx('coin');
         JV.floatAt(h, r.coins ? '+' + r.coins + ' 🪙' : '+1 💎', '#B07A00');
@@ -339,6 +362,7 @@
     }
     openModal((s) => {
       s.append(el('h2', '', '🏠 Familie ' + esc(fam.surname)));
+      if (gift && gift.birthday) s.append(el('p', 'tipline', '🎂 Hoera, ' + esc(gift.birthday) + ' is vandaag jarig!'));
       const pet = fam.pet ? JV.PETS.find((p) => p.id === fam.pet) : null;
       s.append(el('p', 'muted', C[h.type].name + ' · ' + fam.members.length + (fam.members.length === 1 ? ' persoon' : ' personen') + (pet ? ' · ' + pet.icon + ' ' + pet.name : '')));
       s.append(el('div', 'happy', 'Tevredenheid ' + heartsHtml(fam.hearts)));
@@ -355,6 +379,24 @@
     });
   }
 
+  function openAdopt() {
+    openModal((s) => {
+      s.append(el('h2', '', '🐾 Een huisdier adopteren'));
+      s.append(el('p', 'muted', 'Kies een huisdier dat bij jou in huis komt wonen. Het kost 🪙 ' + JV.PET_PRICE + '.'));
+      const row = el('div', 'unlocks');
+      JV.PETS.forEach((p) => {
+        const b = el('button', 'unlock pet-pick', '<span class="e">' + p.icon + '</span><span>' + esc(p.name) + '</span>'); b.type = 'button';
+        b.addEventListener('click', () => {
+          const r = JV.adoptPet(p.id);
+          if (!r.ok) { JV.toast(r.reason, 'warn'); return; }
+          JV.sfx('win'); JV.toast('Je hebt een ' + p.name.toLowerCase() + ' geadopteerd!'); JV.save(); closeModal(); refreshHud();
+        });
+        row.append(b);
+      });
+      s.append(row);
+    });
+  }
+
   function openPlayerCard() {
     const S = JV.state();
     openModal((s) => {
@@ -367,6 +409,15 @@
       txt.append(edit);
       wrap.append(txt);
       s.append(wrap);
+      if (S.player.pet) { const pet = JV.PETS.find((x) => x.id === S.player.pet); s.append(el('p', '', 'Je huisdier: ' + pet.icon + ' ' + pet.name.toLowerCase())); }
+      const hs = JV.STARTER_HOUSES.find((h) => h.id === S.houseStyle) || JV.STARTER_HOUSES[0];
+      const cur = S.houseColors || { wall: hs.wall, roof: hs.roof };
+      s.append(el('h3', '', 'Je huis een kleurtje geven'));
+      const rowW = el('div', 'swatches'), rowR = el('div', 'swatches');
+      const paint = (wall, roof) => { JV.setHouseColors(wall, roof); JV.sfx('tap'); JV.save(); closeModal(); openPlayerCard(); };
+      JV.HOUSE_WALLS.forEach((c) => { const b = el('button', 'swatch' + (c === cur.wall ? ' on' : '')); b.type = 'button'; b.style.background = c; b.setAttribute('aria-label', 'Muurkleur'); b.addEventListener('click', () => paint(c, cur.roof)); rowW.append(b); });
+      JV.HOUSE_ROOFS.forEach((c) => { const b = el('button', 'swatch' + (c === cur.roof ? ' on' : '')); b.type = 'button'; b.style.background = c; b.setAttribute('aria-label', 'Dakkleur'); b.addEventListener('click', () => paint(cur.wall, c)); rowR.append(b); });
+      s.append(el('span', 'opt-label', 'Muren'), rowW, el('span', 'opt-label', 'Dak'), rowR);
     });
   }
   function editPlayer() {
@@ -503,6 +554,7 @@
       tabs.append(b);
     });
     const items = $('#shop-items'); items.innerHTML = '';
+    if (ui.tab === 'grond') { renderLandShop(items); $('#btn-undo').disabled = !JV.canUndo(); return; }
     Object.keys(C).filter((k) => C[k].cat === ui.tab).sort((a, b) => C[a].level - C[b].level || C[a].price - C[b].price).forEach((k) => {
       const d = C[k];
       const locked = d.level > S.level;
@@ -523,6 +575,32 @@
       items.append(b);
     });
     $('#btn-undo').disabled = !JV.canUndo();
+  }
+
+  function renderLandShop(items) {
+    const S = JV.state();
+    const L = JV.LAND_STEPS;
+    const bought = S.landStep || 0;
+    const start = el('div', 'shop-item locked', '<span class="e">🟩</span><span class="n">20 × 20</span><span class="p">✓ Van jou</span>');
+    items.append(start);
+    L.forEach((st, i) => {
+      const done = i < bought, next = i === bought;
+      const locked = next && S.level < st.level;
+      const b = el('button', 'shop-item' + (done ? ' locked' : '') + (next && !locked && S.coins < st.price ? ' poor' : '') + (!done && !next ? ' locked' : ''));
+      b.type = 'button';
+      b.innerHTML = '<span class="e">' + (done ? '🟩' : '🗺️') + '</span><span class="n">' + st.size + ' × ' + st.size + '</span><span class="p">' + (done ? '✓ Van jou' : locked || !next ? '🔒 Level ' + st.level : '🪙 ' + st.price) + '</span>';
+      b.addEventListener('click', () => {
+        if (done) { JV.toast('Deze grond is al van jou.'); return; }
+        if (!next) { JV.toast('Koop eerst de kleinere uitbreiding.'); return; }
+        if (locked) { JV.toast('Deze grond kun je kopen vanaf level ' + st.level + '.'); return; }
+        confirmBox('Wil je de stad uitbreiden naar ' + st.size + ' × ' + st.size + ' vakjes voor ' + st.price + ' munten?', 'Ja, uitbreiden', () => {
+          const r = JV.expandLand();
+          if (!r.ok) { JV.toast(r.reason, 'warn'); return; }
+          JV.sfx('level'); JV.toast('Je stad is groter geworden: ' + r.size + ' × ' + r.size + '!'); JV.save(); refreshHud(); renderShop();
+        });
+      });
+      items.append(b);
+    });
   }
 
   function hidePlacebar() { $('#placebar').hidden = true; }
@@ -824,6 +902,8 @@
       modalQueue.push(() => openFamilyArrived(f));
       setTimeout(() => { JV.flushPending(); JV.tip('family', 'Er is een nieuw gezin komen wonen! Iedereen in een gezin heeft dezelfde achternaam. De volwassenen gaan werken in jouw gebouwen.'); }, 700);
     });
+    JV.on('season', (i) => { const se = JV.SEASONS[i]; JV.sfx('win'); JV.toast(se.icon + ' Het is ' + se.name.toLowerCase() + '! Seizoensfeest: +2 💎', 'ok'); JV.save(true); });
+    JV.on('birthday', (ev) => { JV.toast('🎂 ' + ev.m.first + ' ' + ev.f.surname + ' is jarig! Ga op bezoek.'); });
     JV.on('tasks', refreshHud);
     JV.on('xp', refreshHud);
   };

@@ -1,6 +1,6 @@
 # Jaylinn Village
 
-Speelbaar prototype van een stadsbouwspel voor kinderen. Jij bent de burgemeester: je werkt in mini-games, verdient munten, bouwt je stad en verwelkomt nieuwe gezinnen. Het spel heeft geen einde en slaat automatisch op.
+Stadsbouwspel voor kinderen. Jij bent de burgemeester: je werkt in mini-games, verdient munten, bouwt je stad en verwelkomt nieuwe gezinnen. Het spel heeft geen einde en slaat automatisch op.
 
 ## Spelen
 
@@ -14,19 +14,18 @@ python3 -m http.server 8000
 # open http://localhost:8000
 ```
 
-## Wat zit erin (eerste versie)
+## Wat zit erin
 
-- Poppetje maken (geslacht, huidskleur, 8 haarstijlen, kleuren, bril, baard, jurk) en een huis kiezen
-- Stad op een rooster van 20 × 20: wegen tekenen (over water wordt het een brug), woningen, werkgebouwen en versiering plaatsen, verplaatsen, draaien, verkopen en ongedaan maken
-- Nieuwe gezinnen bij elke woning, met dezelfde achternaam, verschillende gezinsvormen, kinderen en huisdieren
-- Volwassenen kiezen een baan in een werkgebouw; peuters en baby's gaan naar de kinderopvang
-- Bewoners lopen over de wegen naar hun werk en terug, en maken wandelingetjes
-- Dag-en-nachtcyclus van 12 minuten, met lantaarns en verlichte ramen
-- Drie mini-games: supermarkt (boodschappenlijstje), restaurant (koken en op tijd serveren) en kinderopvang (voor de kinderen zorgen)
-- Munten, diamanten, XP en levels die nieuwe gebouwen vrijspelen
-- Gebouwen met personeel verdienen elke dag munten; blije gezinnen geven cadeautjes
-- Takenlijst, bewonersboek en tips van Jaylinn
-- Automatisch opslaan in de browser (`localStorage`); als Claude-artifact ook in de privé-opslag van de speler
+- **Poppetje en huis:** je maakt je eigen poppetje (geslacht, huidskleur, 8 haarstijlen, kleuren, bril, baard, jurk), kiest een huis en kunt later de kleuren van je huis aanpassen. Je woont alleen, als burgemeester.
+- **Stadsbouw:** een kaart van 28 × 28 vakjes waarvan je 20 × 20 bezit. Teken wegen (over water wordt het een brug), plaats woningen, werkgebouwen en versiering, verplaats, draai, verkoop en maak ongedaan. Koop in 4 stappen extra grond.
+- **Gezinnen:** elke woning (rijtjeshuis, vrijstaand huis, appartement, villa) brengt een nieuw gezin met dezelfde achternaam: één of twee ouders (ook twee vaders of twee moeders), kinderen en soms een huisdier. Er is ook een verjaardag en een cadeautje voor blije gezinnen.
+- **Banen:** volwassenen werken in jouw gebouwen, peuters en baby's gaan naar de kinderopvang en schoolkinderen naar school. Je ziet ze over de wegen lopen.
+- **14 gebouwen met een eigen mini-game:** supermarkt, bakkerij, kapper, café, dierenopvang, restaurant, kinderopvang, bloemenwinkel, ziekenhuis, school, dierenarts, ijssalon, brandweer en busstation. Alle mini-games duren 1 tot 2 minuten, geven 1 tot 3 sterren en worden moeilijker naarmate je vaker werkt.
+- **Doorgroeien:** munten, diamanten, XP en levels (nieuwe gebouwen per level), upgrades van gebouwen tot niveau 5 (meer munten en werkplekken), dagelijkse opbrengst van gebouwen met personeel, takenlijst en tips van Jaylinn.
+- **Versiering:** bomen, bloemperken, bankjes, lantaarns, fontein, speeltuin, park, standbeeld en strand.
+- **Huisdier:** adopteer er een bij de dierenopvang.
+- **Wereld:** dag en nacht (12 minuten per dag), vier seizoenen (lente, zomer, herfst met vallende bladeren en winter met sneeuw) met een seizoensfeest.
+- **Opslaan:** automatisch na elke actie. In de browser (`localStorage`) en, als Claude-artifact, ook in de privé-opslag van de speler.
 
 ## Bestanden
 
@@ -36,7 +35,8 @@ python3 -m http.server 8000
 | `js/avatar.js` | Poppetjes tekenen |
 | `js/city.js` | Spelregels: bouwen, gezinnen, banen, wegen zoeken, bewoners, taken, ongedaan maken |
 | `js/render.js` | De stad tekenen in schuin bovenaanzicht |
-| `js/minigames.js` | De drie mini-games |
+| `js/minigames.js` | Mini-games: supermarkt, restaurant, kinderopvang, en het scherm eromheen |
+| `js/minigames2.js` | Mini-games: bakkerij, ijssalon, café, bloemen, kapper, dierenopvang, school, ziekenhuis, dierenarts, brandweer, bus |
 | `js/ui.js` | Schermen, kaartjes, bouwmodus en invoer |
 | `js/storage.js` | Opslaan en laden |
 | `js/main.js` | Opstarten en de spellus |

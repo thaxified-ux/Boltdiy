@@ -308,6 +308,90 @@ button:focus-visible, .btn:focus-visible { outline: 3px solid var(--sun); outlin
 .op-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; position: sticky; bottom: 0; padding-top: 6px; }
 .op-act.sel { background: var(--plum); color: #fff; }
 
+/* samenstellen (bakkerij, café, ijssalon, bloemenwinkel) */
+.as-top { display: grid; grid-template-columns: minmax(0, 190px) minmax(0, 1fr); gap: 12px; align-items: stretch; }
+.as-cust { background: var(--paper); border-radius: 22px; padding: 10px; box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.as-order { background: #FFFDF6; border: 2px dashed #E7D8A8; border-radius: 22px; padding: 12px; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+.as-title { font-family: var(--font-display); font-weight: 600; font-size: 1.2rem; }
+.as-title .big { font-size: 2.2rem; vertical-align: middle; }
+.as-parts { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 2.2rem; }
+.as-chip { position: relative; background: var(--paper); border-radius: 14px; padding: 2px 10px; box-shadow: 0 2px 0 rgba(74,46,60,.12); }
+.as-chip i { position: absolute; top: -6px; left: -6px; width: 20px; height: 20px; border-radius: 50%; background: var(--plum); color: #fff; font-size: .75rem; font-style: normal; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.as-arrow { color: var(--ink-soft); font-size: 1.4rem; }
+.as-tray { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 10px; background: var(--paper); border-radius: 18px; padding: 10px; min-height: 52px; }
+.as-slot { width: 56px; height: 56px; border-radius: 14px; border: 3px dashed #E5D6DF; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+.as-slot.on { border-style: solid; border-color: var(--plum); background: #F7F1FE; }
+.as-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; }
+.rs-ing.hint { outline: 4px solid var(--sun); animation: pulse 1s infinite; }
+
+/* kapper */
+.kp-wrap { display: flex; flex-direction: column; gap: 10px; align-items: center; max-width: 640px; margin: 0 auto; }
+.kp-faces { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.kp-photo, .kp-mine { background: var(--paper); border-radius: 22px; padding: 10px 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; }
+.kp-photo { background: #FFF8E1; transform: rotate(-2deg); border: 6px solid #fff; }
+.kp-styles { display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 8px; width: 100%; }
+.kp-colors { justify-content: center; }
+.opt-label { display: block; font-family: var(--font-display); font-weight: 600; font-size: .95rem; margin-bottom: 4px; }
+
+/* dierenopvang */
+.dp-room { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; background: repeating-linear-gradient(90deg, #E6F2E0 0 24px, #DCEBD4 24px 48px); border-radius: 24px; padding: 14px; }
+.dp-animal { position: relative; background: rgba(255,255,255,.85); border: 3px solid transparent; border-radius: 20px; padding: 12px 6px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; user-select: none; }
+.dp-animal.done { background: #EAF7E6; border-color: var(--leaf); }
+.dp-pet { font-size: 3.6rem; line-height: 1.1; }
+.dp-steps { display: flex; gap: 8px; font-size: 1.5rem; }
+.dp-steps span { opacity: .35; filter: grayscale(1); }
+.dp-steps span.ok { opacity: 1; filter: none; }
+.dp-foam { position: absolute; top: 6px; right: 10px; font-size: 1.6rem; }
+.dp-badge { position: absolute; top: 4px; right: 8px; font-size: 1.6rem; }
+.dp-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* school */
+.sc-board { background: #2F6B4F; border: 10px solid #A9774C; border-radius: 16px; color: #fff; text-align: center; padding: 18px 10px; min-height: 120px; display: flex; flex-direction: column; justify-content: center; gap: 6px; box-shadow: var(--shadow); }
+.sc-q { font-family: var(--font-display); font-weight: 600; font-size: clamp(2rem, 9vw, 3.4rem); word-break: break-word; }
+.sc-small { font-size: 1rem; opacity: .9; }
+.sc-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.sc-opt { font-family: var(--font-display); font-weight: 600; font-size: clamp(1.4rem, 6vw, 2.2rem); background: var(--paper); border: none; border-radius: 20px; padding: 18px 6px; cursor: pointer; box-shadow: 0 4px 0 rgba(74,46,60,.15); color: var(--ink); }
+.sc-opt.wrong { background: #FDE2DF; color: var(--danger); box-shadow: none; }
+
+/* ziekenhuis en dierenarts */
+.dx-stage { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.dx-fig { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.dx-body { position: relative; width: 220px; height: 220px; background: #F4F8FB; border-radius: 22px; display: flex; align-items: center; justify-content: center; }
+.dx-pet { font-size: 8.5rem; line-height: 1; }
+.dx-zone { position: absolute; transform: translate(-50%, -50%); width: 46px; height: 46px; border-radius: 50%; border: 3px dashed rgba(74,46,60,.25); background: rgba(255,255,255,.35); cursor: pointer; font-size: 1.3rem; padding: 0; }
+.dx-zone.hurt { border-color: var(--danger); background: rgba(217,83,74,.2); animation: pulse 1s infinite; }
+.dx-say { max-width: 320px; text-align: center; }
+.dx-tools { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* brandweer */
+.bw-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; background: #C9B7A0; border: 8px solid #A98A6B; border-radius: 16px; padding: 10px; max-width: 520px; margin: 0 auto; }
+.bw-win { position: relative; aspect-ratio: 1; border: 4px solid #8B6A4D; border-radius: 10px; background: linear-gradient(180deg, #9FD3EA, #CBE8F5); cursor: pointer; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 0; touch-action: manipulation; }
+.bw-fire.l1 { font-size: 2rem; } .bw-fire.l2 { font-size: 3rem; } .bw-fire.l3 { font-size: 4rem; animation: pulse .5s infinite; }
+.bw-hp { position: absolute; bottom: 1px; left: 0; right: 0; text-align: center; font-size: .75rem; }
+.bw-char { font-size: 2.4rem; }
+
+/* busstation */
+.bus-queue { display: flex; align-items: flex-end; gap: 8px; min-height: 130px; background: #EEF3F8; border-radius: 20px; padding: 10px; overflow-x: auto; }
+.bus-pass { display: flex; flex-direction: column; align-items: center; flex: none; gap: 2px; }
+.bus-dest { font-size: 1.2rem; background: #fff; border-radius: 10px; padding: 0 6px; }
+.bus-road { position: relative; height: 56px; margin: 10px 0 0; background: #5B5A68; border-radius: 12px; border-top: 4px solid #8D8794; }
+.bus-road::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; border-top: 3px dashed rgba(255,255,255,.7); }
+.bus-bus { position: absolute; top: 2px; left: 12.5%; transform: translateX(-50%); font-size: 2.8rem; transition: left .6s ease; z-index: 1; }
+.bus-stops { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.bus-stop { border: none; border-radius: 16px; background: var(--paper); padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; box-shadow: 0 3px 0 rgba(74,46,60,.14); font: inherit; color: var(--ink); touch-action: manipulation; }
+.bus-stop .e { font-size: 2.4rem; line-height: 1.1; }
+.bus-stop .n { font-size: .78rem; font-weight: 800; }
+
+.stars-inline { color: var(--sun); font-size: 1rem; vertical-align: middle; }
+.pet-pick { border: none; cursor: pointer; font: inherit; color: var(--ink); }
+.toast.ok { background: var(--leaf); }
+
+@media (max-width: 720px) {
+  .as-top { grid-template-columns: minmax(0, 1fr); }
+  .as-cust { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+  .dp-room { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 /* bewegingen */
 @keyframes rise { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes pulse { 50% { transform: scale(1.15); } }

@@ -19,39 +19,57 @@
   JV.state = () => S;
 
   // --- nieuw spel -----------------------------------------------------------
+  const OFF = JV.LAND_OFF;
+  const riverX = (gy) => OFF + 16 + Math.round(Math.sin(gy / 3) * 0.9);
+  function riverTerrain(terrain, rows) {
+    for (const gy of rows) { const cx = riverX(gy); terrain[idx(cx, gy)] = 1; terrain[idx(cx + 1, gy)] = 1; }
+  }
+
   JV.newGame = function (player, houseStyle) {
     const terrain = new Array(G * G).fill(0);
-    for (let gy = 0; gy < G; gy++) {
-      const cx = 16 + Math.round(Math.sin(gy / 3) * 0.9);
-      terrain[idx(cx, gy)] = 1; terrain[idx(cx + 1, gy)] = 1;
-    }
+    riverTerrain(terrain, Array.from({ length: G }, (_, i) => i));
     S = {
-      v: 1, player, houseStyle, coins: JV.START_COINS, diamonds: 5, xp: 0, level: 1,
-      terrain, objects: [], families: [], nextId: 1, time: 0.12, day: 1,
+      v: 2, player, houseStyle, coins: JV.START_COINS, diamonds: 5, xp: 0, level: 1, landStep: 0,
+      terrain, objects: [], families: [], nextId: 1, time: 0.12, day: 1, season: 0,
       tasks: [], tutorialStep: 0, worked: {}, usedSurnames: [], settings: { sound: true },
       tipsSeen: {},
     };
-    const add = (type, gx, gy, extra) => { const o = Object.assign({ id: S.nextId++, type, gx, gy, flip: false }, extra || {}); S.objects.push(o); return o; };
+    const add = (type, gx, gy, extra) => { const o = Object.assign({ id: S.nextId++, type, gx: gx + OFF, gy: gy + OFF, flip: false }, extra || {}); S.objects.push(o); return o; };
     add('playerhouse', 6, 8);
     for (let gx = 3; gx <= 13; gx++) add('road', gx, 10);
-    add('super', 9, 11, { pending: 0 });
+    add('super', 9, 11, { pending: 0, lvl: 1, worked: 0 });
     add('tree', 4, 8); add('tree', 5, 12); add('flowers', 8, 9);
     rebuild();
     // natuur: rotsen en struiken op vrije plekken
     let n = 0, tries = 0;
-    while (n < 16 && tries++ < 400) {
+    while (n < 26 && tries++ < 800) {
       const gx = Math.floor(rnd() * G), gy = Math.floor(rnd() * G);
       if (terrain[idx(gx, gy)] !== 0 || R.occ[idx(gx, gy)] !== -1) continue;
-      if (gx > 1 && gx < 15 && gy > 5 && gy < 15) continue; // houd het startgebied vrij
-      add(rnd() < 0.45 ? 'rock' : 'bush', gx, gy); rebuild(); n++;
+      if (gx > OFF + 1 && gx < OFF + 15 && gy > OFF + 5 && gy < OFF + 15) continue; // houd het startgebied vrij
+      const o = { id: S.nextId++, type: rnd() < 0.45 ? 'rock' : 'bush', gx, gy, flip: false };
+      S.objects.push(o); rebuild(); n++;
     }
     fillTasks();
     rebuild();
     return S;
   };
 
+  function migrateV1(old) {
+    // v1 had a 20 × 20 map; v2 has 28 × 28 with the old map in the middle
+    const terrain = new Array(G * G).fill(0);
+    for (let y = 0; y < 20; y++) for (let x = 0; x < 20; x++) terrain[idx(x + OFF, y + OFF)] = old.terrain[y * 20 + x];
+    riverTerrain(terrain, [...Array(OFF).keys(), ...Array.from({ length: OFF }, (_, i) => OFF + 20 + i)]);
+    old.terrain = terrain;
+    for (const o of old.objects) { o.gx += OFF; o.gy += OFF; }
+    old.v = 2; old.landStep = 0; old.season = 0;
+  }
+
   JV.loadGame = function (saved) {
     S = saved;
+    if (S.v === 1) migrateV1(S);
+    S.landStep = S.landStep || 0;
+    S.season = S.season || 0;
+    for (const o of S.objects) if (C[o.type].cat === 'werk') { o.lvl = o.lvl || 1; o.worked = o.worked || 0; }
     S.settings = S.settings || { sound: true };
     S.tipsSeen = S.tipsSeen || {};
     S.worked = S.worked || {};
@@ -72,6 +90,8 @@
     R.dirty = true;
   }
   JV.rebuild = rebuild;
+  JV.land = () => { const k = (S && S.landStep) || 0; return { x0: OFF - k, y0: OFF - k, x1: OFF + 20 + k, y1: OFF + 20 + k }; };
+  JV.inLand = (gx, gy) => { const L = JV.land(); return gx >= L.x0 && gy >= L.y0 && gx < L.x1 && gy < L.y1; };
   JV.objAt = (gx, gy) => (inside(gx, gy) ? R.byId.get(R.occ[idx(gx, gy)]) || null : null);
   JV.isWater = (gx, gy) => inside(gx, gy) && S.terrain[idx(gx, gy)] === 1;
   JV.isRoad = (gx, gy) => { const o = JV.objAt(gx, gy); return !!o && o.type === 'road'; };
@@ -96,6 +116,7 @@
     for (let y = 0; y < d.h; y++) for (let x = 0; x < d.w; x++) {
       const tx = gx + x, ty = gy + y;
       if (!inside(tx, ty)) return { ok: false, reason: 'Dat past niet op de kaart.' };
+      if (!JV.inLand(tx, ty)) return { ok: false, reason: 'Dit stuk grond is nog niet van jou. Koop het bij het tabblad Grond.' };
       const id = R.occ[idx(tx, ty)];
       if (id !== -1 && id !== ignoreId) return { ok: false, reason: 'Daar staat al iets.' };
       if (S.terrain[idx(tx, ty)] === 1 && type !== 'road') return { ok: false, reason: 'Je kunt niet op het water bouwen. Een weg wordt hier een brug.' };
@@ -114,7 +135,7 @@
     S.coins -= price;
     const d = C[type];
     const o = { id: S.nextId++, type, gx, gy, flip: false };
-    if (d.cat === 'werk') o.pending = 0;
+    if (d.cat === 'werk') { o.pending = 0; o.lvl = 1; o.worked = 0; }
     if (d.cat === 'woning') { o.wall = pick(JV.HOUSE_WALLS); o.roof = pick(JV.HOUSE_ROOFS); o.movedIn = Date.now(); }
     S.objects.push(o);
     rebuild();
@@ -190,7 +211,7 @@
     for (const g of parents) {
       members.push({ id: S.nextId++, first: firstName(g, used), look: JV.randomLook(rnd, 'volw', g), workId: null, job: null });
     }
-    const kids = Math.floor(rnd() * (d.maxKids + 1));
+    const kids = (d.minKids || 0) + Math.floor(rnd() * (d.maxKids - (d.minKids || 0) + 1));
     const ages = ['baby', 'peuter', 'kind', 'kind', 'tiener'];
     for (let i = 0; i < kids; i++) {
       const g = rnd() < 0.5 ? 'm' : 'v';
@@ -208,6 +229,25 @@
   }
 
   function workBuildings() { return S.objects.filter((o) => C[o.type].cat === 'werk'); }
+  JV.slotsOf = (b) => C[b.type].slots + ((b.lvl || 1) - 1);
+  JV.childSlotsOf = (b) => (C[b.type].childSlots || 0) + (b.type === 'opvang' ? 3 : 4) * ((b.lvl || 1) - 1);
+  JV.multOf = (b) => C[b.type].mult * (1 + 0.25 * ((b.lvl || 1) - 1));
+  JV.upgradeInfo = (b) => {
+    const lvl = b.lvl || 1;
+    if (lvl >= JV.MAX_BUILDING_LEVEL) return { max: true, lvl };
+    const need = JV.UPGRADE_WORK[lvl - 1];
+    return { lvl, need, worked: b.worked || 0, cost: Math.round(C[b.type].price * 0.5 * lvl), ready: (b.worked || 0) >= need };
+  };
+  JV.upgrade = (b) => {
+    const u = JV.upgradeInfo(b);
+    if (u.max) return { ok: false, reason: 'Dit gebouw is al op het hoogste niveau.' };
+    if (!u.ready) return { ok: false, reason: 'Werk nog ' + (u.need - u.worked) + ' keer in dit gebouw om het te kunnen upgraden.' };
+    if (S.coins < u.cost) return { ok: false, reason: 'Je hebt niet genoeg munten.' };
+    S.coins -= u.cost; b.lvl = u.lvl + 1;
+    JV.addXp(Math.round(u.cost / 8));
+    assignJobs(); initAgents(); R.dirty = true;
+    return { ok: true, lvl: b.lvl };
+  };
   JV.workersOf = (b) => {
     const list = [];
     for (const f of S.families) for (const m of f.members) if (m.workId === b.id && m.look.age === 'volw') list.push({ m, f });
@@ -231,14 +271,13 @@
       const home = R.byId.get(f.houseId);
       for (const m of f.members) {
         if (m.workId != null) continue;
-        const isAdult = m.look.age === 'volw';
-        const isSmall = m.look.age === 'baby' || m.look.age === 'peuter';
-        if (!isAdult && !isSmall) continue;
+        const age = m.look.age;
+        const isAdult = age === 'volw';
+        const kidPlace = age === 'baby' || age === 'peuter' ? 'opvang' : 'school';
         let best = null, bestD = 1e9;
         for (const b of builds) {
-          const d = C[b.type];
-          if (isAdult && count.get(b.id) >= d.slots) continue;
-          if (isSmall && (b.type !== 'opvang' || kidCount.get(b.id) >= d.childSlots)) continue;
+          if (isAdult && count.get(b.id) >= JV.slotsOf(b)) continue;
+          if (!isAdult && (b.type !== kidPlace || kidCount.get(b.id) >= JV.childSlotsOf(b))) continue;
           const dist = Math.abs(b.gx - home.gx) + Math.abs(b.gy - home.gy);
           if (dist < bestD) { bestD = dist; best = b; }
         }
@@ -253,8 +292,8 @@
   JV.assignJobs = assignJobs;
 
   function updateHearts() {
-    const decoTypes = ['tree', 'flowers', 'bench', 'lantern', 'fountain'];
-    const nice = ['bench', 'lantern', 'fountain'];
+    const decoTypes = ['tree', 'flowers', 'bench', 'lantern', 'fountain', 'speeltuin', 'park', 'standbeeld', 'strand'];
+    const nice = ['bench', 'lantern', 'fountain', 'speeltuin', 'park', 'strand', 'standbeeld'];
     for (const f of S.families) {
       const h = R.byId.get(f.houseId);
       if (!h) continue;
@@ -265,7 +304,7 @@
       for (const o of S.objects) {
         if (!decoTypes.includes(o.type)) continue;
         const dist = Math.max(Math.abs(o.gx - h.gx - 0.5), Math.abs(o.gy - h.gy - 0.5));
-        if (dist <= 4.5) deco++;
+        if (dist <= 4.5) deco += (o.type === 'park' || o.type === 'strand') ? 3 : 1;
         if (nice.includes(o.type) && dist <= 5.5) hasNice = true;
       }
       if (deco >= 3) hearts++;
@@ -306,7 +345,7 @@
 
   JV.openGift = function (fam) {
     if (!fam.giftReady) return null;
-    fam.giftReady = false;
+    fam.giftReady = false; fam.birthday = null;
     if (rnd() < 0.25) { S.diamonds += 1; return { diamonds: 1 }; }
     const coins = 30 + Math.floor(rnd() * 5) * 10;
     JV.addCoins(coins);
@@ -439,6 +478,16 @@
     if (S.time >= 1) {
       S.time -= 1; S.day++;
       for (const f of S.families) if (f.hearts >= 4) f.giftReady = true;
+      const ns = JV.seasonOf(S.day);
+      if (ns !== S.season) {
+        S.season = ns; R.dirty = true; S.diamonds += 2;
+        JV.emit('season', ns);
+      } else if (S.families.length && rnd() < 0.5) {
+        const f = S.families[Math.floor(rnd() * S.families.length)];
+        const m = f.members[Math.floor(rnd() * f.members.length)];
+        f.birthday = m.first; f.giftReady = true;
+        JV.emit('birthday', { f, m });
+      }
       JV.emit('newday', S.day);
     }
     for (const b of S.objects) {
@@ -446,13 +495,34 @@
       if (d.cat !== 'werk') continue;
       const workers = JV.workersOf(b).length;
       if (!workers) continue;
-      const perDay = workers * 25 * d.mult;
+      const perDay = workers * 25 * JV.multOf(b);
       b.pending = Math.min((b.pending || 0) + perDay * dt / JV.DAY_SECONDS, perDay * 3);
     }
     updateAgents(dt);
     heartTimer -= dt;
     if (heartTimer <= 0) { heartTimer = 3; updateHearts(); }
   };
+
+  JV.seasonOf = (day) => Math.floor((day - 1) / JV.SEASON_DAYS) % 4;
+  JV.season = () => (S ? S.season || 0 : 0);
+
+  JV.nextLand = () => JV.LAND_STEPS[S.landStep || 0] || null;
+  JV.expandLand = function () {
+    const st = JV.nextLand();
+    if (!st) return { ok: false, reason: 'Je hebt al alle grond.' };
+    if (S.level < st.level) return { ok: false, reason: 'Dit stuk grond kun je kopen vanaf level ' + st.level + '.' };
+    if (S.coins < st.price) return { ok: false, reason: 'Je hebt niet genoeg munten.' };
+    S.coins -= st.price; S.landStep = (S.landStep || 0) + 1;
+    R.dirty = true; JV.addXp(Math.round(st.price / 10));
+    return { ok: true, size: st.size };
+  };
+
+  JV.adoptPet = function (id) {
+    if (S.coins < JV.PET_PRICE) return { ok: false, reason: 'Je hebt niet genoeg munten.' };
+    S.coins -= JV.PET_PRICE; S.player.pet = id; JV.addXp(10);
+    return { ok: true };
+  };
+  JV.setHouseColors = function (wall, roof) { S.houseColors = { wall, roof }; R.dirty = true; };
 
   // 0 = dag, 1 = nacht
   JV.darkness = function () {
