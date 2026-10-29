@@ -11,9 +11,11 @@
     const S = JV.state();
     if (S && JV.ui.screen === 'game') {
       const playing = document.getElementById('minigame').hidden;
-      if (playing) JV.update(dt);
-      const ctx = JV.canvas.getContext('2d');
-      JV.render(ctx, t, JV.ui);
+      if (playing) {
+        JV.update(dt);
+        const ctx = JV.is3d ? null : JV.canvas.getContext('2d');
+        JV.render(ctx, t, JV.ui);
+      }
       hudClock -= dt;
       if (hudClock <= 0) { hudClock = 0.25; JV.refreshHud(); JV.flushPending(); }
       tipClock -= dt;

@@ -701,6 +701,21 @@
     cam.y = Math.max(0, Math.min(G * TH, cam.y));
   };
 
+  // Camera-bediening (zelfde namen als in de 3D-weergave)
+  let panRef = null;
+  JV.camPanStart = (sx, sy) => { panRef = { sx, sy, cx: JV.cam.x, cy: JV.cam.y }; };
+  JV.camPanMove = (sx, sy) => { if (!panRef) return; JV.cam.x = panRef.cx - (sx - panRef.sx) / JV.cam.zoom; JV.cam.y = panRef.cy - (sy - panRef.sy) / JV.cam.zoom; JV.clampCam(); };
+  JV.camZoom = (f, sx, sy) => {
+    const cam = JV.cam, v = JV.view;
+    const before = { x: (sx - v.w / 2) / cam.zoom + cam.x, y: (sy - v.h / 2) / cam.zoom + cam.y };
+    cam.zoom *= f; JV.clampCam();
+    cam.x = before.x - (sx - v.w / 2) / cam.zoom; cam.y = before.y - (sy - v.h / 2) / cam.zoom; JV.clampCam();
+  };
+  JV.camRotate = () => {};
+  JV.camTilt = () => {};
+  JV.pickObjectAt = null;
+  JV.onResize = () => {};
+
   // Voorbeeldplaatje van een huis (voor het kiezen van je huis)
   JV.drawHousePreview = function (canvas, style) {
     const ctx = canvas.getContext('2d');

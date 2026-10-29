@@ -12,6 +12,7 @@
 <!-- page -->
 <div id="app">
   <canvas id="city" aria-label="Jouw stad"></canvas>
+  <div id="bubbles" aria-hidden="true"></div>
 
   <section id="screen-start" class="screen">
     <div class="screen-inner start">
@@ -76,6 +77,10 @@
       <button id="btn-people" class="side-btn" type="button" aria-label="Bewoners">👪<small>Bewoners</small></button>
       <button id="btn-settings" class="side-btn" type="button" aria-label="Instellingen">⚙️<small>Menu</small></button>
     </div>
+    <div id="cam-btns" class="cam-btns" hidden>
+      <button id="btn-rotl" class="cam-btn" type="button" aria-label="Draai de stad naar links">⟲</button>
+      <button id="btn-rotr" class="cam-btn" type="button" aria-label="Draai de stad naar rechts">⟳</button>
+    </div>
     <button id="btn-build" class="fab" type="button" aria-label="Bouwen">🔨</button>
   </div>
 
@@ -102,7 +107,9 @@
 <script src="js/avatar.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/city.js"></script>
+<script src="vendor/three.min.js"></script>
 <script src="js/render.js"></script>
+<script src="js/render3d.js"></script>
 <script src="js/minigames.js"></script>
 <script src="js/minigames2.js"></script>
 <script src="js/ui.js"></script>

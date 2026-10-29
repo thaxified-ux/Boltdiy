@@ -427,3 +427,15 @@ button:focus-visible, .btn:focus-visible { outline: 3px solid var(--sun); outlin
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 #app.building .fab { display: none; }
+
+/* 3D-weergave: bubbels en zwevende teksten boven de scene */
+#bubbles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
+.bubble3d { position: absolute; left: 0; top: 0; background: #fff; color: var(--ink); font-family: var(--font-display); font-weight: 600; font-size: .9rem; padding: 4px 10px; border-radius: 14px; box-shadow: var(--shadow); white-space: nowrap; will-change: transform; }
+.bubble3d::after { content: ''; position: absolute; left: 50%; bottom: -6px; width: 10px; height: 10px; background: inherit; transform: translateX(-50%) rotate(45deg); border-radius: 2px; }
+.bubble3d[data-k="coin"] { background: #FFF4C9; }
+.bubble3d[data-k="gift"] { background: #FFE3EC; }
+.floater3d { position: absolute; transform: translate(-50%, -100%); font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; color: var(--ink); text-shadow: 0 0 4px #fff, 0 0 4px #fff, 0 0 6px #fff; animation: floatup 1.6s ease-out forwards; }
+@keyframes floatup { from { opacity: 1; margin-top: 0; } to { opacity: 0; margin-top: -60px; } }
+.cam-btns { position: absolute; z-index: 6; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 106px); display: flex; flex-direction: column; gap: 8px; }
+.cam-btn { width: 48px; height: 48px; border-radius: 50%; border: none; background: rgba(255,255,255,.94); box-shadow: var(--shadow); font-size: 1.5rem; cursor: pointer; color: var(--ink); }
+#app.building .cam-btns { bottom: calc(env(safe-area-inset-bottom, 0px) + 200px); }

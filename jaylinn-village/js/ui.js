@@ -751,7 +751,10 @@
   }
 
   function onTap(e) {
-    const t = tileFromEvent(e);
+    const r = JV.canvas.getBoundingClientRect();
+    const px = e.clientX - r.left, py = e.clientY - r.top;
+    const t = JV.screenToTile(px, py);
+    const hit = () => (JV.pickObjectAt && JV.pickObjectAt(px, py)) || JV.objAt(t.gx, t.gy);
     if (ui.build) {
       if (ui.moving) { setGhost(ui.moving.type, t.gx, t.gy); moveHint(); return; }
       if (ui.tool) {
@@ -765,11 +768,11 @@
         showPlaceHint();
         return;
       }
-      const o = JV.objAt(t.gx, t.gy);
+      const o = hit();
       if (o) { JV.sfx('tap'); selectObj(o); } else { ui.selected = null; hidePlacebar(); }
       return;
     }
-    const o = JV.objAt(t.gx, t.gy);
+    const o = hit();
     if (!o) return;
     const d = C[o.type];
     JV.sfx('tap');
@@ -781,22 +784,29 @@
   }
 
   function bindCanvas(cv) {
+    let rotating = false, lastRot = null, pinch = null;
+    const rel = (e) => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+    cv.addEventListener('contextmenu', (e) => e.preventDefault());
     cv.addEventListener('pointerdown', (e) => {
       cv.setPointerCapture(e.pointerId);
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pointers.size === 1) {
-        dragStart = { x: e.clientX, y: e.clientY, cx: JV.cam.x, cy: JV.cam.y };
+        const p = rel(e);
+        dragStart = { x: e.clientX, y: e.clientY };
+        JV.camPanStart(p.x, p.y);
         panning = false; painting = false; lastPaint = null; paintRoad.warned = false;
-        if (ui.build && ui.tool === 'road' && e.button === 0) painting = 'maybe';
+        rotating = JV.is3d && (e.button === 2 || e.shiftKey || e.ctrlKey);
+        lastRot = { x: e.clientX, y: e.clientY };
+        if (ui.build && ui.tool === 'road' && e.button === 0 && !rotating) painting = 'maybe';
       } else if (pointers.size === 2) {
         const [a, b] = [...pointers.values()];
-        pinchStart = { d: Math.hypot(a.x - b.x, a.y - b.y), zoom: JV.cam.zoom };
-        painting = false; panning = true;
+        pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), ang: Math.atan2(b.y - a.y, b.x - a.x) };
+        painting = false; panning = true; rotating = false;
       }
     });
     cv.addEventListener('pointermove', (e) => {
       if (e.pointerType === 'mouse' && ui.build && !pointers.size) {
-        const t = tileFromEvent(e);
+        const p = rel(e); const t = JV.screenToTile(p.x, p.y);
         if (ui.moving) { setGhost(ui.moving.type, t.gx, t.gy); }
         else if (ui.tool) {
           const d = C[ui.tool];
@@ -805,25 +815,30 @@
       }
       if (!pointers.has(e.pointerId)) return;
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (pointers.size === 2 && pinchStart) {
+      if (pointers.size === 2 && pinch) {
         const [a, b] = [...pointers.values()];
-        JV.cam.zoom = pinchStart.zoom * Math.hypot(a.x - b.x, a.y - b.y) / pinchStart.d;
-        JV.clampCam();
+        const d = Math.hypot(a.x - b.x, a.y - b.y), ang = Math.atan2(b.y - a.y, b.x - a.x);
+        const r = cv.getBoundingClientRect();
+        JV.camZoom(d / pinch.d, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top);
+        let da = ang - pinch.ang; da = Math.atan2(Math.sin(da), Math.cos(da));
+        JV.camRotate(da, true);
+        pinch = { d, ang };
         return;
       }
       if (!dragStart) return;
+      if (rotating) {
+        JV.camRotate(-(e.clientX - lastRot.x) * 0.008, true); JV.camTilt((e.clientY - lastRot.y) * 0.004);
+        lastRot = { x: e.clientX, y: e.clientY }; panning = true;
+        return;
+      }
       const dx = e.clientX - dragStart.x, dy = e.clientY - dragStart.y;
       if (painting) {
         if (painting === 'maybe' && Math.hypot(dx, dy) > 4) painting = true;
-        if (painting === true) paintRoad(tileFromEvent(e));
+        if (painting === true) { const p = rel(e); paintRoad(JV.screenToTile(p.x, p.y)); }
         return;
       }
       if (!panning && Math.hypot(dx, dy) > 7) panning = true;
-      if (panning) {
-        JV.cam.x = dragStart.cx - dx / JV.cam.zoom;
-        JV.cam.y = dragStart.cy - dy / JV.cam.zoom;
-        JV.clampCam();
-      }
+      if (panning) { const p = rel(e); JV.camPanMove(p.x, p.y); }
     });
     const end = (e) => {
       if (!pointers.has(e.pointerId)) return;
@@ -831,8 +846,8 @@
       if (pointers.size === 0) {
         if (painting === true) { renderShop(); JV.save(); }
         else if (!panning && dragStart && e.type === 'pointerup') onTap(e);
-        dragStart = null; panning = false; painting = false; pinchStart = null;
-      }
+        dragStart = null; panning = false; painting = false; pinch = null; rotating = false;
+      } else if (pointers.size === 1) { pinch = null; const [id, p] = [...pointers.entries()][0]; const r = cv.getBoundingClientRect(); dragStart = { x: p.x, y: p.y }; JV.camPanStart(p.x - r.left, p.y - r.top); }
     };
     cv.addEventListener('pointerup', end);
     cv.addEventListener('pointercancel', end);
@@ -840,13 +855,7 @@
     cv.addEventListener('wheel', (e) => {
       e.preventDefault();
       const r = cv.getBoundingClientRect();
-      const sx = e.clientX - r.left, sy = e.clientY - r.top;
-      const before = { x: (sx - JV.view.w / 2) / JV.cam.zoom + JV.cam.x, y: (sy - JV.view.h / 2) / JV.cam.zoom + JV.cam.y };
-      JV.cam.zoom *= Math.exp(-e.deltaY * 0.0015);
-      JV.clampCam();
-      JV.cam.x = before.x - (sx - JV.view.w / 2) / JV.cam.zoom;
-      JV.cam.y = before.y - (sy - JV.view.h / 2) / JV.cam.zoom;
-      JV.clampCam();
+      JV.camZoom(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top);
     }, { passive: false });
   }
 
@@ -867,6 +876,7 @@
     const r = cv.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     JV.view.w = r.width; JV.view.h = r.height; JV.view.dpr = dpr;
+    if (JV.is3d) { JV.onResize(); return; }
     cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
   }
   JV.resize = resize;
@@ -874,6 +884,10 @@
   // --- alles aan elkaar knopen ----------------------------------------------
   JV.initUI = function () {
     JV.canvas = $('#city');
+    if (JV.try3D) JV.try3D(JV.canvas);
+    $('#cam-btns').hidden = !JV.is3d;
+    $('#btn-rotl').addEventListener('click', () => { JV.sfx('tap'); JV.camRotate(Math.PI / 4); });
+    $('#btn-rotr').addEventListener('click', () => { JV.sfx('tap'); JV.camRotate(-Math.PI / 4); });
     bindCanvas(JV.canvas);
     window.addEventListener('resize', resize);
     $('#creator-done').addEventListener('click', creatorFinish);
