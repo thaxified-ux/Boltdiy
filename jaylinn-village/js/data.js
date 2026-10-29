@@ -2,6 +2,7 @@
 window.JV = window.JV || {};
 
 (function (JV) {
+  JV.MODELS = {};  // eigen 3D-modellen, bijvoorbeeld { house_small: 'models/house_small.glb' }
   JV.GRID = 28;   // hele kaart; je begint met 20 × 20 en koopt grond erbij
   JV.LAND_OFF = 4;
   JV.DAY_SECONDS = 720; // één dag-en-nachtcyclus = 12 minuten

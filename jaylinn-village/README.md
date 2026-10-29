@@ -17,7 +17,7 @@ python3 -m http.server 8000
 ## Wat zit erin
 
 - **Poppetje en huis:** je maakt je eigen poppetje (geslacht, huidskleur, 8 haarstijlen, kleuren, bril, baard, jurk), kiest een huis en kunt later de kleuren van je huis aanpassen. Je woont alleen, als burgemeester.
-- **3D-weergave:** de stad is een echte 3D-wereld (three.js) met schaduwen, een zon die over de dag beweegt, 's nachts verlichte ramen en lantaarns, en gebouwen en bewoners van lage-poly blokjes. Je kunt de camera draaien (knoppen ⟲ ⟳, twee vingers draaien, of rechtermuisknop slepen), zoomen en schuiven. Werkt WebGL niet, dan valt het spel terug op de schuine 2D-weergave. Voeg `#2d` aan de link toe om die te forceren.
+- **3D-weergave:** de stad is een echte 3D-wereld (three.js) met schaduwen, een zon die over de dag beweegt, 's nachts verlichte ramen en lantaarns, en gebouwen en bewoners van lage-poly blokjes. Je kunt de camera draaien (knoppen ⟲ ⟳, twee vingers draaien, of rechtermuisknop slepen), zoomen en schuiven. Gebouwen hebben dakpannen, raamkozijnen, luiken, balkons, torens, luifels en voortuintjes met tafeltjes, kratten en voertuigen. Je kunt elk gebouw vervangen door een eigen glTF-model. Werkt WebGL niet, dan valt het spel terug op de schuine 2D-weergave. Voeg `#2d` aan de link toe om die te forceren.
 - **Stadsbouw:** een kaart van 28 × 28 vakjes waarvan je 20 × 20 bezit. Teken wegen (over water wordt het een brug), plaats woningen, werkgebouwen en versiering, verplaats, draai, verkoop en maak ongedaan. Koop in 4 stappen extra grond.
 - **Gezinnen:** elke woning (rijtjeshuis, vrijstaand huis, appartement, villa) brengt een nieuw gezin met dezelfde achternaam: één of twee ouders (ook twee vaders of twee moeders), kinderen en soms een huisdier. Er is ook een verjaardag en een cadeautje voor blije gezinnen.
 - **Banen:** volwassenen werken in jouw gebouwen, peuters en baby's gaan naar de kinderopvang en schoolkinderen naar school. Je ziet ze over de wegen lopen.
@@ -37,7 +37,8 @@ python3 -m http.server 8000
 | `js/city.js` | Spelregels: bouwen, gezinnen, banen, wegen zoeken, bewoners, taken, ongedaan maken |
 | `js/render3d.js` | De stad in 3D tekenen (three.js): gebouwen, bewoners, licht, seizoenen, camera |
 | `js/render.js` | De stad tekenen in schuin 2D-bovenaanzicht (terugvaloptie) |
-| `vendor/three.min.js` | three.js r128 (MIT-licentie, zie `vendor/three.LICENSE`) |
+| `vendor/three.min.js`, `vendor/GLTFLoader.js` | three.js r128 en de glTF-lader (MIT-licentie, zie `vendor/three.LICENSE`) |
+| `models/` | Eigen 3D-modellen (`.glb`) die de ingebouwde gebouwen vervangen, zie `models/README.md` |
 | `js/minigames.js` | Mini-games: supermarkt, restaurant, kinderopvang, en het scherm eromheen |
 | `js/minigames2.js` | Mini-games: bakkerij, ijssalon, café, bloemen, kapper, dierenopvang, school, ziekenhuis, dierenarts, brandweer, bus |
 | `js/ui.js` | Schermen, kaartjes, bouwmodus en invoer |
