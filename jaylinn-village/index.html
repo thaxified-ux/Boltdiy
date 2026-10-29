@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jaylinn Village</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;700;800&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- page -->
+<div id="app">
+  <canvas id="city" aria-label="Jouw stad"></canvas>
+
+  <section id="screen-start" class="screen">
+    <div class="screen-inner start">
+      <div class="logo"><span class="big">Jaylinn</span><span class="tag">Village</span></div>
+      <p class="start-sub">Jij bent de burgemeester. Werk, verdien munten en bouw je eigen stad vol diverse gezinnen.</p>
+      <div id="start-people" aria-hidden="true"></div>
+      <div id="start-actions"></div>
+    </div>
+  </section>
+
+  <section id="screen-creator" class="screen" hidden>
+    <div class="screen-inner">
+      <div class="screen-head">
+        <button id="creator-back" class="icon-btn" type="button" aria-label="Terug">←</button>
+        <h1 id="creator-title">Maak je eigen poppetje</h1>
+      </div>
+      <div class="creator">
+        <div class="creator-preview">
+          <div id="creator-preview"></div>
+          <div style="width:100%">
+            <label class="opt-label" for="player-name">Naam</label>
+            <input id="player-name" type="text" maxlength="16" placeholder="Hoe heet je?" autocomplete="off">
+          </div>
+        </div>
+        <div class="creator-opts">
+          <div class="opt"><span class="opt-label">1. Ik ben een</span>
+            <div class="seg" id="c-gender"><button class="btn" type="button" data-g="m">Jongen</button><button class="btn" type="button" data-g="v">Meisje</button></div>
+          </div>
+          <div class="opt"><span class="opt-label">2. Huidskleur</span><div class="swatches" id="c-skin"></div></div>
+          <div class="opt"><span class="opt-label">3. Haarstijl</span><div class="hairopts" id="c-hair"></div></div>
+          <div class="opt"><span class="opt-label" id="c-haircolor-label">4. Haarkleur</span><div class="swatches" id="c-haircolor"></div></div>
+          <div class="opt"><span class="opt-label">5. Shirt</span><div class="swatches" id="c-shirt"></div></div>
+          <div class="opt"><span class="opt-label">6. Broek</span><div class="swatches" id="c-pants"></div></div>
+          <div class="opt"><span class="opt-label">7. Extra</span><div class="chips" id="c-extra"></div></div>
+          <div class="screen-foot"><button id="creator-done" class="btn btn-primary btn-big" type="button">Klaar!</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-house" class="screen" hidden>
+    <div class="screen-inner">
+      <div class="screen-head">
+        <button id="house-back" class="icon-btn" type="button" aria-label="Terug">←</button>
+        <h1>Kies je huis</h1>
+      </div>
+      <p class="muted">Hier woon jij, als burgemeester van de stad. Welk huis vind je het mooist?</p>
+      <div class="house-list" id="house-list"></div>
+      <div class="screen-foot"><button id="house-done" class="btn btn-primary btn-big" type="button" disabled>Hier ga ik wonen!</button></div>
+    </div>
+  </section>
+
+  <div id="hud" hidden>
+    <div class="hud-top">
+      <div class="pill" title="Munten">🪙 <b id="coins">0</b></div>
+      <div class="pill" title="Diamanten">💎 <b id="gems">0</b></div>
+      <div class="level"><span class="lv">Level <b id="lvl">1</b></span><div class="xpbar"><i id="xpfill"></i></div><span id="xptext"></span></div>
+      <div class="pill" id="clock"></div>
+    </div>
+    <div class="hud-left">
+      <button id="btn-tasks" class="side-btn" type="button" aria-label="Taken">📋<small>Taken</small><span id="task-badge" class="badge" hidden>0</span></button>
+      <button id="btn-people" class="side-btn" type="button" aria-label="Bewoners">👪<small>Bewoners</small></button>
+      <button id="btn-settings" class="side-btn" type="button" aria-label="Instellingen">⚙️<small>Menu</small></button>
+    </div>
+    <button id="btn-build" class="fab" type="button" aria-label="Bouwen">🔨</button>
+  </div>
+
+  <div id="buildbar" hidden>
+    <div class="bb-top">
+      <div id="shop-tabs"></div>
+      <button id="btn-undo" class="btn" type="button">↩️ Terug</button>
+      <button id="btn-done" class="btn btn-primary" type="button">Klaar</button>
+    </div>
+    <div id="shop-items"></div>
+  </div>
+  <div id="placebar" hidden></div>
+
+  <div id="guide" hidden>
+    <div class="g-face"></div>
+    <div class="g-bubble"><b>Jaylinn</b><span class="g-text"></span><button id="guide-close" class="icon-btn" type="button" aria-label="Tip sluiten">✕</button></div>
+  </div>
+
+  <div id="modal" hidden><div class="sheet"></div></div>
+  <div id="minigame" hidden></div>
+  <div id="toasts" aria-live="polite"></div>
+</div>
+<script src="js/data.js"></script>
+<script src="js/avatar.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/city.js"></script>
+<script src="js/render.js"></script>
+<script src="js/minigames.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+<!-- /page -->
+</body>
+</html>
