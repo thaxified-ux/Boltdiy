@@ -775,44 +775,147 @@
       rebuildRoads();
     }
 
-    // ---- mensen -------------------------------------------------------------
-    const personCache = new Map();
+    // ---- poppetjes -------------------------------------------------------------
+    // Alle vaste onderdelen van een lichaamsdeel worden tot één mesh samengevoegd (weinig draw calls).
+    const smoothG = {
+      sph: () => geo('p-sph', () => new THREE.SphereGeometry(1, 18, 14).toNonIndexed()),
+      cyl: () => geo('p-cyl', () => new THREE.CylinderGeometry(1, 1, 1, 14).toNonIndexed()),
+      tap: () => geo('p-tap', () => new THREE.CylinderGeometry(0.82, 1, 1, 14).toNonIndexed()),
+      box: () => geo('p-box', () => new THREE.BoxGeometry(1, 1, 1).toNonIndexed()),
+      cone: () => geo('p-cone', () => new THREE.ConeGeometry(1, 1, 14).toNonIndexed()),
+      cap: () => geo('p-cap', () => new THREE.SphereGeometry(1, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.58).toNonIndexed()),
+      arc: () => geo('p-arc', () => new THREE.TorusGeometry(1, 0.14, 6, 14, Math.PI).toNonIndexed()),
+      ring: () => geo('p-ring', () => new THREE.TorusGeometry(1, 0.12, 6, 16).toNonIndexed()),
+      scarf: () => geo('p-scarf', () => new THREE.SphereGeometry(1, 18, 12, 2.32, 4.78, 0, Math.PI * 0.8).toNonIndexed()),
+    };
+    function bake(parts) {
+      const pos = [], nor = [], col = [], m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), nm = new THREE.Matrix3(), c = new THREE.Color(), v = new THREE.Vector3(), one = new THREE.Vector3();
+      for (const p of parts) {
+        e.set(p.rot ? p.rot[0] : 0, p.rot ? p.rot[1] : 0, p.rot ? p.rot[2] : 0); q.setFromEuler(e);
+        const s = p.s; one.set(s[0], s[1] === undefined ? s[0] : s[1], s[2] === undefined ? s[0] : s[2]);
+        m.compose(v.set(p.p[0], p.p[1], p.p[2]), q, one); nm.getNormalMatrix(m);
+        const g = smoothG[p.k](), P = g.attributes.position, N = g.attributes.normal; c.set(p.c);
+        for (let i = 0; i < P.count; i++) {
+          v.fromBufferAttribute(P, i).applyMatrix4(m); pos.push(v.x, v.y, v.z);
+          v.fromBufferAttribute(N, i).applyMatrix3(nm).normalize(); nor.push(v.x, v.y, v.z); col.push(c.r, c.g, c.b);
+        }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+      g.userData.own = true;
+      const me = new THREE.Mesh(g, vcMat); me.castShadow = true; me.receiveShadow = true;
+      return me;
+    }
+    const part = (k, c, p, s, rot) => ({ k, c, p, s, rot });
+
+    // kleding en hoofddeksels per beroep
+    const UNIF = {
+      Kassamedewerker: { shirt: '#4DAA57', apron: '#FFFFFF' }, Vakkenvuller: { shirt: '#3E8E48' }, Bakker: { shirt: '#FFFFFF', hat: 'bakker', apron: '#E8D7B5' }, Verkoper: { shirt: '#E8A040', apron: '#FFFFFF' },
+      Kapper: { shirt: '#2F2F3A', apron: '#E8708A' }, Kapster: { shirt: '#2F2F3A', apron: '#E8708A' }, Barista: { shirt: '#F1E7D8', apron: '#5E3B28' }, Bediening: { shirt: '#FFFFFF', vest: '#2F2F3A' },
+      Dierenverzorger: { shirt: '#4DAA57' }, Kok: { shirt: '#FFFFFF', hat: 'kok' }, Ober: { shirt: '#FFFFFF', vest: '#2F2F3A' }, 'Pedagogisch medewerker': { shirt: '#9B6FD6', apron: '#F6C445' },
+      Leidster: { shirt: '#F6C445', apron: '#9B6FD6' }, Bloemist: { shirt: '#F8E0F0', apron: '#4DAA57' }, Arts: { shirt: '#FFFFFF', coat: '#FFFFFF' }, Verpleegkundige: { shirt: '#7FC8E8', hat: 'zuster' },
+      Juf: { shirt: '#E8708A' }, Meester: { shirt: '#3F7FD8', glasses: true }, Dierenarts: { shirt: '#33B7B0', coat: '#FFFFFF' }, Assistent: { shirt: '#7FC8E8' },
+      IJsverkoper: { shirt: '#F28BA8', hat: 'papier', apron: '#FFFFFF' }, Brandweerman: { shirt: '#D9453A', hat: 'helm' }, Brandweervrouw: { shirt: '#D9453A', hat: 'helm' },
+      Buschauffeur: { shirt: '#3F7FD8', hat: 'pet' }, Buschauffeuse: { shirt: '#3F7FD8', hat: 'pet' },
+    };
+
     function makePerson(look0, opts) {
       opts = opts || {};
-      const lk = look0;
-      const g = new THREE.Group();
-      const inner = new THREE.Group(); g.add(inner);
-      const skin = lk.skin, hairC = lk.hairColor;
+      const lk = look0, u = opts.job ? UNIF[opts.job] || {} : {};
+      const skin = lk.skin, skinD = JV.shade(skin, -22), hairC = lk.hairColor;
+      const shirt = u.shirt || lk.shirt, pants = u.coat ? '#3A3F58' : lk.pants, shoe = lk.age === 'baby' ? skin : '#F4F1EA';
+      const g = new THREE.Group(), inner = new THREE.Group(); g.add(inner);
+
+      // benen
       const legs = [];
-      for (const sx of [-1, 1]) { const l = bx(lk.pants, sx * 0.1, 0.13, 0, 0.17, 0.27, 0.19); const pivot = new THREE.Group(); pivot.position.set(sx * 0.1, 0.27, 0); l.position.set(0, -0.135, 0); pivot.add(l); const shoe = bx('#FFFFFF', 0, -0.26, 0.03, 0.18, 0.06, 0.25); pivot.add(shoe); inner.add(pivot); legs.push(pivot); }
-      const body = bx(lk.shirt, 0, 0.42, 0, 0.42, 0.3, 0.25); inner.add(body);
-      if (lk.gender === 'v' && lk.dress && lk.age === 'volw') inner.add(cone(lk.shirt, 0, 0.3, 0, 0.32, 0.34));
-      const arms = [];
-      for (const sx of [-1, 1]) { const pivot = new THREE.Group(); pivot.position.set(sx * 0.27, 0.54, 0); pivot.add(bx(JV.shade(lk.shirt, -14), 0, -0.12, 0, 0.1, 0.26, 0.12)); pivot.add(sph(skin, 0, -0.27, 0, 0.065)); inner.add(pivot); arms.push(pivot); }
-      const head = new THREE.Group(); head.position.set(0, 0.76, 0); inner.add(head);
-      head.add(sph(skin, 0, 0, 0, 0.27));
-      head.add(sph('#2B1B12', -0.09, 0.02, 0.235, 0.04, 0.055, 0.03), sph('#2B1B12', 0.09, 0.02, 0.235, 0.04, 0.055, 0.03));
-      head.add(sph('#FFFFFF', -0.085, 0.04, 0.262, 0.012), sph('#FFFFFF', 0.095, 0.04, 0.262, 0.012));
-      head.add(sph('#F2A0A8', -0.16, -0.05, 0.2, 0.04, 0.025, 0.02), sph('#F2A0A8', 0.16, -0.05, 0.2, 0.04, 0.025, 0.02));
-      head.add(sph('#B05A4A', 0, -0.1, 0.24, 0.035, 0.012, 0.015));
-      const cap = (r, extra) => { const m = new THREE.Mesh(geo('cap' + r, () => new THREE.SphereGeometry(r, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.56)), mat(hairC)); m.position.set(0, 0.02, -0.01); m.rotation.x = -0.25; m.castShadow = true; return m; };
-      switch (lk.hair) {
-        case 'afro': head.add(sph(hairC, 0, 0.06, -0.04, 0.35, 0.33, 0.33)); break;
-        case 'krul': head.add(cap(0.29)); for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; head.add(sph(hairC, Math.cos(a) * 0.27, 0.1 + Math.sin(a * 2) * 0.04, Math.sin(a) * 0.2 - 0.04, 0.09)); } break;
-        case 'lang': head.add(cap(0.29), bx(hairC, 0, -0.12, -0.17, 0.5, 0.5, 0.12), bx(hairC, -0.26, -0.08, 0, 0.07, 0.34, 0.2), bx(hairC, 0.26, -0.08, 0, 0.07, 0.34, 0.2)); break;
-        case 'staart': head.add(cap(0.29), sph(hairC, 0.2, 0.18, -0.15, 0.1, 0.17, 0.09), sph('#F06A96', 0.17, 0.2, -0.1, 0.045)); break;
-        case 'vlechtjes': head.add(cap(0.29), sph(hairC, -0.3, 0.1, -0.02, 0.1), sph(hairC, 0.3, 0.1, -0.02, 0.1), sph('#F06A96', -0.26, 0.16, 0, 0.04), sph('#F06A96', 0.26, 0.16, 0, 0.04)); break;
-        case 'knot': head.add(cap(0.29), sph(hairC, 0, 0.33, -0.03, 0.12)); break;
-        case 'hoofddoek': { const m = new THREE.Mesh(geo('scarf', () => new THREE.SphereGeometry(0.32, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.75)), mat(hairC)); m.position.set(0, 0.0, -0.03); m.rotation.x = -0.2; m.castShadow = true; head.add(m); head.add(bx(hairC, 0, -0.32, -0.05, 0.5, 0.2, 0.3)); break; }
-        default: head.add(cap(0.29));
+      for (const sx of [-1, 1]) {
+        const piv = new THREE.Group(); piv.position.set(sx * 0.095, 0.3, 0);
+        piv.add(bake([part('cyl', pants, [0, -0.14, 0], [0.078, 0.28, 0.078]), part('sph', shoe, [0, -0.285, 0.035], [0.09, 0.055, 0.135]), part('sph', JV.shade(shoe, -30), [0, -0.3, 0.035], [0.092, 0.03, 0.137])]));
+        inner.add(piv); legs.push(piv);
       }
-      if (lk.glasses) { for (const sx of [-1, 1]) { const t = new THREE.Mesh(geo('ring', () => new THREE.TorusGeometry(0.075, 0.012, 6, 14)), mat('#3A2A2A')); t.position.set(sx * 0.09, 0.03, 0.26); head.add(t); } }
-      if (lk.beard) head.add(sph(hairC, 0, -0.15, 0.17, 0.17, 0.12, 0.1));
-      if (opts.sash) { const s = bx('#F6C445', 0, 0.42, 0.13, 0.5, 0.06, 0.03); s.rotation.z = 0.7; inner.add(s); }
-      const sc = ({ volw: 1, tiener: 0.92, kind: 0.78, peuter: 0.62, baby: 0.5 }[lk.age] || 1) * (opts.scale || 0.8);
+      // romp
+      const tp = [part('tap', shirt, [0, 0.46, 0], [0.19, 0.34, 0.15]), part('sph', shirt, [0, 0.62, 0], [0.2, 0.08, 0.15]), part('cyl', skinD, [0, 0.68, 0], [0.045, 0.06, 0.045]),
+        part('cyl', '#FFFDF6', [0, 0.645, 0], [0.085, 0.03, 0.07])];
+      if (lk.gender === 'v' && lk.dress && lk.age === 'volw') tp.push(part('tap', JV.shade(shirt, -6), [0, 0.27, 0], [0.34, 0.2, 0.28]));
+      else tp.push(part('box', JV.shade(pants, -20), [0, 0.3, 0], [0.4, 0.035, 0.3]));
+      if (u.apron) tp.push(part('box', u.apron, [0, 0.42, 0.135], [0.25, 0.3, 0.03]));
+      if (u.vest) tp.push(part('box', u.vest, [0, 0.46, 0.14], [0.3, 0.3, 0.03]));
+      if (u.coat) tp.push(part('tap', u.coat, [0, 0.38, 0], [0.215, 0.5, 0.17]), part('box', '#E2483D', [0.09, 0.5, 0.17], [0.07, 0.02, 0.02]));
+      if (opts.sash) tp.push(part('box', '#F6C445', [0, 0.46, 0.15], [0.46, 0.06, 0.03], [0, 0, 0.75]), part('sph', '#E8708A', [-0.1, 0.38, 0.17], [0.045, 0.045, 0.02]));
+      const torso = bake(tp); inner.add(torso);
+      // armen
+      const arms = [];
+      for (const sx of [-1, 1]) {
+        const piv = new THREE.Group(); piv.position.set(sx * 0.235, 0.6, 0);
+        piv.add(bake([part('sph', shirt, [0, 0, 0], [0.075, 0.075, 0.075]), part('cyl', u.coat || shirt, [0, -0.13, 0], [0.06, 0.26, 0.06]), part('sph', skin, [0, -0.28, 0], [0.058, 0.058, 0.058])]));
+        inner.add(piv); arms.push(piv);
+      }
+      // hoofd
+      const head = new THREE.Group(); head.position.set(0, 0.83, 0); inner.add(head);
+      const hp = [part('sph', skin, [0, 0, 0], [0.275, 0.26, 0.26]),
+        part('sph', skin, [-0.27, -0.02, 0], [0.045, 0.06, 0.04]), part('sph', skin, [0.27, -0.02, 0], [0.045, 0.06, 0.04]),
+        part('sph', skinD, [0, -0.045, 0.265], [0.04, 0.032, 0.035]),
+        part('sph', '#F59AA4', [-0.165, -0.065, 0.19], [0.05, 0.03, 0.02]), part('sph', '#F59AA4', [0.165, -0.065, 0.19], [0.05, 0.03, 0.02]),
+        part('arc', '#9A4A44', [0, -0.085, 0.25], [0.07, 0.07, 0.05], [-0.25, 0, Math.PI])];
+      const brow = (sx) => part('box', hairC === '#ECA2C4' ? '#7A4A5A' : JV.shade(hairC, -10), [sx * 0.095, 0.115, 0.245], [0.075, 0.016, 0.02], [0, 0, sx * -0.12]);
+      if (lk.gender === 'v') hp.push(part('box', '#2B1B12', [-0.14, 0.04, 0.235], [0.03, 0.01, 0.02], [0, 0, 0.5]), part('box', '#2B1B12', [0.14, 0.04, 0.235], [0.03, 0.01, 0.02], [0, 0, -0.5]));
+      hp.push(brow(-1), brow(1));
+      const cap = (r) => part('cap', hairC, [0, 0.03, -0.015], [r, r * 0.97, r * 1.02], [-0.32, 0, 0]);
+      const fringe = () => [part('sph', hairC, [0, 0.15, 0.195], [0.13, 0.07, 0.07]), part('sph', hairC, [-0.14, 0.11, 0.18], [0.09, 0.07, 0.07]), part('sph', hairC, [0.14, 0.11, 0.18], [0.09, 0.07, 0.07])];
+      const hairStyle = ['helm', 'pet', 'kok'].includes(u.hat) && lk.hair !== 'hoofddoek' ? 'kort' : lk.hair;
+      switch (hairStyle) {
+        case 'afro': hp.push(part('sph', hairC, [0, 0.09, -0.04], [0.4, 0.37, 0.37]), part('sph', hairC, [0, 0.19, 0.17], [0.2, 0.09, 0.1]), part('sph', hairC, [-0.2, 0.15, 0.16], [0.11, 0.1, 0.09]), part('sph', hairC, [0.2, 0.15, 0.16], [0.11, 0.1, 0.09])); break;
+        case 'krul': hp.push(cap(0.3)); for (let i = 0; i < 11; i++) { const a = i / 11 * Math.PI * 2; hp.push(part('sph', hairC, [Math.cos(a) * 0.27, 0.12 + Math.sin(a * 2) * 0.05, Math.sin(a) * 0.22 - 0.03], [0.095, 0.095, 0.095])); } hp.push(part('sph', hairC, [0, 0.27, 0], [0.11, 0.1, 0.11]), ...fringe()); break;
+        case 'lang': hp.push(cap(0.3), part('sph', hairC, [0, -0.17, -0.16], [0.3, 0.44, 0.15]), part('sph', hairC, [-0.255, -0.1, 0.0], [0.075, 0.27, 0.13]), part('sph', hairC, [0.255, -0.1, 0.0], [0.075, 0.27, 0.13]), ...fringe()); break;
+        case 'staart': hp.push(cap(0.3), part('sph', hairC, [0.0, 0.1, -0.29], [0.1, 0.1, 0.1]), part('cone', hairC, [0, -0.1, -0.32], [0.1, 0.46, 0.1], [Math.PI + 0.12, 0, 0]), part('ring', '#F06A96', [0, 0.08, -0.27], [0.08, 0.08, 0.08], [0.3, 0, 0]), ...fringe()); break;
+        case 'vlechtjes': hp.push(cap(0.3), ...fringe()); for (const sx of [-1, 1]) { hp.push(part('sph', hairC, [sx * 0.29, -0.02, 0.0], [0.08, 0.08, 0.08]), part('sph', hairC, [sx * 0.3, -0.13, 0.0], [0.075, 0.075, 0.075]), part('sph', hairC, [sx * 0.3, -0.23, 0.0], [0.07, 0.07, 0.07]), part('sph', hairC, [sx * 0.3, -0.31, 0.0], [0.06, 0.06, 0.06]), part('sph', '#F06A96', [sx * 0.29, 0.07, 0.04], [0.055, 0.04, 0.04])); } break;
+        case 'knot': hp.push(cap(0.3), part('sph', hairC, [0, 0.31, -0.06], [0.125, 0.115, 0.125]), part('ring', '#F06A96', [0, 0.25, -0.05], [0.11, 0.11, 0.11], [Math.PI / 2, 0, 0]), ...fringe()); break;
+        case 'hoofddoek': hp.push(part('scarf', hairC, [0, 0.02, -0.01], [0.325, 0.3, 0.32], [-0.1, 0, 0]), part('sph', hairC, [0, 0.2, 0.17], [0.2, 0.07, 0.1]), part('sph', JV.shade(hairC, -12), [0, -0.2, -0.04], [0.3, 0.17, 0.26])); break;
+        default: hp.push(cap(0.3), ...fringe(), part('sph', hairC, [-0.26, 0.0, 0.0], [0.05, 0.1, 0.1]), part('sph', hairC, [0.26, 0.0, 0.0], [0.05, 0.1, 0.1]));
+      }
+      if (lk.beard) hp.push(part('sph', hairC, [0, -0.15, 0.15], [0.17, 0.11, 0.1]), part('sph', hairC, [0, -0.07, 0.235], [0.09, 0.025, 0.03]));
+      if (lk.glasses || u.glasses) { for (const sx of [-1, 1]) hp.push(part('ring', '#3A2A2A', [sx * 0.095, 0.03, 0.262], [0.075, 0.075, 0.03])); hp.push(part('box', '#3A2A2A', [0, 0.04, 0.265], [0.04, 0.012, 0.012])); }
+      switch (u.hat) {
+        case 'kok': hp.push(part('cyl', '#FFFFFF', [0, 0.3, -0.02], [0.17, 0.16, 0.17]), part('sph', '#FFFFFF', [0, 0.42, -0.02], [0.21, 0.13, 0.21]), part('sph', '#FFFFFF', [-0.12, 0.38, -0.02], [0.1, 0.09, 0.1])); break;
+        case 'bakker': hp.push(part('sph', '#FFFFFF', [0, 0.25, -0.03], [0.24, 0.12, 0.24])); break;
+        case 'zuster': hp.push(part('box', '#FFFFFF', [0, 0.27, 0.02], [0.26, 0.09, 0.14]), part('box', '#E2483D', [0, 0.275, 0.095], [0.05, 0.05, 0.01])); break;
+        case 'papier': hp.push(part('cone', '#FFFFFF', [0, 0.32, -0.02], [0.15, 0.2, 0.15]), part('box', '#F28BA8', [0, 0.23, 0.0], [0.28, 0.035, 0.2])); break;
+        case 'helm': hp.push(part('cap', '#F6C445', [0, 0.06, -0.015], [0.32, 0.3, 0.33], [-0.1, 0, 0]), part('box', '#F6C445', [0, 0.1, 0.27], [0.34, 0.03, 0.12]), part('box', '#D9453A', [0, 0.28, -0.02], [0.05, 0.04, 0.3])); break;
+        case 'pet': hp.push(part('cap', '#2F4F8A', [0, 0.07, -0.01], [0.31, 0.27, 0.31], [-0.1, 0, 0]), part('box', '#1F2F5A', [0, 0.11, 0.28], [0.26, 0.025, 0.12], [0.2, 0, 0]), part('box', '#F6C445', [0, 0.17, 0.22], [0.07, 0.04, 0.01])); break;
+        default: break;
+      }
+      head.add(bake(hp));
+      // ogen apart, zodat ze kunnen knipperen
+      const eyes = bake([part('sph', '#2B1B12', [-0.095, 0.02, 0.232], [0.05, 0.066, 0.034]), part('sph', '#2B1B12', [0.095, 0.02, 0.232], [0.05, 0.066, 0.034]),
+        part('sph', '#FFFFFF', [-0.082, 0.042, 0.262], [0.016, 0.016, 0.01]), part('sph', '#FFFFFF', [0.108, 0.042, 0.262], [0.016, 0.016, 0.01]),
+        part('sph', '#5A3A26', [-0.095, 0.005, 0.255], [0.03, 0.04, 0.01]), part('sph', '#5A3A26', [0.095, 0.005, 0.255], [0.03, 0.04, 0.01])]);
+      eyes.castShadow = false; head.add(eyes);
+      const age = lk.age || 'volw';
+      head.scale.setScalar(age === 'baby' ? 1.3 : age === 'peuter' ? 1.2 : age === 'kind' ? 1.1 : 1);
+      const sc = ({ volw: 1, tiener: 0.92, kind: 0.78, peuter: 0.62, baby: 0.5 }[age] || 1) * (opts.scale || 0.8);
       g.scale.set(sc, sc, sc);
-      g.userData = { legs, arms, inner };
+      g.userData = { legs, arms, inner, head, eyes, torso, seed: Math.random() * 10 };
       return g;
+    }
+
+    // bewegingen: wandelen of rustig staan (ademen, knipperen, af en toe zwaaien)
+    function animatePerson(g, t, walkPhase, wave) {
+      const u = g.userData; if (!u) return;
+      const ph = u.seed + t;
+      const blink = (ph % 4.3) < 0.12 ? 0.1 : 1; u.eyes.scale.y += (blink - u.eyes.scale.y) * 0.6;
+      if (walkPhase !== null) {
+        const sw = Math.sin(walkPhase) * 0.75;
+        u.legs[0].rotation.x = sw; u.legs[1].rotation.x = -sw; u.arms[0].rotation.x = -sw * 0.9; u.arms[1].rotation.x = sw * 0.9;
+        u.arms[0].rotation.z = 0.06; u.arms[1].rotation.z = -0.06;
+        u.inner.position.y = Math.abs(Math.sin(walkPhase)) * 0.035; u.inner.rotation.y = Math.sin(walkPhase) * 0.1; u.inner.rotation.x = 0.06; u.head.rotation.z = Math.sin(walkPhase) * 0.04;
+      } else {
+        const br = Math.sin(ph * 2.2) * 0.012;
+        u.legs[0].rotation.x = 0; u.legs[1].rotation.x = 0; u.inner.position.y = 0; u.inner.rotation.y = Math.sin(ph * 0.7) * 0.08; u.inner.rotation.x = 0;
+        u.torso.scale.set(1 + br, 1 + br * 1.5, 1 + br); u.head.rotation.z = Math.sin(ph * 0.9) * 0.05;
+        u.arms[0].rotation.x = Math.sin(ph * 1.6) * 0.06; u.arms[0].rotation.z = 0.08 + br * 2;
+        if (wave) { const w = (ph % 7) < 1.6; u.arms[1].rotation.z = w ? -2.5 + Math.sin(ph * 12) * 0.3 : -0.08; u.arms[1].rotation.x = 0; }
+        else { u.arms[1].rotation.x = -Math.sin(ph * 1.6) * 0.06; u.arms[1].rotation.z = -0.08 - br * 2; }
+      }
     }
 
     // ---- bewoners en poppetjes in de scene ---------------------------------------
@@ -827,7 +930,8 @@
       for (const a of R.agents) {
         live.add(a.m.id);
         let e = agentMap.get(a.m.id);
-        if (!e) { e = { g: makePerson(a.m.look) }; peopleGroup.add(e.g); agentMap.set(a.m.id, e); }
+        if (e && e.job !== a.m.job) { peopleGroup.remove(e.g); disposeGroup(e.g); e = null; }
+        if (!e) { e = { g: makePerson(a.m.look, { job: a.m.job }), job: a.m.job }; peopleGroup.add(e.g); agentMap.set(a.m.id, e); }
         const walking = a.state === 'walking' && a.path;
         e.g.visible = !!walking;
         if (walking) {
@@ -835,8 +939,7 @@
           const off = a.small ? 0.12 : -0.1;
           e.g.position.set(p.x + 0.5 + off * (p.dy ? 1 : 0), 0.0, p.y + 0.5 + off * (p.dx ? 1 : 0));
           if (p.dx || p.dy) { const target = Math.atan2(p.dx, p.dy); let d = target - e.g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); e.g.rotation.y += d * Math.min(1, dt * 12); }
-          const sw = Math.sin(a.walk) * 0.7;
-          const u = e.g.userData; u.legs[0].rotation.x = sw; u.legs[1].rotation.x = -sw; u.arms[0].rotation.x = -sw * 0.8; u.arms[1].rotation.x = sw * 0.8; u.inner.position.y = Math.abs(Math.sin(a.walk)) * 0.03;
+          animatePerson(e.g, t, a.walk, false);
         }
       }
       for (const [id, e] of agentMap) if (!live.has(id)) { peopleGroup.remove(e.g); agentMap.delete(id); }
@@ -859,7 +962,7 @@
           peopleGroup.add(g); e = { g, sig }; homeMap.set(f.id, e);
         }
         e.g.visible = dark < 0.6;
-        if (e.g.userData.kid) e.g.userData.kid.position.y = Math.max(0, Math.sin(t * 3 + f.id) * 0.04);
+        if (e.g.userData.kid) { animatePerson(e.g.userData.kid, t, null, false); e.g.userData.kid.position.y = Math.max(0, Math.sin(t * 3 + f.id) * 0.04); }
         if (e.g.userData.pet) e.g.userData.pet.position.y = 0.3 + Math.abs(Math.sin(t * 2.2 + f.id)) * 0.06;
       }
       for (const [id, e] of homeMap) if (!famIds.has(id)) { peopleGroup.remove(e.g); homeMap.delete(id); }
@@ -877,7 +980,7 @@
           peopleGroup.add(playerFig); playerSig = sig;
         }
         playerFig.visible = dark < 0.6;
-        playerFig.userData.p.position.y = Math.max(0, Math.sin(t * 2.4) * 0.02);
+        animatePerson(playerFig.userData.p, t, null, true);
         if (playerFig.userData.pet) playerFig.userData.pet.position.y = 0.3 + Math.abs(Math.sin(t * 2.6)) * 0.07;
       }
     }
@@ -1077,5 +1180,6 @@
     Object.keys(JV.MODELS || {}).forEach((k) => JV.setModel(k, JV.MODELS[k]));
     updateCam();
     JV._three = { scene, camera, renderer };
+    JV._people = { makePerson, animatePerson };
   }
 })(window.JV);
