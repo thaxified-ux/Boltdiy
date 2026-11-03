@@ -124,7 +124,7 @@ h2{font:700 1.1rem/1.2 var(--display);margin:0;letter-spacing:.03em;text-wrap:ba
 .roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .fol{border:2px solid var(--rc);border-radius:8px;background:var(--raise);padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .fol header{display:flex;gap:10px;align-items:center}
-.fol canvas{width:40px;height:40px;image-rendering:pixelated;flex:none;background:#0f161a;border-radius:4px}
+.fol canvas{width:60px;height:60px;image-rendering:pixelated;flex:none;background:#0f161a;border-radius:4px}
 .fol h3{margin:0;font:700 1rem/1.15 var(--display);color:var(--rc)}
 .fol .meta{font-size:.82rem;color:var(--muted)}
 .fol p{margin:0;font-size:.9rem}
@@ -148,6 +148,9 @@ h2{font:700 1.1rem/1.2 var(--display);margin:0;letter-spacing:.03em;text-wrap:ba
 .zone.locked .sky{filter:grayscale(1) brightness(.5)}
 .status{font:500 .78rem/1 var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .status.cur{color:var(--lamp)}
+.foe{display:flex;gap:8px;align-items:center}
+.foe img{height:42px;width:auto;image-rendering:pixelated;flex:none}
+.zone.locked .foe img{filter:brightness(0)}
 
 .feats{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
 .feat{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:10px;display:flex;flex-direction:column;gap:6px}
@@ -654,7 +657,7 @@ function spawnWave() {
   G.enemies = [];
   for (let i = 0; i < n; i++) {
     const f = boss ? z.boss : pick(z.foes), b = enemyBase(S.stage, S.wave, boss);
-    G.enemies.push({ n: f.n, s: f.s, c: f.c, el: f.el, res: f.res, hp: b.hp, max: b.hp, dmg: b.dmg, aspd: boss ? .7 : .8, boss, x: W - 6 + i * 20, t: rnd(.2, .7), flash: 0, dead: false, die: 0, ph: Math.random() * 6 });
+    G.enemies.push({ n: f.n, s: f.s, c: f.c, el: f.el, res: f.res, hp: b.hp, max: b.hp, dmg: b.dmg, aspd: boss ? .7 : .8, boss, x: W + 4 + i * 20, t: rnd(.2, .7), flash: 0, dead: false, die: 0, ph: Math.random() * 6 });
   }
   G.phase = 'fight';
   if (boss) banner(`Guardian: ${z.boss.n}`, '#ff8070');
@@ -675,7 +678,7 @@ function heroAttack(front) {
     const d = damage(front, raw, st.elem, crit);
     if (st.ls) G.hero.hp = Math.min(st.hp, G.hero.hp + d * st.ls / 100);
   } else {
-    G.proj.push({ x: HX + 6, y: GY - 11, tgt: front, sp: S.path === 'bow' ? 220 : 160, kind: S.path === 'bow' ? 'arrow' : 'bolt', el: st.elem, raw, crit, splash: S.path === 'lamp' ? .4 : 0, hero: true });
+    G.proj.push({ x: HX + 10, y: GY - 11, tgt: front, sp: S.path === 'bow' ? 220 : 160, kind: S.path === 'bow' ? 'arrow' : 'bolt', el: st.elem, raw, crit, splash: S.path === 'lamp' ? .4 : 0, hero: true });
   }
 }
 function updateProj(dt) {
@@ -772,7 +775,7 @@ function update(dt) {
   updateProj(dt);
   const alive = G.enemies.filter(e => !e.dead).sort((a, b) => a.x - b.x);
   alive.forEach((e, i) => {
-    const target = HX + 14 + i * 17 + (e.boss ? 4 : 0);
+    const target = HX + 16 + i * 18 + (e.boss ? 6 : 0);
     if (e.x > target) e.x = Math.max(target, e.x - 48 * dt);
     e.flash = Math.max(0, e.flash - dt);
     if (e.x <= target + .5 && i < 2) { e.t -= dt; if (e.t <= 0) { e.t = 1 / e.aspd; enemyHit(e); } }
@@ -781,7 +784,7 @@ function update(dt) {
   G.enemies = G.enemies.filter(e => !e.dead || e.die < .5);
   const front = alive.find(e => !e.dead);
   h.atkT -= dt;
-  if (front && front.x <= HX + st.range + (front.boss ? 4 : 0) && h.atkT <= 0 && h.dead <= 0) { h.atkT = 1 / st.aspd; h.swing = .16; heroAttack(front); }
+  if (front && front.x <= HX + st.range + (front.boss ? 6 : 0) && h.atkT <= 0 && h.dead <= 0) { h.atkT = 1 / st.aspd; h.swing = .16; heroAttack(front); }
   // company
   partyMembers().forEach((f, i) => {
     const K = KINDS[f.kind]; if (!K.atk) return;
@@ -789,7 +792,7 @@ function update(dt) {
     const tgt = G.enemies.find(e => !e.dead);
     if (G.folT[f.id] <= 0 && tgt && tgt.x <= HX + 120) {
       G.folT[f.id] = K.atk;
-      G.proj.push({ x: HX - 14 - i * 12 + 4, y: GY - 9, tgt, sp: f.kind === 'archer' ? 220 : 150, kind: f.kind === 'archer' ? 'arrow' : 'bolt', el: K.el, raw: folPower(f, st.cp) * K.atk * rnd(.9, 1.1), crit: false, splash: f.kind === 'fire' ? .5 : 0, hero: false });
+      G.proj.push({ x: HX - 18 - i * 13 + 6, y: GY - 10, tgt, sp: f.kind === 'archer' ? 220 : 150, kind: f.kind === 'archer' ? 'arrow' : 'bolt', el: K.el, raw: folPower(f, st.cp) * K.atk * rnd(.9, 1.1), crit: false, splash: f.kind === 'fire' ? .5 : 0, hero: false });
     }
   });
   if (!G.enemies.some(e => !e.dead) && h.dead <= 0) nextWave();
@@ -831,115 +834,434 @@ function shade(hex, f) {
 const STARS = Array.from({ length: 40 }, (_, i) => [(i * 53) % W, (i * 29) % 40, i % 3]);
 function hash(i) { const s = Math.sin(i * 127.1) * 43758.5; return s - Math.floor(s); }
 
+/* ---------- Pixel art ----------
+   Each sprite is a grid of letters; each letter is a colour from its palette, '.' is empty.
+   The builder adds a 1px dark outline around every sprite (scenery skips it so it sits back). */
+const OUTLINE = '#0b0d10';
+const SPR = {
+  hero: { rows: [
+    '.....hhhh.....',
+    '....hHHHHh....',
+    '...hHHHHHHh...',
+    '...hHHHsesh...',
+    '...hHHHsssh...',
+    '....hHHHhh....',
+    '....cCCCCc....',
+    '...cCCCCCCd...',
+    '..cCccccccdd..',
+    '..cCccccccdd..',
+    '..bbbbbbbbbb..',
+    '..cCccccccdd..',
+    '..ccccccccdd..',
+    '...ccccccdd...',
+    '....ll.ll.....',
+    '....ll.ll.....',
+    '....ll.ll.....',
+    '...kkk.kkk....'],
+    alt: { 14: '....ll..ll....', 15: '...ll...ll....', 16: '...ll....ll...', 17: '..kkk....kkk..' } },
+  lantern: ['.b..', 'bbbb', 'bYyb', 'byyb', 'bbbb'],
+  sword: ['.W.', '.w.', '.w.', '.w.', '.w.', '.w.', '.w.', 'ggg', '.b.', '.b.'],
+  swing: ['g...........', 'bbgwwwwwwwwW', 'g...........'],
+  bow: { rows: ['bb...', '.bb..', '.s.b.', '.s..b', '.s..b', '.s..b', '.s..b', '.s..b', '.s..b', '.s.b.', '.bb..', 'bb...'],
+    alt: { 3: 's...b', 4: 's...b', 5: 's...b', 6: 's...b', 7: 's...b', 8: 's...b' } },
+  staff: ['.bbb.', 'byyyb', 'byYyb', 'byyyb', '.bbb.', '..b..', '..b..', '..t..', '..t..', '..t..', '..t..', '..t..', '..t..'],
+  fol: { rows: [
+    '...hhhh...',
+    '..hHHHHh..',
+    '..hHHseh..',
+    '..hHHssh..',
+    '...hhhh...',
+    '..cCCCCc..',
+    '.cCccccdd.',
+    '.cCccccdd.',
+    '.bbbbbbbb.',
+    '.cccccddd.',
+    '..ccccdd..',
+    '...l..l...',
+    '...l..l...',
+    '..kk..kk..'],
+    alt: { 11: '...l...l..', 12: '..l....l..', 13: '.kk....kk.' } },
+  fbow: ['b..', '.b.', 's.b', 's.b', 's.b', 's.b', '.b.', 'b..'],
+  shield: ['mmmmm', 'mMMMm', 'mMcMm', 'mMMMm', '.mMm.', '..m..'],
+  basket: ['b...b', '.bbb.', 'bgGgb', 'bbbbb'],
+  pole: ['ttt', '..t', '..t', '.yy', '.Yy', '.yy'],
+  orb: ['.o.', 'oOo', '.o.', '.t.', '.t.', '.t.', '.t.', '.t.', '.t.', '.t.', '.t.'],
+  slime: { rows: [
+    '.....GGGG.....',
+    '...GGggggGG...',
+    '..GggggggggG..',
+    '.Gggggggggggd.',
+    '.gwkgggwkgggd.',
+    '.gkkgggkkgggd.',
+    'gggggggggggggd',
+    'ggggggggggggdd',
+    'dgggggggggdddd',
+    '.dddddddddddd.'],
+    alt: { 0: '..............', 1: '....GGGGGG....', 2: '..GGggggggGG..' } },
+  rat: { rows: [
+    '..p......FFF....',
+    '.pFF...FFFFFFF..',
+    'FFFFFFFFFFFFFFF.',
+    'eFFfffffffffffft',
+    'pfffffffffffffdt',
+    '.ffffffffffffd.t',
+    '..fd.fd..fd.fd.t',
+    '..d..d...d..d...'],
+    alt: { 6: '.fd..fd.fd..fd.t', 7: '.d...d...d...d..' } },
+  crab: { rows: [
+    'cc.............',
+    'c.c...SSSSS....',
+    'cc.c.SSsssSS...',
+    '.ccSSSssssssSS.',
+    '..Ssesssesssss.',
+    '..sssssssssssd.',
+    '...sssssssssdd.',
+    '..d.d.d.d.d.d..',
+    '.d.d.d.d.d.d...'],
+    alt: { 0: '.cc............', 1: 'c..c..SSSSS....', 7: '.d.d.d.d.d.d...', 8: '..d.d.d.d.d.d..' } },
+  wisp: { fly: 1, rows: [
+    '....y......',
+    '...yy......',
+    '..yYy..y...',
+    '..yYYy.yy..',
+    '.yYYYYyyy..',
+    '.yYWWYYyy..',
+    'yYWWWWYYy..',
+    'yYWkWkWYy..',
+    'yYWWWWWYy..',
+    'yYYWWWYYy..',
+    '.yYYYYYy...',
+    '..yyyyy....',
+    '...y.y.....'],
+    alt: { 0: '......y....', 1: '.....yy....', 2: '..yYy.y....', 12: '....y......' } },
+  hound: { rows: [
+    '..aa............',
+    '.aAAa...........',
+    'aeAAAaaaaaaaaa..',
+    'rAAAAAAAAAAAAAa.',
+    '.aaAAAAAAAAAAAat',
+    '..aaaaaaaaaaaa.t',
+    '...ad.ad..ad.ad.',
+    '...a..a...a..a..'],
+    alt: { 6: '..ad..ad.ad..ad.', 7: '..a...a..a...a..' } },
+  scarab: { rows: [
+    '.....gggggg....',
+    '...ggGGGGGGgg..',
+    '..gGGWGGGGGGGg.',
+    '.egGGGGGGGGGGGg',
+    'hhgggggggggggg.',
+    '.h.gggggggggggd',
+    '..d.d.d.d.d.d..',
+    '.d.d.d.d.d.d...'],
+    alt: { 6: '.d.d.d.d.d.d...', 7: '..d.d.d.d.d.d..' } },
+  moth: { fly: 1, rows: [
+    '.ww.......ww.',
+    'wWWw.....wWWw',
+    'wWWWw...wWWWw',
+    '.wWWWwbwWWWw.',
+    '..wWWbebWWw..',
+    '...wwbbbww...',
+    '..wWWbbbWWw..',
+    '.wWWw.b.wWWw.',
+    '..ww.....ww..'],
+    alt: { 0: '.............', 1: '..ww.....ww..', 2: '.wWWw...wWWw.', 7: '..wWw.b.wWw..', 8: '...w.....w...' } },
+  sentinel: { rows: [
+    '...mmmm.....',
+    '..mMMMMm....',
+    '..meeMMm....',
+    '..mMMMMm....',
+    '.mmmmmmmm...',
+    'mMMMMMMMMm..',
+    'mmMMMMMMmm..',
+    'mMmMMMMmMm..',
+    'mMmMMMMmMm..',
+    'mdmmmmmmdm..',
+    '..mMMMMm....',
+    '..mMmmMm....',
+    '..mMm.mMm...',
+    '..mMm.mMm...',
+    '..mmm.mmm...'],
+    alt: { 12: '..mMm..mMm..', 13: '.mMm...mMm..', 14: '.mmm...mmm..' } },
+  stump: [
+    '......l.........l.......',
+    '.....lll.......lll......',
+    '......w.........w.......',
+    '.......w.......w........',
+    '........wbbbbbw.........',
+    '......bHHHHHHHHb........',
+    '.....bHBBBBBBBBBb.......',
+    '.....bBBHBBBBHBBb.......',
+    '.....bBrrBBBBrrBb.......',
+    '.....bBrrBBBBrrBb.......',
+    '.....bBBBBBBBBBBb.......',
+    '.....bBBdkkkkkdBb.......',
+    '....wbBBBdkkkdBBbw......',
+    '...ww.bBBBBBBBBBb.ww....',
+    '..w...bBBHBBBBBBb...w...',
+    '..l...bBBBBBBHBBb...l...',
+    '......bBBBBBBBBBb.......',
+    '......bBHBBBBBBBb.......',
+    '......bBBBBBBHBBb.......',
+    '.....bbBBBBBBBBBbb......',
+    '....bb.bbbbbbbbbb.bb....',
+    '...bb..b..b..b..b..bb...'],
+  matron: [
+    '..........SSSSSS........',
+    '........SSssssssSS......',
+    '.......SssSSSSSSssS.....',
+    '......SsSSssssssSSsS....',
+    '......SsSsSSSSSSsSsS....',
+    '......SsSsSppSSsSsSD....',
+    '......SsSsSppSsSSsSD....',
+    '......SsSSsssssSSsSD....',
+    '.......SsSSSSSSSsSD.....',
+    '..cc....SSssssssDD......',
+    '.c..c..cCCCCCCCCCc......',
+    '.cc.c.cCCekCCekCCCc.....',
+    '..ccCCCCCCCCCCCCCCCc....',
+    '...CCCCCCCCCCCCCCCCc....',
+    '....cCCCCCCCCCCCCCc.....',
+    '...c.c.c.c.c.c.c.c......',
+    '..c.c.c.c.c.c.c.c.......'],
+  golem: [
+    '.......dRRRRRd..........',
+    '......dRHHHHRRd.........',
+    '......dRFfRRfFd.........',
+    '......dRRRRRRRd.........',
+    '....dddRRffffRRddd......',
+    '...dRRRRRfFFfRRRRRd.....',
+    '..dRHRRRRfFFfRRRRHRd....',
+    '..dRRRRRRRffRRRRRRRd....',
+    '..dRRdRRRRRRRRRRdRRd....',
+    '..dRRddRRRRRRRRddRRd....',
+    '..dHRd.dRRRRRRd.dRHd....',
+    '..dRRd.dRRffRRd.dRRd....',
+    '..dffd.dRRRRRRd.dffd....',
+    '...dd..dRRRdRRd..dd.....',
+    '.......dRRd.dRRd........',
+    '......dRRRd.dRRRd.......',
+    '......ddddd.ddddd.......'],
+  wyrm: [
+    '..........W.............',
+    '.........WBW..W.........',
+    '......BBBBBBBWBW........',
+    '.....BWBBBBBBBB.........',
+    '....BeBBBBBBBBBd........',
+    '...BBBBBBBBBBBdd........',
+    '..ddBBB....BBBdd........',
+    '..d.d.......BBdd........',
+    '.............BBdd.......',
+    '..............BBdd......',
+    '..........W...BBBd......',
+    '.........BBBBBBBBd......',
+    '........BBdddddBBdW.....',
+    '.......BBd.....dBBdB....',
+    '......BBd.......dBBBd...',
+    '.....BBBBd.....dBBBd....',
+    '....ddddddddddddddd.....'],
+  king: [
+    '......c.c.c.....',
+    '......ccccc.....',
+    '.....aAAAAAa....',
+    '.....AeAAAeA....',
+    '.....AkkkkkA....',
+    '.....aAAAAAa....',
+    '...raaAAAAAaar..',
+    '..rrAAHAAAAHAAr.',
+    '..rrAAAAAAAAAAr.',
+    '.rrrAAAAccAAAArr',
+    '.rrrAaAAAAAAaArr',
+    '.rrraaAAAAAAaarr',
+    '.rrr.aAAAAAAa.rr',
+    '.rr..aAAaaAAa..r',
+    '.r...aAAa.aAAa..',
+    '.....aAAa..aAAa.',
+    '.....aaaa..aaaa.'],
+  tree: [
+    '.....HHHH.....',
+    '...HHLLLLHH...',
+    '..HLLLLLLLLH..',
+    '.HLLLHLLLLLLD.',
+    '.LLLLLLLLHLLD.',
+    'HLLHLLLLLLLLDD',
+    'LLLLLLLLLLLLLD',
+    'LLLLLLLHLLLLDD',
+    '.LLLLLLLLLLDD.',
+    '.DLLLLLLLLDDD.',
+    '..DDLLLLLDDD..',
+    '...DDDtTDDD...',
+    '......tT......',
+    '......tT......',
+    '......tT......',
+    '......tT......',
+    '.....ttTT.....',
+    '....tt..TT....'],
+  reed: ['.c...c...', '.c..cc.c.', '.L..cL.c.', '.L..L..L.', 'LL..L.LL.', 'L..LL.L..', 'L..L..L.L', 'L.LL.LL.L', 'LL.L.L.LL', '.L.L.L.L.', '.LLLLLLL.'],
+  rock: ['.....HHH......', '...HHLLLHH....', '..HLLLLLLLLH..', '.HLLLDLLLLLLD.', 'HLLLLLLLLLLLDD', 'LLLLLLLLLLLDDD', 'DLLLLLLLLLDDDD', '.DDDDDDDDDDDD.'],
+  shard: ['...H...', '...HL..', '..HLL..', '..HLL..', '..HLLD.', '.HLLLD.', '.HLLLD.', '.HLLLD.', 'HLLLLLD', 'HLLLLLD', 'HLLLLDD', 'HLLLLDD', 'DDDDDDD'],
+  pillar: ['..HHH....', '.HLLLH...', 'HLLLLLLH.', 'DDDDDDDDD', '.HLLLLD..', '.HLDLLD..', '.HLDLLD..', '.HLDLLD..', '.HLLLLD..', '.HLDLLD..', '.HLDLLD..', '.HLDLLD..', '.HLLLLD..', '.HLDLLD..', '.HLDLLD..', '.HLDLLD..', '.HLLLLD..', '.HLDLLD..', '.HLDLLD..', '.HLLLLD..', 'HLLLLLLLD', 'DDDDDDDDD'],
+};
+const PAL = {
+  hero: { h: '#2f4757', H: '#41617a', s: '#e2c39b', e: '#1a1a1a', c: '#3d5a6b', C: '#557a8e', d: '#2b4250', b: '#6b4a2a', l: '#20282d', k: '#2a1d14' },
+  lantern: { b: '#6b4a2a', y: '#f3b44a', Y: '#fff2c0' },
+  bow: { b: '#8a6a3a', s: '#d8d0b8' },
+  staff: { b: '#3a2a1a', y: '#f3b44a', Y: '#fff2c0', t: '#6b4a2a' },
+  staffLit: { b: '#3a2a1a', y: '#fff6d0', Y: '#ffffff', t: '#6b4a2a' },
+  fbow: { b: '#8a6a3a', s: '#d8d0b8' },
+  shield: { m: '#5a6070', M: '#9aa0aa', c: '#f3b44a' },
+  basket: { b: '#8a6a3a', g: '#7fd38b', G: '#b8f0a0' },
+  pole: { t: '#6b4a2a', y: '#f3b44a', Y: '#fff2c0' },
+  moss: { g: '#6fae4a', G: '#9fd46a', d: '#3f6e2c', w: '#ffffff', k: '#111111' },
+  mirage: { g: '#c8a8e0', G: '#f0e0ff', d: '#8a6aa8', w: '#ffffff', k: '#3a2a50' },
+  rat: { f: '#7a6a5a', F: '#9a8a76', d: '#4e4238', p: '#d89a9a', e: '#111111', t: '#b08a7a' },
+  crab: { s: '#c0674a', S: '#e08a66', d: '#7a3a2a', c: '#d0704e', e: '#111111' },
+  boglamp: { y: '#2f7a68', Y: '#6fc8a8', W: '#d8fff0', k: '#0f2a24' },
+  ember: { y: '#a8361a', Y: '#ff8a3d', W: '#ffe0a0', k: '#3a1208' },
+  hound: { a: '#3e3636', A: '#6a5c58', d: '#241e1e', e: '#ff7a3a', r: '#ff5a2a', t: '#6a5c58' },
+  scarab: { g: '#3f7f96', G: '#8fd8e8', W: '#e8faff', h: '#2a5060', d: '#244050', e: '#111111' },
+  moth: { w: '#a89858', W: '#f0e6a0', b: '#5a4a30', e: '#ff6050' },
+  sentinel: { m: '#3e3c64', M: '#8a88b0', d: '#2a2840', e: '#ffb84a' },
+  stump: { b: '#3e2c1c', B: '#6b5236', H: '#8a6c48', w: '#4a3624', l: '#6fae4a', r: '#ff5a3a', k: '#140c08', d: '#2e2014' },
+  matron: { S: '#7fbaba', s: '#4f8a8a', D: '#2e5a5a', p: '#f0f0ff', c: '#a05a40', C: '#d08060', e: '#ffffff', k: '#111111' },
+  golem: { d: '#3a302c', R: '#7a6a60', H: '#9a8a7e', f: '#ff8a3d', F: '#ffd27a' },
+  wyrm: { d: '#3a6088', B: '#8cc4ec', W: '#ffffff', e: '#ff60a0' },
+  king: { a: '#2a2240', A: '#4a3a6a', H: '#6a5a90', c: '#d8b84a', e: '#c070ff', k: '#0a0812', r: '#24162f' },
+};
+const FOE_ART = {
+  'Moss Slime': ['slime', 'moss'], 'Burrow Rat': ['rat', 'rat'], 'Old Stump': ['stump', 'stump'],
+  'Reed Crab': ['crab', 'crab'], 'Bog Lantern': ['wisp', 'boglamp'], 'Brine Matron': ['matron', 'matron'],
+  'Ember Wisp': ['wisp', 'ember'], 'Ash Hound': ['hound', 'hound'], 'Kiln Golem': ['golem', 'golem'],
+  'Glass Scarab': ['scarab', 'scarab'], 'Mirage': ['slime', 'mirage', .75], 'Prism Wyrm': ['wyrm', 'wyrm'],
+  'Star Moth': ['moth', 'moth'], 'Lost Sentinel': ['sentinel', 'sentinel'], 'The Unlit King': ['king', 'king'],
+};
+function buildSprite(rows, pal, outline) {
+  const h = rows.length, w = Math.max(...rows.map(r => r.length));
+  const c = document.createElement('canvas'); c.width = w + 2; c.height = h + 2;
+  const x = c.getContext('2d');
+  const solid = (i, j) => j >= 0 && j < h && i >= 0 && i < rows[j].length && rows[j][i] !== '.' && !!pal[rows[j][i]];
+  if (outline) {
+    x.fillStyle = outline;
+    for (let j = -1; j <= h; j++) for (let i = -1; i <= w; i++)
+      if (!solid(i, j) && (solid(i - 1, j) || solid(i + 1, j) || solid(i, j - 1) || solid(i, j + 1))) x.fillRect(i + 1, j + 1, 1, 1);
+  }
+  for (let j = 0; j < h; j++) for (let i = 0; i < rows[j].length; i++) if (solid(i, j)) { x.fillStyle = pal[rows[j][i]]; x.fillRect(i + 1, j + 1, 1, 1); }
+  return c;
+}
+const sprCache = {};
+function getSpr(name, frame, palKey, pal, flash, noOutline) {
+  const key = `${name}|${frame}|${palKey}|${flash ? 1 : 0}${noOutline ? 'n' : ''}`;
+  if (sprCache[key]) return sprCache[key];
+  const def = SPR[name];
+  let rows = def.rows || def;
+  if (frame && def.alt) { rows = rows.slice(); for (const k in def.alt) rows[+k] = def.alt[k]; }
+  let p = pal || PAL[palKey];
+  if (flash) p = Object.fromEntries(Object.keys(p).map(k => [k, '#ffffff']));
+  return (sprCache[key] = buildSprite(rows, p, noOutline ? null : flash ? '#ffffff' : OUTLINE));
+}
+function blit(c, x, y) { L.drawImage(c, Math.round(x), Math.round(y)); }
+const urlCache = {};
+function foeURL(name) {
+  if (urlCache[name]) return urlCache[name];
+  const [sn, pk] = FOE_ART[name];
+  return (urlCache[name] = getSpr(sn, 0, pk).toDataURL());
+}
+function swordPal(el) { const b = el === 'phys' ? '#dfe6ea' : ELEM[el].col; return { W: '#ffffff', w: b, g: '#c8a050', b: '#6b4a2a' }; }
+function folPal(kind) {
+  const c = KINDS[kind].cloak;
+  return { h: shade(c, -.35), H: shade(c, -.15), s: '#e2c39b', e: '#1a1a1a', c, C: shade(c, .22), d: shade(c, -.3), b: '#5a3e24', l: '#20282d', k: '#2a1d14' };
+}
+function propPal(z) { return { L: z.mid, H: shade(z.mid, .18), D: shade(z.mid, -.3), t: '#24190f', T: '#3a2a1a', c: '#6b5a3a' }; }
+
 function drawProp(kind, x, i, z) {
   const r = hash(i);
-  if (kind === 'tree') {
-    const h = 8 + r * 6, cr = 6 + r * 3;
-    px(x - 1, GY - h, 2, h, '#24190f');
-    for (let dy = -cr; dy <= cr; dy++) { const w = Math.sqrt(cr * cr - dy * dy) * 2; px(x - w / 2, GY - h - cr + dy, w, 1, z.mid); }
-    px(x - cr / 2, GY - h - cr * 1.5, cr / 2, 1, shade(z.mid, .15));
-  } else if (kind === 'reed') {
-    for (let k = 0; k < 5; k++) { const hh = 6 + hash(i * 7 + k) * 10; px(x + k * 2, GY - hh, 1, hh, z.mid); px(x + k * 2, GY - hh - 2, 1, 2, '#6b5a3a'); }
-  } else if (kind === 'rock') {
-    const w = 8 + r * 10, h = 4 + r * 8;
-    px(x, GY - h, w, h, z.mid); px(x + 2, GY - h - 2, w - 5, 2, z.mid); px(x + 1, GY - h, 2, 1, shade(z.mid, .25));
-    if (r > .6) px(x + w / 2, GY - h - 3, 1, 1, '#ff9a4a');
-  } else if (kind === 'shard') {
-    const h = 8 + r * 14;
-    for (let k = 0; k < h; k++) { const w = Math.max(1, (k / h) * 6); px(x - w / 2, GY - h + k, w, 1, z.mid); }
-    px(x, GY - h + 2, 1, h * .6, 'rgba(230,245,255,.55)');
-  } else if (kind === 'pillar') {
-    const h = 10 + r * 18;
-    px(x, GY - h, 6, h, z.mid); px(x - 1, GY - h, 8, 2, shade(z.mid, .2)); px(x + 1, GY - h + 3, 1, h - 3, shade(z.mid, -.3));
-    if (r > .5) px(x + 4, GY - h - 3, 3, 3, z.mid);
-  }
+  const c = getSpr(kind, 0, 'prop:' + z.name, propPal(z), false, true);
+  const cut = kind === 'pillar' ? Math.floor(r * 12) : kind === 'tree' ? Math.floor(r * 3) : 0;
+  const h = c.height - cut, y = GY - h + 1;
+  if (r > .5) { L.save(); L.scale(-1, 1); L.drawImage(c, 0, cut, c.width, h, -Math.round(x) - c.width, y, c.width, h); L.restore(); }
+  else L.drawImage(c, 0, cut, c.width, h, Math.round(x), y, c.width, h);
 }
 
 function drawFoe(e) {
-  const sc = e.boss ? 1.7 : 1, t = G.t + e.ph;
-  const x = e.x;
-  let y = GY;
-  const fade = e.dead ? 1 - e.die / .5 : 1;
-  L.globalAlpha = clamp(fade, 0, 1);
+  const [sn, pk, alpha] = FOE_ART[e.n] || ['slime', 'moss'];
+  const def = SPR[sn], t = G.t + e.ph;
+  const frame = Math.floor(t * (def.fly ? 7 : 5)) % 2;
+  const c = getSpr(sn, frame, pk, null, e.flash > 0 && !e.dead);
+  let y = GY - c.height + 1;
+  if (def.fly) y -= 5 + Math.round(Math.sin(t * 3) * 2);
+  else if (e.boss) y += frame;
+  const fade = e.dead ? clamp(1 - e.die / .5, 0, 1) : 1;
   if (e.dead) y += e.die * 8;
-  const c = e.flash > 0 ? '#ffffff' : e.c, dk = e.flash > 0 ? '#ffffff' : shade(e.c, -.4), lt = e.flash > 0 ? '#ffffff' : shade(e.c, .3);
-  if (e.s === 'blob') {
-    const w = 11 * sc, hgt = (7 + Math.sin(t * 4) * .8) * sc;
-    px(x - w / 2 + 1, y - hgt, w - 2, hgt, c); px(x - w / 2, y - hgt + 2, w, hgt - 2, c);
-    px(x - w / 2, y - 1, w, 1, dk); px(x - w / 2 + 2, y - hgt + 1, 2, 1, lt);
-    px(x - w / 2 + 2, y - hgt + 3 * sc, 1, 2, '#111'); px(x - w / 2 + 5, y - hgt + 3 * sc, 1, 2, '#111');
-  } else if (e.s === 'quad') {
-    const step = Math.floor(t * 8) % 2;
-    px(x - 5 * sc, y - 7 * sc, 12 * sc, 4 * sc, c); px(x - 5 * sc, y - 4 * sc, 12 * sc, 1, dk);
-    px(x - 9 * sc, y - 9 * sc, 5 * sc, 4 * sc, c); px(x - 8 * sc, y - 8 * sc, 1, 1, '#111');
-    for (let k = 0; k < 4; k++) px(x - 4 * sc + k * 3 * sc, y - 3 * sc, 1, 3 * sc - ((k + step) % 2), dk);
-    px(x + 6 * sc, y - 8 * sc, 3 * sc, 1, c);
-  } else if (e.s === 'wisp') {
-    const fy = y - 12 * sc + Math.sin(t * 3) * 2;
-    for (let k = 0; k < 9 * sc; k++) { const w = Math.max(1, (Math.sin((k / (9 * sc)) * Math.PI)) * 7 * sc + (k % 2)); px(x - w / 2, fy - k + 4, w, 1, k < 3 ? lt : c); }
-    px(x - 2, fy - 2, 1, 1, '#111'); px(x + 1, fy - 2, 1, 1, '#111');
-    L.globalAlpha = .25 * fade; px(x - 5 * sc, fy - 8 * sc, 10 * sc, 12 * sc, c); L.globalAlpha = fade;
-  } else {
-    const step = Math.floor(t * 6) % 2;
-    px(x - 4 * sc, y - 5 * sc, 3 * sc, 5 * sc - step, dk); px(x + 1 * sc, y - 5 * sc, 3 * sc, 5 * sc - (1 - step), dk);
-    px(x - 5 * sc, y - 15 * sc, 10 * sc, 10 * sc, c); px(x - 5 * sc, y - 15 * sc, 10 * sc, 1, lt);
-    px(x - 4 * sc, y - 20 * sc, 8 * sc, 5 * sc, c);
-    px(x - 3 * sc, y - 18 * sc, 2, 1, e.boss ? '#ff6050' : '#f3b44a'); px(x, y - 18 * sc, 2, 1, e.boss ? '#ff6050' : '#f3b44a');
-    px(x - 8 * sc, y - 14 * sc + (G.phase === 'fight' && Math.sin(t * 8) > .6 ? 2 : 0), 3 * sc, 7 * sc, dk);
-    px(x + 5 * sc, y - 14 * sc, 3 * sc, 7 * sc, dk);
-    if (e.n === 'The Unlit King') { px(x - 4 * sc, y - 23 * sc, 8 * sc, 2, '#d8b84a'); px(x - 4 * sc, y - 25 * sc, 1, 2, '#d8b84a'); px(x - .5 * sc, y - 25 * sc, 1, 2, '#d8b84a'); px(x + 3 * sc, y - 25 * sc, 1, 2, '#d8b84a'); }
-  }
+  L.globalAlpha = fade * (alpha || 1);
+  blit(c, e.x - c.width / 2, y);
   L.globalAlpha = 1;
   if (!e.dead) {
-    const bw = e.boss ? 22 : 12, top = GY - (e.s === 'tall' ? 24 * sc : e.s === 'wisp' ? 26 * sc : 14 * sc) - 3;
-    px(x - bw / 2, top, bw, 2, '#2a0f0f'); px(x - bw / 2, top, bw * clamp(e.hp / e.max, 0, 1), 2, e.boss ? '#ff6050' : '#d24a3a');
-    if (e.el !== 'phys') px(x - bw / 2 - 3, top, 2, 2, ELEM[e.el].col);
+    const bw = e.boss ? 22 : 12, top = y - 3;
+    px(e.x - bw / 2, top, bw, 2, '#2a0f0f'); px(e.x - bw / 2, top, bw * clamp(e.hp / e.max, 0, 1), 2, e.boss ? '#ff6050' : '#d24a3a');
+    if (e.el !== 'phys') px(e.x - bw / 2 - 3, top, 2, 2, ELEM[e.el].col);
   }
 }
 
 /* A follower: smaller figure, cloak colour by kind, a tool in hand. */
 function drawFollower(f, x, walking, phase) {
-  const y = GY, K = KINDS[f.kind], step = walking ? Math.floor((G ? G.t : 0) * 8 + phase) % 2 : 0;
-  px(x - 2, y - 3, 1, 3 - step, '#20282d'); px(x + 1, y - 3, 1, 2 + step, '#20282d');
-  px(x - 2, y - 10, 5, 7, K.cloak); px(x - 2, y - 10, 5, 1, shade(K.cloak, .25));
-  px(x - 1, y - 13, 3, 3, shade(K.cloak, -.3)); px(x, y - 12, 2, 1, '#e2c39b');
-  if (f.kind === 'archer') { px(x + 3, y - 12, 1, 7, '#8a6a3a'); px(x + 4, y - 13, 1, 1, '#8a6a3a'); px(x + 4, y - 5, 1, 1, '#8a6a3a'); }
-  else if (f.kind === 'warden') { px(x + 2, y - 9, 3, 5, '#9aa0aa'); px(x + 3, y - 8, 1, 3, '#5a6070'); }
-  else if (f.kind === 'herb') { px(x + 2, y - 6, 3, 2, '#8a6a3a'); px(x + 2, y - 7, 1, 1, '#7fd38b'); }
-  else if (f.kind === 'lamp') { px(x + 3, y - 8, 2, 2, '#f3b44a'); }
-  else { const tip = ELEM[K.el].col; px(x + 3, y - 13, 1, 10, '#6b4a2a'); px(x + 2, y - 15, 3, 2, tip); }
-  px(x - 3, y - 15, 6, 1, RAR[f.r].col);
+  const frame = walking ? Math.floor((G ? G.t : 0) * 8 + phase) % 2 : 0;
+  const body = getSpr('fol', frame, 'fol:' + f.kind, folPal(f.kind));
+  const ox = Math.round(x - 6), oy = GY - body.height + 1;
+  blit(body, ox, oy);
+  const K = KINDS[f.kind];
+  if (f.kind === 'archer') blit(getSpr('fbow', 0, 'fbow'), ox + 9, oy + 4);
+  else if (f.kind === 'warden') blit(getSpr('shield', 0, 'shield'), ox + 8, oy + 6);
+  else if (f.kind === 'herb') blit(getSpr('basket', 0, 'basket'), ox + 8, oy + 9);
+  else if (f.kind === 'lamp') blit(getSpr('pole', 0, 'pole'), ox + 8, oy + 3);
+  else { const col = ELEM[K.el].col; blit(getSpr('orb', 0, 'orb:' + K.el, { o: col, O: shade(col, .6), t: '#6b4a2a' }), ox + 9, oy + 1); }
+  px(x - 3, oy - 2, 6, 1, RAR[f.r].col);
 }
 
 function drawHero() {
-  const h = G.hero, x = HX, y = GY, walking = G.phase === 'walk' && h.dead <= 0;
-  const step = walking ? Math.floor(G.t * 8) % 2 : 0;
-  if (h.dead > 0) { px(x - 7, y - 3, 12, 3, '#3d5a6b'); px(x + 5, y - 4, 4, 3, '#2f4757'); px(x - 9, y - 3, 3, 3, '#6b4a2a'); return; }
-  px(x - 2, y - 4, 2, 4 - step, '#20282d'); px(x + 1, y - 4, 2, 3 + step, '#20282d');
-  px(x - 3, y - 12, 7, 8, '#3d5a6b'); px(x - 3, y - 12, 7, 1, '#557a8e'); px(x - 4, y - 8, 1, 4, '#33505f');
-  px(x - 3, y - 7, 7, 1, '#6b4a2a');
-  px(x - 2, y - 16, 5, 4, '#2f4757'); px(x - 1, y - 15, 3, 2, '#e2c39b'); px(x - 1, y - 15, 1, 1, '#1a1a1a');
-  const sway = walking ? step : 0;
-  const st = stats(), ecol = ELEM[st.elem].col;
-  if (S.path === 'lamp') {
-    // lantern held forward on a rod
-    px(x + 3, y - 11, 6, 1, '#6b4a2a'); px(x + 8, y - 11, 1, 2, '#6b4a2a');
-    px(x + 7, y - 9 + sway, 3, 3, h.swing > 0 ? '#fff6d0' : '#f3b44a'); px(x + 8, y - 8 + sway, 1, 1, '#ffffff');
-  } else {
-    px(x - 5, y - 11, 2, 1, '#3d5a6b'); px(x - 7, y - 11 + sway, 1, 2, '#6b4a2a');
-    px(x - 8, y - 9 + sway, 3, 3, '#f3b44a'); px(x - 8, y - 10 + sway, 3, 1, '#6b4a2a'); px(x - 7, y - 8 + sway, 1, 1, '#fff2c0');
-  }
+  const h = G.hero, x = HX, walking = G.phase === 'walk' && h.dead <= 0;
+  const st = stats();
+  if (h.dead > 0) { px(x - 7, GY - 3, 12, 3, '#3d5a6b'); px(x + 5, GY - 4, 4, 3, '#2f4757'); px(x - 9, GY - 3, 3, 3, '#6b4a2a'); return; }
+  const frame = walking ? Math.floor(G.t * 8) % 2 : 0;
+  const body = getSpr('hero', frame, 'hero');
+  const ox = x - 8, oy = GY - body.height + 1, sway = walking ? frame : 0;
+  if (S.path !== 'lamp') blit(getSpr('lantern', 0, 'lantern'), ox - 4, oy + 9 + sway);
+  blit(body, ox, oy);
   if (S.path === 'blade') {
-    if (h.swing > 0) { px(x + 4, y - 10, 3, 1, '#3d5a6b'); px(x + 7, y - 11, 9, 1, st.elem === 'phys' ? '#dfe6ea' : ecol); px(x + 7, y - 12, 1, 3, '#8a6a3a'); px(x + 15, y - 11, 1, 1, '#ffffff'); }
-    else { px(x + 4, y - 10, 1, 3, '#3d5a6b'); px(x + 4, y - 18, 1, 8, st.elem === 'phys' ? '#dfe6ea' : ecol); px(x + 3, y - 10, 3, 1, '#8a6a3a'); }
-  } else if (S.path === 'bow') {
-    const pull = h.swing > 0 ? 1 : 0;
-    px(x + 5 + pull, y - 16, 1, 1, '#8a6a3a'); px(x + 6 + pull, y - 15, 1, 8, '#8a6a3a'); px(x + 5 + pull, y - 7, 1, 1, '#8a6a3a');
-    px(x + 5, y - 15, 1, 7, '#cfc6b0'); px(x + 4, y - 11, 2, 1, '#3d5a6b');
-  }
-  if (h.hurt > 0) { L.globalAlpha = .45; px(x - 3, y - 16, 8, 16, '#ff5040'); L.globalAlpha = 1; }
-  px(x - 7, y - 21, 14, 2, '#0e1a12'); px(x - 7, y - 21, 14 * clamp(h.hp / st.hp, 0, 1), 2, '#7fd38b');
+    if (h.swing > 0) blit(getSpr('swing', 0, 'sw:' + st.elem, swordPal(st.elem)), ox + 12, oy + 8);
+    else blit(getSpr('sword', 0, 'sw:' + st.elem, swordPal(st.elem)), ox + 11, oy + 1);
+  } else if (S.path === 'bow') blit(getSpr('bow', h.swing > 0 ? 1 : 0, 'bow'), ox + 11, oy + 4);
+  else blit(getSpr('staff', 0, h.swing > 0 ? 'staffLit' : 'staff'), ox + 11, oy + 1 + sway);
+  if (h.hurt > 0) { L.globalAlpha = .45; px(ox + 2, oy + 1, 12, 18, '#ff5040'); L.globalAlpha = 1; }
+  px(x - 7, oy - 3, 14, 2, '#0e1a12'); px(x - 7, oy - 3, 14 * clamp(h.hp / st.hp, 0, 1), 2, '#7fd38b');
 }
+function lightPos() { return S.path === 'lamp' ? [HX + 6, GY - 15] : [HX - 10, GY - 8]; }
+
+/* The full sprite sheet, for anyone who wants the art outside the game. */
+function artSheet(scale) {
+  scale = scale || 4;
+  const groups = [
+    ['The Wanderer', [['hero', 0, 'hero'], ['hero', 1, 'hero'], ['lantern', 0, 'lantern'], ['sword', 0, 'sw:phys', swordPal('phys')], ['swing', 0, 'sw:fire', swordPal('fire')], ['bow', 0, 'bow'], ['bow', 1, 'bow'], ['staff', 0, 'staff'], ['staff', 0, 'staffLit']]],
+    ['Company', Object.keys(KINDS).map(k => ['fol', 0, 'fol:' + k, folPal(k)]).concat([['fbow', 0, 'fbow'], ['shield', 0, 'shield'], ['basket', 0, 'basket'], ['pole', 0, 'pole'], ['orb', 0, 'orb:fire', { o: '#ff8a3d', O: '#ffd2b0', t: '#6b4a2a' }]])],
+    ['Foes', Object.values(FOE_ART).filter(([sn]) => !['stump', 'matron', 'golem', 'wyrm', 'king'].includes(sn)).flatMap(([sn, pk]) => [[sn, 0, pk], [sn, 1, pk]])],
+    ['Guardians', [['stump', 0, 'stump'], ['matron', 0, 'matron'], ['golem', 0, 'golem'], ['wyrm', 0, 'wyrm'], ['king', 0, 'king']]],
+    ['Scenery', ZONES.map(z => [z.prop, 0, 'prop:' + z.name, propPal(z), false, true])],
+  ];
+  const pad = 6, rowsOut = groups.map(([title, list]) => [title, list.map(a => getSpr(...a))]);
+  const width = Math.max(...rowsOut.map(([, s]) => s.reduce((a, c) => a + c.width + pad, pad)));
+  const height = rowsOut.reduce((a, [, s]) => a + 12 + Math.max(...s.map(c => c.height)) + pad, pad);
+  const out = document.createElement('canvas'); out.width = width * scale; out.height = height * scale;
+  const o = out.getContext('2d'); o.imageSmoothingEnabled = false;
+  o.fillStyle = '#141c21'; o.fillRect(0, 0, out.width, out.height);
+  let y = pad;
+  for (const [title, list] of rowsOut) {
+    o.fillStyle = '#f3b44a'; o.font = `700 ${7 * scale}px "Pixelify Sans", monospace`; o.fillText(title, pad * scale, (y + 8) * scale);
+    y += 12;
+    let x = pad; const rh = Math.max(...list.map(c => c.height));
+    for (const c of list) { o.drawImage(c, x * scale, (y + rh - c.height) * scale, c.width * scale, c.height * scale); x += c.width + pad; }
+    y += rh + pad;
+  }
+  return out.toDataURL('image/png');
+}
+window.lanternRoadArt = artSheet;
 
 function draw() {
   const z = ZONES[zoneOf(S.stage)], sc = G.scroll;
@@ -962,7 +1284,7 @@ function draw() {
   L.globalAlpha = 1;
   for (const e of G.enemies) drawFoe(e);
   const walking = G.phase === 'walk' && G.hero.dead <= 0;
-  partyMembers().forEach((f, i) => drawFollower(f, HX - 14 - i * 12, walking, i));
+  partyMembers().forEach((f, i) => drawFollower(f, HX - 18 - i * 13, walking, i));
   drawHero();
   for (const p of G.proj) {
     const col = p.el === 'phys' ? '#e8e0c8' : ELEM[p.el].col;
@@ -971,7 +1293,7 @@ function draw() {
   }
   // lantern light
   const flick = (S.path === 'lamp' ? 54 : 46) + Math.sin(G.t * 9) * 1.5 + Math.sin(G.t * 23);
-  const lx = S.path === 'lamp' ? HX + 8 : HX - 7, ly = GY - 9;
+  const [lx, ly] = lightPos();
   K.globalCompositeOperation = 'source-over'; K.clearRect(0, 0, W, H);
   K.fillStyle = `rgba(3,5,9,${z.dark})`; K.fillRect(0, 0, W, H);
   K.globalCompositeOperation = 'destination-out';
@@ -1013,9 +1335,8 @@ function sizeCanvas() {
 function portrait(canvas, f) {
   const prev = L, c = canvas.getContext('2d');
   L = c; c.clearRect(0, 0, 20, 20);
-  const savedGY = GY;
-  c.save(); c.translate(10 - 0, 18 - savedGY);
-  drawFollower(f, 0, false, 0);
+  c.save(); c.translate(4, 19 - GY);
+  drawFollower(f, 6, false, 0);
   c.restore(); L = prev;
 }
 
@@ -1176,7 +1497,7 @@ function renderMap() {
   const cards = ZONES.map((z, i) => {
     const first = i * 5 + 1, last = i === ZONES.length - 1 ? '∞' : first + 4, open = S.maxStage >= first;
     const status = i === cur ? '<span class="status cur">You are here</span>' : open ? (S.maxStage > first + 4 && i < ZONES.length - 1 ? '<span class="status">Cleared</span>' : '<span class="status">Open</span>') : `<span class="status">Locked · reach Stage ${first}</span>`;
-    const foes = [...z.foes, z.boss].map(f => `<span>${f.n}${f === z.boss ? ' (guardian)' : ''}: hits with ${elemTag(f.el)}, ${resTxt(f)}</span>`).join('');
+    const foes = [...z.foes, z.boss].map(f => `<span class="foe"><img alt="" src="${foeURL(f.n)}"><span>${f.n}${f === z.boss ? ' (guardian)' : ''}: hits with ${elemTag(f.el)}, ${resTxt(f)}</span></span>`).join('');
     return `<article class="zone ${open ? '' : 'locked'}"><div class="sky" style="background:linear-gradient(${z.sky[0]},${z.sky[1]} 70%,${z.top} 70%,${z.ground})"><span>${z.name}</span></div>
       <div class="body">${status}<span>Stages ${first}–${last}</span><div class="sub" style="display:flex;flex-direction:column;gap:2px">${foes}</div>
       ${open && i !== cur ? `<div class="row"><button class="btn small" data-act="travel" data-s="${first}">Travel to Stage ${first}</button></div>` : ''}</div></article>`;
