@@ -59,25 +59,34 @@ h1{font:700 1.7rem/1 var(--display);margin:0;letter-spacing:.02em;color:var(--la
 .pill.on{border-color:var(--lamp);color:var(--lamp)}
 .pts{background:var(--lamp);color:var(--lamp-ink);border-color:var(--lamp);font-weight:700}
 
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
-.tab{background:none;border:0;border-bottom:3px solid transparent;padding:9px 12px;font:500 1rem/1 var(--display);color:var(--muted);white-space:nowrap;position:relative}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:9px 11px;font:500 1rem/1 var(--display);color:var(--muted);white-space:nowrap;position:relative}
 .tab[aria-selected="true"]{color:var(--paper);border-bottom-color:var(--lamp)}
-.tab .dot{position:absolute;top:6px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--lamp)}
+.tab .dot{position:absolute;top:6px;right:2px;width:7px;height:7px;border-radius:50%;background:var(--lamp)}
 
 .panel{display:flex;flex-direction:column;gap:14px;min-height:300px}
 h2{font:700 1.1rem/1.2 var(--display);margin:0;letter-spacing:.03em;text-wrap:balance}
 .sub{color:var(--muted);font-size:.9rem;margin:0}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.between{justify-content:space-between}
 .split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
 @media (max-width:720px){.split{grid-template-columns:minmax(0,1fr)}}
 
-.equip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.paths{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:520px){.paths{grid-template-columns:minmax(0,1fr)}}
+.path{text-align:left;background:var(--raise);border:2px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:4px}
+.path b{font:700 1rem/1 var(--display)}
+.path small{color:var(--muted);font-size:.84rem;line-height:1.35}
+.path[aria-pressed="true"]{border-color:var(--lamp);background:#2a2110}
+.path[aria-pressed="true"] b{color:var(--lamp)}
+
+.equip{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
 .slot{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--raise);border:2px solid var(--rc,var(--line));border-radius:6px;padding:8px 4px;min-width:0}
 .slot.empty{border-style:dashed;opacity:.7}
 .slot.sel{box-shadow:0 0 0 2px var(--lamp)}
 .slot img,.cell img,.icon{width:36px;height:36px;image-rendering:pixelated}
-.slot .lab{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.slot .lab{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 .gs{font:500 .78rem/1 var(--display);color:var(--rc,var(--muted))}
 
 .stats{display:grid;grid-template-columns:1fr auto;gap:4px 14px;margin:0;font-variant-numeric:tabular-nums}
@@ -108,13 +117,26 @@ h2{font:700 1.1rem/1.2 var(--display);margin:0;letter-spacing:.03em;text-wrap:ba
 .cmp .v{text-align:right;font-weight:700}
 .cmp .d{text-align:right;min-width:5ch}
 .good{color:var(--good)} .bad{color:var(--bad)}
-.verdict{font-weight:700}
-.hint{color:var(--muted);font-size:.92rem;border:1px dashed var(--line);border-radius:8px;padding:12px}
+.verdict{font-weight:700;margin:0}
+.hint{color:var(--muted);font-size:.92rem;border:1px dashed var(--line);border-radius:8px;padding:12px;margin:0}
+.el{font-weight:700}
 
-.tree{position:relative;aspect-ratio:1;width:100%;max-width:420px;margin:0 auto}
+.roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.fol{border:2px solid var(--rc);border-radius:8px;background:var(--raise);padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.fol header{display:flex;gap:10px;align-items:center}
+.fol canvas{width:40px;height:40px;image-rendering:pixelated;flex:none;background:#0f161a;border-radius:4px}
+.fol h3{margin:0;font:700 1rem/1.15 var(--display);color:var(--rc)}
+.fol .meta{font-size:.82rem;color:var(--muted)}
+.fol p{margin:0;font-size:.9rem}
+.tagpill{font:500 .72rem/1 var(--display);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--lamp);color:var(--lamp);border-radius:999px;padding:3px 7px}
+.partybar{display:flex;gap:6px;flex-wrap:wrap}
+.pslot{min-width:110px;border:1px dashed var(--line);border-radius:6px;padding:6px 8px;font-size:.85rem;color:var(--muted)}
+.pslot.on{border-style:solid;border-color:var(--rc);color:var(--paper)}
+
+.tree{position:relative;aspect-ratio:1;width:100%;max-width:520px;margin:0 auto}
 .tree svg{position:absolute;inset:0;width:100%;height:100%}
-.node{position:absolute;width:15%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:8px;border:2px solid var(--line);background:#11181c;color:var(--muted);font:700 .7rem/1.05 var(--display);padding:2px;display:grid;place-items:center;text-align:center;overflow:hidden}
-.node.owned{border-color:var(--lamp);background:#2a2110;color:var(--lamp);box-shadow:0 0 14px -2px rgba(243,180,74,.55)}
+.node{position:absolute;width:12.5%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:8px;border:2px solid var(--line);background:#11181c;color:var(--muted);font:700 .62rem/1.05 var(--display);padding:2px;display:grid;place-items:center;text-align:center;overflow:hidden;hyphens:auto;overflow-wrap:normal}
+.node.owned{border-color:var(--lamp);background:#2a2110;color:var(--lamp);box-shadow:0 0 12px -2px rgba(243,180,74,.55)}
 .node.avail{border-color:#6c7f88;color:var(--paper)}
 .node.sel{outline:2px solid var(--paper);outline-offset:2px}
 
@@ -127,6 +149,14 @@ h2{font:700 1.1rem/1.2 var(--display);margin:0;letter-spacing:.03em;text-wrap:ba
 .status{font:500 .78rem/1 var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .status.cur{color:var(--lamp)}
 
+.feats{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.feat{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:10px;display:flex;flex-direction:column;gap:6px}
+.feat.done{border-color:var(--lamp)}
+.feat b{font:700 .98rem/1.1 var(--display)}
+.feat.claimed b{color:var(--lamp)}
+.prog{height:6px;background:#0a0f12;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--lamp)}
+
 .log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:320px;overflow:auto;font-size:.9rem}
 .log li{display:flex;gap:8px;border-bottom:1px solid #1e2a30;padding:4px 0}
 .log time{color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
@@ -134,7 +164,7 @@ label.chk{display:flex;gap:8px;align-items:center}
 select{background:var(--raise);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
 
 .overlay{position:fixed;inset:0;background:rgba(5,8,10,.78);display:grid;place-items:center;padding:20px;z-index:20}
-.away{max-width:420px;width:100%;background:var(--panel);border:2px solid var(--lamp);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.away{max-width:420px;width:100%;background:var(--panel);border:2px solid var(--lamp);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;max-height:100%;overflow:auto}
 .away h2{color:var(--lamp);text-align:center}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .tiles div{border:1px solid var(--line);border-radius:6px;padding:8px;text-align:center;background:var(--raise)}
@@ -176,8 +206,10 @@ body.strip .exitstrip{display:block}
   <nav class="tabs" role="tablist" aria-label="Menus">
     <button class="tab" role="tab" data-tab="hero" id="tab-hero">Hero</button>
     <button class="tab" role="tab" data-tab="bag" id="tab-bag">Bag</button>
+    <button class="tab" role="tab" data-tab="company" id="tab-company">Company</button>
     <button class="tab" role="tab" data-tab="talents" id="tab-talents">Waystones</button>
     <button class="tab" role="tab" data-tab="map" id="tab-map">Map</button>
+    <button class="tab" role="tab" data-tab="feats" id="tab-feats">Feats</button>
     <button class="tab" role="tab" data-tab="journal" id="tab-journal">Journal</button>
   </nav>
   <section class="panel" id="panel" role="tabpanel"></section>
@@ -188,7 +220,7 @@ body.strip .exitstrip{display:block}
 (() => {
 'use strict';
 const $ = s => document.querySelector(s);
-const W = 240, H = 90, GY = 72, HX = 70, WAVES = 10, BAG_MAX = 24;
+const W = 240, H = 90, GY = 72, HX = 78, WAVES = 10, BAG_MAX = 30, ROSTER_MAX = 12;
 const SAVE_KEY = 'lantern-road-v1';
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pick = a => a[Math.floor(Math.random() * a.length)];
@@ -199,7 +231,7 @@ function fmt(n) {
   const a = Math.abs(n);
   if (a < 10 && n % 1) return n.toFixed(1);
   if (a < 1e4) return Math.round(n).toLocaleString('en-US');
-  const u = ['K', 'M', 'B', 'T', 'Qa', 'Qi'];
+  const u = ['K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp'];
   let i = -1, v = a;
   while (v >= 1000 && i < u.length - 1) { v /= 1000; i++; }
   return (n < 0 ? '-' : '') + (v < 100 ? v.toFixed(1) : Math.round(v)) + u[i];
@@ -219,52 +251,90 @@ const RAR = [
   { n: 'Rare', col: '#5fb0ff', m: 1.7, aff: 2, w: 9.5 },
   { n: 'Epic', col: '#c58bff', m: 2.2, aff: 3, w: 3.8 },
   { n: 'Mythic', col: '#ff8f45', m: 3.0, aff: 4, w: 0.7 },
+  { n: 'Heirloom', col: '#ffd84a', m: 3.8, aff: 5, w: 0.15 },
+  { n: 'Starborn', col: '#7ff0ff', m: 5.0, aff: 5, w: 0.03 },
 ];
+const ELEM = {
+  phys: { n: 'Physical', col: '#dfe6ea' }, fire: { n: 'Fire', col: '#ff8a3d' }, frost: { n: 'Frost', col: '#8fd8ff' },
+  shadow: { n: 'Shadow', col: '#c08cff' }, radiant: { n: 'Radiant', col: '#ffe680' },
+};
 const STAT = {
   hp: { l: 'Max HP', p: 0, base: 18 }, dmg: { l: 'Damage', p: 0, base: 3 }, def: { l: 'Defense', p: 0, base: 3 },
   regen: { l: 'Regen / sec', p: 0, base: 0.6 }, aspd: { l: 'Attack speed', p: 1, base: 3 }, crit: { l: 'Crit chance', p: 1, base: 1.2 },
   critd: { l: 'Crit damage', p: 1, base: 8 }, dodge: { l: 'Dodge', p: 1, base: 1 }, block: { l: 'Block', p: 1, base: 1.5 },
   ls: { l: 'Lifesteal', p: 1, base: 0.6 }, gold: { l: 'Gold find', p: 1, base: 5 }, xp: { l: 'XP gain', p: 1, base: 5 }, drop: { l: 'Drop chance', p: 1, base: 5 },
+  rFire: { l: 'Fire resist', p: 1, base: 4 }, rFrost: { l: 'Frost resist', p: 1, base: 4 }, rShadow: { l: 'Shadow resist', p: 1, base: 4 },
+  rAll: { l: 'All resists', p: 1, base: 2 }, elem: { l: 'Elemental damage', p: 1, base: 5 }, comp: { l: 'Company power', p: 1, base: 5 },
 };
-const SLOTS = ['weapon', 'helm', 'armor', 'boots', 'ring', 'charm'];
-const SLOT_LABEL = { weapon: 'Weapon', helm: 'Helm', armor: 'Armor', boots: 'Boots', ring: 'Ring', charm: 'Charm' };
-const SLOT_MAIN = { weapon: { dmg: 6 }, helm: { hp: 30, def: 2 }, armor: { def: 5, hp: 20 }, boots: { dodge: 1.5, hp: 14 }, ring: { crit: 1.5, critd: 10 }, charm: { gold: 6, regen: 0.8 } };
-const BASES = { weapon: ['Shortsword', 'Hatchet', 'Spear', 'Warpick', 'Sabre'], helm: ['Cap', 'Coif', 'Helm', 'Visor'], armor: ['Jerkin', 'Hauberk', 'Brigandine', 'Cuirass'], boots: ['Sandals', 'Boots', 'Greaves', 'Treads'], ring: ['Band', 'Signet', 'Loop'], charm: ['Talisman', 'Wick Charm', 'Idol', 'Token'] };
-const PREFIX = ['Rusted', 'Plain', 'Tempered', 'Runed', 'Starforged', 'Lanternlit'];
-const SUFFIX = { dodge: 'of the Fox', dmg: 'of Embers', hp: 'of the Oak', aspd: 'of Haste', gold: 'of Fortune', xp: 'of the Owl', crit: 'of Precision', critd: 'of Ruin', block: 'of the Wall', def: 'of the Wall', ls: 'of Leeches', regen: 'of Renewal', drop: 'of the Magpie' };
+const SLOTS = ['weapon', 'helm', 'armor', 'gloves', 'belt', 'boots', 'cloak', 'amulet', 'ring', 'charm'];
+const SLOT_LABEL = { weapon: 'Weapon', helm: 'Helm', armor: 'Armor', gloves: 'Gloves', belt: 'Belt', boots: 'Boots', cloak: 'Cloak', amulet: 'Amulet', ring: 'Ring', charm: 'Charm' };
+const SLOT_MAIN = {
+  weapon: { dmg: 6 }, helm: { hp: 30, def: 2 }, armor: { def: 5, hp: 20 }, gloves: { aspd: 3, crit: .8 }, belt: { hp: 22, regen: .6 },
+  boots: { dodge: 1.5, hp: 14 }, cloak: { def: 3, rAll: 3 }, amulet: { dmg: 3, critd: 8 }, ring: { crit: 1.5, critd: 10 }, charm: { gold: 6, comp: 4 },
+};
+const PATHS = {
+  blade: { n: 'Blade', d: 'Fights up close. +20% max HP, +15% defense.', range: 18, mult: 1, elem: 'phys', weapons: ['Shortsword', 'Sabre', 'Warpick', 'Hatchet', 'Falchion'] },
+  bow: { n: 'Bow', d: 'Shoots from range, so foes take hits before they reach you. +15% attack speed, 90% damage.', range: 110, mult: .9, elem: 'phys', weapons: ['Shortbow', 'Longbow', 'Sling', 'Recurve'] },
+  lamp: { n: 'Lamp', d: 'Casts radiant light from the lantern. Every bolt splashes 40% onto the other foes. 85% damage.', range: 85, mult: .85, elem: 'radiant', weapons: ['Wick Staff', 'Censer', 'Lamp Rod', 'Glimmer Wand'] },
+};
+const BASES = { helm: ['Cap', 'Coif', 'Helm', 'Visor'], armor: ['Jerkin', 'Hauberk', 'Brigandine', 'Cuirass'], gloves: ['Wraps', 'Gauntlets', 'Grips', 'Mitts'], belt: ['Sash', 'Girdle', 'Cord', 'Buckle'], boots: ['Sandals', 'Boots', 'Greaves', 'Treads'], cloak: ['Mantle', 'Shroud', 'Cape', 'Oilskin'], amulet: ['Pendant', 'Locket', 'Torc'], ring: ['Band', 'Signet', 'Loop'], charm: ['Talisman', 'Wick Charm', 'Idol', 'Token'] };
+const PREFIX = ['Rusted', 'Plain', 'Tempered', 'Runed', 'Starforged', 'Lanternlit', 'Old-Kingdom', 'Comet-born'];
+const SUFFIX = { dodge: 'of the Fox', dmg: 'of Embers', hp: 'of the Oak', aspd: 'of Haste', gold: 'of Fortune', xp: 'of the Owl', crit: 'of Precision', critd: 'of Ruin', block: 'of the Wall', def: 'of the Wall', ls: 'of Leeches', regen: 'of Renewal', drop: 'of the Magpie', rFire: 'of the Hearth', rFrost: 'of the Thaw', rShadow: 'of Dawn', rAll: 'of the Pilgrim', elem: 'of the Storm', comp: 'of Fellowship' };
 
 const ZONES = [
   { name: 'Mossbarrow Lane', sky: ['#14212d', '#3b5a50'], far: '#21363a', mid: '#2c4838', ground: '#33291f', top: '#4f7a3f', dark: .38, prop: 'tree', part: 'firefly',
-    foes: [{ n: 'Moss Slime', s: 'blob', c: '#7fbf5a' }, { n: 'Burrow Rat', s: 'quad', c: '#8a7b6a' }], boss: { n: 'Old Stump', s: 'tall', c: '#6b5236' } },
+    foes: [{ n: 'Moss Slime', s: 'blob', c: '#7fbf5a', el: 'phys', res: { fire: -50 } }, { n: 'Burrow Rat', s: 'quad', c: '#8a7b6a', el: 'phys', res: {} }],
+    boss: { n: 'Old Stump', s: 'tall', c: '#6b5236', el: 'phys', res: { fire: -50, shadow: 25 } } },
   { name: 'Saltmarsh Causeway', sky: ['#121f28', '#46656c'], far: '#20343b', mid: '#2e4c4a', ground: '#28363a', top: '#5c7d6a', dark: .44, prop: 'reed', part: 'mist',
-    foes: [{ n: 'Reed Crab', s: 'quad', c: '#c0674a' }, { n: 'Bog Lantern', s: 'wisp', c: '#9fe0c8' }], boss: { n: 'Brine Matron', s: 'tall', c: '#4f8a8a' } },
+    foes: [{ n: 'Reed Crab', s: 'quad', c: '#c0674a', el: 'frost', res: { frost: 50, phys: 20 } }, { n: 'Bog Lantern', s: 'wisp', c: '#9fe0c8', el: 'frost', res: { radiant: -40, phys: 30 } }],
+    boss: { n: 'Brine Matron', s: 'tall', c: '#4f8a8a', el: 'frost', res: { frost: 60, fire: -25 } } },
   { name: 'Cinder Steppe', sky: ['#1a1216', '#6e3424'], far: '#3a1f1f', mid: '#4a2922', ground: '#2a1f1c', top: '#6b3a2a', dark: .32, prop: 'rock', part: 'ember',
-    foes: [{ n: 'Ember Wisp', s: 'wisp', c: '#ff9a4a' }, { n: 'Ash Hound', s: 'quad', c: '#6a5c58' }], boss: { n: 'Kiln Golem', s: 'tall', c: '#a0523a' } },
+    foes: [{ n: 'Ember Wisp', s: 'wisp', c: '#ff9a4a', el: 'fire', res: { fire: 70, frost: -50 } }, { n: 'Ash Hound', s: 'quad', c: '#6a5c58', el: 'fire', res: { fire: 40, frost: -25 } }],
+    boss: { n: 'Kiln Golem', s: 'tall', c: '#a0523a', el: 'fire', res: { fire: 70, phys: 30, frost: -40 } } },
   { name: 'Glasswind Dunes', sky: ['#191b30', '#8c6c5a'], far: '#55464a', mid: '#7a6450', ground: '#86704f', top: '#c4a678', dark: .24, prop: 'shard', part: 'sand',
-    foes: [{ n: 'Glass Scarab', s: 'quad', c: '#8fd8e8' }, { n: 'Mirage', s: 'blob', c: '#e8c8f0' }], boss: { n: 'Prism Wyrm', s: 'tall', c: '#b6e0ff' } },
+    foes: [{ n: 'Glass Scarab', s: 'quad', c: '#8fd8e8', el: 'phys', res: { phys: 40, shadow: -30 } }, { n: 'Mirage', s: 'blob', c: '#e8c8f0', el: 'shadow', res: { phys: 50, radiant: -50 } }],
+    boss: { n: 'Prism Wyrm', s: 'tall', c: '#b6e0ff', el: 'frost', res: { radiant: 60, phys: 30, shadow: -30 } } },
   { name: 'Starfall Ruins', sky: ['#080918', '#2a2350'], far: '#1b1934', mid: '#2a2645', ground: '#222036', top: '#4a4570', dark: .56, prop: 'pillar', part: 'star',
-    foes: [{ n: 'Star Moth', s: 'wisp', c: '#f0e6a0' }, { n: 'Lost Sentinel', s: 'tall', c: '#8a88b0' }], boss: { n: 'The Unlit King', s: 'tall', c: '#4a3a66' } },
+    foes: [{ n: 'Star Moth', s: 'wisp', c: '#f0e6a0', el: 'shadow', res: { radiant: 50, shadow: -30 } }, { n: 'Lost Sentinel', s: 'tall', c: '#8a88b0', el: 'shadow', res: { phys: 30, radiant: -50 } }],
+    boss: { n: 'The Unlit King', s: 'tall', c: '#4a3a66', el: 'shadow', res: { shadow: 70, radiant: -60 } } },
 ];
 const zoneOf = s => Math.min(ZONES.length - 1, Math.floor((s - 1) / 5));
 
+/* Waystones: a 7×7 grid. North = offense, west = defense, east = speed, south = fortune, corners = company and elements. */
 const TALENTS = [
-  { id: 'hearth', x: 2, y: 2, n: 'Hearth', d: '+5% max HP. Your starting stone.', k: 'hp', v: .05 },
-  { id: 'whet', x: 2, y: 1, n: 'Whetstone', d: '+8% damage', k: 'dmg', v: .08 },
-  { id: 'exec', x: 2, y: 0, n: 'Executioner', d: '+25% crit damage', k: 'critd', v: 25 },
-  { id: 'keen', x: 1, y: 0, n: 'Keen Eye', d: '+3% crit chance', k: 'crit', v: 3 },
-  { id: 'thirst', x: 3, y: 0, n: 'Thirst', d: '+2% lifesteal', k: 'ls', v: 2 },
-  { id: 'skin', x: 1, y: 2, n: 'Iron Skin', d: '+12% defense', k: 'def', v: .12 },
-  { id: 'bulwark', x: 0, y: 2, n: 'Bulwark', d: '+6% block chance', k: 'block', v: 6 },
-  { id: 'stone', x: 0, y: 1, n: 'Stoneheart', d: '+12% max HP', k: 'hp', v: .12 },
-  { id: 'wind', x: 0, y: 3, n: 'Second Wind', d: 'Regenerate 1% of max HP per second', k: 'regen', v: .01 },
-  { id: 'quick', x: 3, y: 2, n: 'Quickstep', d: '+8% attack speed', k: 'aspd', v: .08 },
-  { id: 'runner', x: 4, y: 2, n: 'Windrunner', d: '+4% dodge', k: 'dodge', v: 4 },
-  { id: 'flurry', x: 4, y: 1, n: 'Flurry', d: '+10% attack speed', k: 'aspd', v: .10 },
-  { id: 'phantom', x: 4, y: 3, n: 'Phantom', d: '+4% dodge', k: 'dodge', v: 4 },
-  { id: 'purse', x: 2, y: 3, n: 'Coin Purse', d: '+15% gold', k: 'gold', v: .15 },
-  { id: 'scholar', x: 2, y: 4, n: 'Scholar', d: '+15% XP', k: 'xp', v: .15 },
-  { id: 'magpie', x: 1, y: 4, n: 'Magpie', d: '+25% drop chance', k: 'drop', v: .25 },
-  { id: 'sense', x: 3, y: 4, n: 'Treasure Sense', d: 'Rarer drops: shifts the odds toward Rare and above', k: 'luck', v: 1 },
+  { id: 'hearth', x: 3, y: 3, n: 'Hearth', d: '+5% max HP. Your starting stone.', k: 'hp', v: .05 },
+  { id: 'whet', x: 3, y: 2, n: 'Whetstone', d: '+8% damage', k: 'dmg', v: .08 },
+  { id: 'exec', x: 3, y: 1, n: 'Executioner', d: '+25% crit damage', k: 'critd', v: 25 },
+  { id: 'edge', x: 3, y: 0, n: 'Edgemaster', d: '+15% damage', k: 'dmg', v: .15 },
+  { id: 'keen', x: 2, y: 1, n: 'Keen Eye', d: '+3% crit chance', k: 'crit', v: 3 },
+  { id: 'deadeye', x: 2, y: 0, n: 'Deadeye', d: '+4% crit chance', k: 'crit', v: 4 },
+  { id: 'thirst', x: 4, y: 1, n: 'Thirst', d: '+2% lifesteal', k: 'ls', v: 2 },
+  { id: 'bloodrite', x: 4, y: 0, n: 'Blood Rite', d: '+2% lifesteal', k: 'ls', v: 2 },
+  { id: 'skin', x: 2, y: 3, n: 'Iron Skin', d: '+12% defense', k: 'def', v: .12 },
+  { id: 'bulwark', x: 1, y: 3, n: 'Bulwark', d: '+6% block chance', k: 'block', v: 6 },
+  { id: 'rampart', x: 0, y: 3, n: 'Rampart', d: '+20% defense', k: 'def', v: .2 },
+  { id: 'stone', x: 1, y: 2, n: 'Stoneheart', d: '+12% max HP', k: 'hp', v: .12 },
+  { id: 'giant', x: 0, y: 2, n: 'Giant’s Blood', d: '+15% max HP', k: 'hp', v: .15 },
+  { id: 'wind', x: 1, y: 4, n: 'Second Wind', d: 'Regenerate 1% of max HP per second', k: 'regen', v: .01 },
+  { id: 'emberward', x: 0, y: 4, n: 'Ember Ward', d: '+15% fire resist', k: 'rFire', v: 15 },
+  { id: 'quick', x: 4, y: 3, n: 'Quickstep', d: '+8% attack speed', k: 'aspd', v: .08 },
+  { id: 'runner', x: 5, y: 3, n: 'Windrunner', d: '+4% dodge', k: 'dodge', v: 4 },
+  { id: 'tempest', x: 6, y: 3, n: 'Tempest', d: '+12% attack speed', k: 'aspd', v: .12 },
+  { id: 'flurry', x: 5, y: 2, n: 'Flurry', d: '+10% attack speed', k: 'aspd', v: .10 },
+  { id: 'frostward', x: 6, y: 2, n: 'Frost Ward', d: '+15% frost resist', k: 'rFrost', v: 15 },
+  { id: 'phantom', x: 5, y: 4, n: 'Phantom', d: '+4% dodge', k: 'dodge', v: 4 },
+  { id: 'duskward', x: 6, y: 4, n: 'Dusk Ward', d: '+15% shadow resist', k: 'rShadow', v: 15 },
+  { id: 'purse', x: 3, y: 4, n: 'Coin Purse', d: '+15% gold', k: 'gold', v: .15 },
+  { id: 'scholar', x: 3, y: 5, n: 'Scholar', d: '+15% XP', k: 'xp', v: .15 },
+  { id: 'hoard', x: 3, y: 6, n: 'Hoard', d: '+25% gold', k: 'gold', v: .25 },
+  { id: 'magpie', x: 2, y: 5, n: 'Magpie', d: '+25% drop chance', k: 'drop', v: .25 },
+  { id: 'gleaner', x: 2, y: 6, n: 'Gleaner', d: '+20% drop chance', k: 'drop', v: .2 },
+  { id: 'sense', x: 4, y: 5, n: 'Treasure Sense', d: 'Shifts drop odds toward rarer items', k: 'luck', v: 1 },
+  { id: 'starsight', x: 4, y: 6, n: 'Starsight', d: 'Shifts drop odds toward rarer items', k: 'luck', v: 1 },
+  { id: 'kindred', x: 2, y: 2, n: 'Kindred', d: '+15% company power', k: 'comp', v: 15 },
+  { id: 'focus', x: 4, y: 2, n: 'Element Focus', d: '+15% elemental damage (any weapon element other than physical)', k: 'elem', v: 15 },
+  { id: 'banner', x: 2, y: 4, n: 'Banner', d: '+1 company slot', k: 'slots', v: 1 },
+  { id: 'mentor', x: 4, y: 4, n: 'Mentor', d: '+15% company power', k: 'comp', v: 15 },
 ];
 const TAL = Object.fromEntries(TALENTS.map(t => [t.id, t]));
 const ATTRS = [
@@ -274,52 +344,101 @@ const ATTRS = [
   { k: 'for', n: 'Fortune', d: '+0.4% crit chance, +1% gold' },
 ];
 
+/* Company: lost travellers who follow the lantern light. */
+const KINDS = {
+  archer: { n: 'Wayfarer Archer', role: 'Shoots the front foe', cloak: '#4d6b3a', el: 'phys', atk: 1.5 },
+  fire: { n: 'Firecaller', role: 'Fire bolts that splash 50%', cloak: '#8a3a2a', el: 'fire', atk: 2.2 },
+  frost: { n: 'Frostweaver', role: 'Frost bolts', cloak: '#3a6a8a', el: 'frost', atk: 2 },
+  hex: { n: 'Hexer', role: 'Shadow bolts', cloak: '#4a3a6a', el: 'shadow', atk: 2 },
+  warden: { n: 'Ferry Warden', role: 'Adds defense and block to you', cloak: '#6a6a72' },
+  herb: { n: 'Herbalist', role: 'Heals you every second', cloak: '#5a7a4a' },
+  lamp: { n: 'Lamplighter', role: 'Adds gold find and drop chance', cloak: '#8a6a2a' },
+};
+const NAMES = ['Ada', 'Bram', 'Cass', 'Dov', 'Edda', 'Fenn', 'Ilse', 'Jory', 'Kit', 'Lune', 'Mara', 'Nils', 'Odo', 'Pim', 'Quill', 'Rook', 'Sefa', 'Tamsin', 'Ula', 'Vesk', 'Wren', 'Yara', 'Hob', 'Greta'];
+
+const FEATS = [
+  { id: 'k100', n: 'First Hundred', d: 'Defeat 100 enemies', goal: 100, cur: () => S.kills },
+  { id: 'k1k', n: 'Road Warden', d: 'Defeat 1,000 enemies', goal: 1000, cur: () => S.kills },
+  { id: 'k10k', n: 'Legend of the Lane', d: 'Defeat 10,000 enemies', goal: 10000, cur: () => S.kills },
+  { id: 's6', n: 'Salt in the Air', d: 'Reach Stage 6', goal: 6, cur: () => S.maxStage },
+  { id: 's11', n: 'Through the Ash', d: 'Reach Stage 11', goal: 11, cur: () => S.maxStage },
+  { id: 's16', n: 'Glass Underfoot', d: 'Reach Stage 16', goal: 16, cur: () => S.maxStage },
+  { id: 's21', n: 'Under Fallen Stars', d: 'Reach Stage 21', goal: 21, cur: () => S.maxStage },
+  { id: 's30', n: 'Past the Map’s Edge', d: 'Reach Stage 30', goal: 30, cur: () => S.maxStage },
+  { id: 's50', n: 'The Long Road', d: 'Reach Stage 50', goal: 50, cur: () => S.maxStage },
+  { id: 'r3', n: 'A Blue Glint', d: 'Find a Rare item', goal: 3, cur: () => S.bestR, rar: 1 },
+  { id: 'r4', n: 'Violet Luck', d: 'Find an Epic item', goal: 4, cur: () => S.bestR, rar: 1 },
+  { id: 'r5', n: 'Embers of Legend', d: 'Find a Mythic item', goal: 5, cur: () => S.bestR, rar: 1 },
+  { id: 'r6', n: 'Family Silver', d: 'Find an Heirloom item', goal: 6, cur: () => S.bestR, rar: 1 },
+  { id: 'r7', n: 'Fallen From the Sky', d: 'Find a Starborn item', goal: 7, cur: () => S.bestR, rar: 1 },
+  { id: 'f1', n: 'Not Alone', d: 'Recruit a follower', goal: 1, cur: () => S.recruited },
+  { id: 'f5', n: 'A Proper Company', d: 'Recruit 5 followers', goal: 5, cur: () => S.recruited },
+  { id: 'w10', n: 'Stonereader', d: 'Own 10 waystones', goal: 10, cur: () => ownedCount() },
+  { id: 'w25', n: 'Waykeeper', d: 'Own 25 waystones', goal: 25, cur: () => ownedCount() },
+  { id: 'l10', n: 'Seasoned', d: 'Reach level 10', goal: 10, cur: () => S.level },
+  { id: 'l25', n: 'Veteran', d: 'Reach level 25', goal: 25, cur: () => S.level },
+  { id: 'l50', n: 'Old Hand', d: 'Reach level 50', goal: 50, cur: () => S.level },
+  { id: 'paths', n: 'Three Roads', d: 'Try all three paths', goal: 3, cur: () => Object.keys(S.starters).length },
+];
+
 /* ---------- Sprites for item icons ---------- */
 const ICONS = {
-  weapon: ['..........#.', '.........#o#', '........#o#.', '.......#o#..', '......#o#...', '.....#o#....', '..#.#o#.....', '...#o#......', '...##.......', '..#..#......', '.#..........', '............'],
+  blade: ['..........#.', '.........#o#', '........#o#.', '.......#o#..', '......#o#...', '.....#o#....', '..#.#o#.....', '...#o#......', '...##.......', '..#..#......', '.#..........', '............'],
+  bow: ['......##....', '.....#o.#...', '....#o...#..', '....#o....#.', '...#o.....#.', '...#o.....#.', '...#o.....#.', '....#o....#.', '....#o...#..', '.....#o.#...', '......##....', '............'],
+  lamp: ['....####....', '...#oooo#...', '...#o##o#...', '...#oooo#...', '....####....', '.....##.....', '.....##.....', '.....##.....', '.....##.....', '.....##.....', '.....##.....', '............'],
   helm: ['............', '....####....', '...#oooo#...', '..#oooooo#..', '..#oooooo#..', '..#o####o#..', '..#o#..#o#..', '..#o#..#o#..', '..#oo##oo#..', '...######...', '............', '............'],
   armor: ['............', '..##....##..', '.#oo####oo#.', '.#oooooooo#.', '.##oooooo##.', '..#oooooo#..', '..#oo##oo#..', '..#oooooo#..', '..#oooooo#..', '..########..', '............', '............'],
+  gloves: ['............', '............', '...#.#.#....', '..#o#o#o#...', '..#o#o#o#.#.', '..#ooooo##o#', '..#oooooooo#', '..#ooooooo#.', '...#ooooo#..', '...#######..', '............', '............'],
+  belt: ['............', '............', '............', '############', '#oooo####oo#', '#oooo#oo#oo#', '#oooo####oo#', '############', '............', '............', '............', '............'],
   boots: ['............', '...####.....', '...#oo#.....', '...#oo#.....', '...#oo#.....', '...#oo#.....', '...#oo###...', '..#ooooo#...', '..#oooooo#..', '..########..', '............', '............'],
+  cloak: ['....####....', '...#oooo#...', '..#oooooo#..', '..#oooooo#..', '.#oooooooo#.', '.#oooooooo#.', '.#oooooooo#.', '#oooooooooo#', '#oooooooooo#', '############', '............', '............'],
+  amulet: ['..#......#..', '...#....#...', '....#..#....', '.....##.....', '....####....', '...#oooo#...', '...#oooo#...', '...#oooo#...', '....####....', '............', '............', '............'],
   ring: ['............', '.....##.....', '....#oo#....', '.....##.....', '...######...', '..#o....o#..', '..#o....o#..', '..#o....o#..', '...#oooo#...', '....####....', '............', '............'],
   charm: ['.....##.....', '....#..#....', '...######...', '...#oooo#...', '..#oooooo#..', '..#oo##oo#..', '..#oo##oo#..', '..#oooooo#..', '...#oooo#...', '...######...', '............', '............'],
 };
 const iconCache = {};
-function icon(slot, r) {
-  const key = slot + r;
-  if (iconCache[key]) return iconCache[key];
+function iconKey(it) { return it.slot === 'weapon' ? (it.path || 'blade') : it.slot; }
+function icon(key, r) {
+  const ck = key + r;
+  if (iconCache[ck]) return iconCache[ck];
   const c = document.createElement('canvas'); c.width = c.height = 12;
   const x = c.getContext('2d');
-  ICONS[slot].forEach((row, j) => [...row].forEach((ch, i) => {
+  ICONS[key].forEach((row, j) => [...row].forEach((ch, i) => {
     if (ch === '.') return;
     x.fillStyle = ch === '#' ? '#efe7d3' : RAR[r].col; x.fillRect(i, j, 1, 1);
   }));
-  return (iconCache[key] = c.toDataURL());
+  return (iconCache[ck] = c.toDataURL());
 }
+const itemIcon = it => icon(iconKey(it), it.r);
 
 /* ---------- State ---------- */
+function emptyEquip() { return Object.fromEntries(SLOTS.map(s => [s, null])); }
 function fresh() {
-  return { v: 1, level: 1, xp: 0, gold: 0, points: 0, attrs: { mig: 0, vit: 0, agi: 0, for: 0 },
-    equip: { weapon: null, helm: null, armor: null, boots: null, ring: null, charm: null }, bag: [], talents: { hearth: true },
+  return { v: 2, level: 1, xp: 0, gold: 0, points: 0, attrs: { mig: 0, vit: 0, agi: 0, for: 0 },
+    equip: emptyEquip(), bag: [], talents: { hearth: true }, path: 'blade', starters: { blade: true },
+    roster: [], party: [], recruited: 0, feats: {}, bestR: 0,
     stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: false, kills: 0, deaths: 0, best: null,
     played: 0, lastSeen: Date.now(), log: [], tab: 'hero', created: Date.now() };
 }
 let S = fresh();
-let G; // runtime only
-let ST; // cached hero stats
+let G, ST;
 let dirtyStats = true, dirtyPanel = true;
-let selBag = null, selEq = null, selTal = null, confirmReset = false;
+let selBag = null, selEq = null, selTal = null, confirmReset = false, confirmDismiss = null;
 
 function save() {
   S.lastSeen = Date.now();
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable: play continues unsaved */ }
 }
+function migrate(d) {
+  if (!d || (d.v !== 1 && d.v !== 2)) return null;
+  const s = Object.assign(fresh(), d);
+  s.equip = Object.assign(emptyEquip(), d.equip || {});
+  for (const it of [...Object.values(s.equip), ...s.bag]) if (it && it.slot === 'weapon' && !it.path) it.path = 'blade';
+  if (d.v === 1) { s.bestR = d.best ? d.best.r : 0; s.v = 2; }
+  return s;
+}
 function load() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return null;
-    const d = JSON.parse(raw);
-    return d && d.v === 1 ? Object.assign(fresh(), d) : null;
-  } catch (e) { return null; }
+  try { const raw = localStorage.getItem(SAVE_KEY); return raw ? migrate(JSON.parse(raw)) : null; } catch (e) { return null; }
 }
 function log(msg, col) {
   S.log.unshift({ t: Date.now(), m: msg, c: col || null });
@@ -329,30 +448,61 @@ function log(msg, col) {
 
 /* ---------- Stats ---------- */
 function talentBonus() {
-  const t = { hp: 0, dmg: 0, critd: 0, crit: 0, ls: 0, def: 0, block: 0, regen: 0, aspd: 0, dodge: 0, gold: 0, xp: 0, drop: 0, luck: 0 };
+  const t = { hp: 0, dmg: 0, critd: 0, crit: 0, ls: 0, def: 0, block: 0, regen: 0, aspd: 0, dodge: 0, gold: 0, xp: 0, drop: 0, luck: 0, rFire: 0, rFrost: 0, rShadow: 0, comp: 0, elem: 0, slots: 0 };
   for (const id in S.talents) if (S.talents[id] && TAL[id]) t[TAL[id].k] += TAL[id].v;
   return t;
 }
+const ownedCount = () => TALENTS.filter(t => S.talents[t.id]).length;
+const renown = () => Object.keys(S.feats).length;
+const partySlots = () => 1 + (S.maxStage >= 6) + (S.maxStage >= 16) + talentBonus().slots;
+const partyMembers = () => S.party.map(id => S.roster.find(f => f.id === id)).filter(Boolean);
+function compPower(gearComp, t) { return 1 + ((gearComp || 0) + t.comp) / 100; }
+function folPower(f, cp) { return 5 * Math.pow(1.13, f.lvl - 1) * RAR[f.r].m * cp; }
+
 function heroStats(eq) {
   eq = eq || S.equip;
-  const a = S.attrs, t = talentBonus(), g = {};
-  for (const s of SLOTS) { const it = eq[s]; if (it) for (const k in it.stats) g[k] = (g[k] || 0) + it.stats[k]; }
+  const a = S.attrs, t = talentBonus(), g = {}, P = PATHS[S.path];
+  for (const s of SLOTS) {
+    const it = eq[s]; if (!it) continue;
+    for (const k in it.stats) {
+      let v = it.stats[k];
+      if (s === 'weapon' && k === 'dmg' && it.path !== S.path) v *= .5;
+      g[k] = (g[k] || 0) + v;
+    }
+  }
   const G0 = k => g[k] || 0;
-  const hp = (100 + a.vit * 14 + (S.level - 1) * 6 + G0('hp')) * (1 + t.hp);
+  const cp = compPower(G0('comp'), t);
+  let fDef = 0, fBlock = 0, fHeal = 0, fGold = 0, fDrop = 0;
+  for (const f of partyMembers()) {
+    const p = folPower(f, cp);
+    if (f.kind === 'warden') { fDef += p * .6; fBlock += 3 + f.r; }
+    if (f.kind === 'herb') fHeal += p * .5;
+    if (f.kind === 'lamp') { fGold += 10 + f.r * 5; fDrop += 5 + f.r * 3; }
+  }
+  const ren = renown();
+  const hp = (100 + a.vit * 14 + (S.level - 1) * 6 + G0('hp')) * (1 + t.hp) * (S.path === 'blade' ? 1.2 : 1);
+  const w = eq.weapon;
+  const elem = (w && w.path === S.path && w.elem) || P.elem;
+  const rAll = G0('rAll');
   return {
-    hp, dmg: (10 + a.mig * 2.4 + (S.level - 1) + G0('dmg')) * (1 + t.dmg),
-    aspd: Math.min(4, 1 + a.agi * .012 + G0('aspd') / 100 + t.aspd),
+    hp, elem, cp,
+    dmg: (10 + a.mig * 2.4 + (S.level - 1) + G0('dmg')) * (1 + t.dmg) * P.mult * (1 + ren * .02) * (elem !== 'phys' ? 1 + (G0('elem') + t.elem) / 100 : 1),
+    aspd: Math.min(4, (1 + a.agi * .012 + G0('aspd') / 100 + t.aspd) * (S.path === 'bow' ? 1.15 : 1)),
     crit: Math.min(75, 5 + a.for * .4 + G0('crit') + t.crit), critd: 150 + G0('critd') + t.critd,
-    def: (G0('def') + a.vit * .5) * (1 + t.def), dodge: Math.min(50, a.agi * .25 + G0('dodge') + t.dodge),
-    block: Math.min(60, G0('block') + t.block), regen: hp * .004 + G0('regen') + hp * t.regen,
-    ls: G0('ls') + t.ls, gold: G0('gold') + t.gold * 100 + a.for, xp: G0('xp') + t.xp * 100, drop: G0('drop') + t.drop * 100, luck: t.luck,
+    def: ((G0('def') + a.vit * .5) * (1 + t.def) + fDef) * (S.path === 'blade' ? 1.15 : 1),
+    dodge: Math.min(50, a.agi * .25 + G0('dodge') + t.dodge),
+    block: Math.min(60, G0('block') + t.block + fBlock), regen: hp * .004 + G0('regen') + hp * t.regen + fHeal,
+    ls: G0('ls') + t.ls, gold: G0('gold') + t.gold * 100 + a.for + fGold + ren * 2, xp: G0('xp') + t.xp * 100, drop: G0('drop') + t.drop * 100 + fDrop, luck: t.luck,
+    res: { phys: 0, fire: Math.min(75, G0('rFire') + rAll + t.rFire), frost: Math.min(75, G0('rFrost') + rAll + t.rFrost), shadow: Math.min(75, G0('rShadow') + rAll + t.rShadow) },
+    range: P.range,
   };
 }
 function stats() { if (dirtyStats) { ST = heroStats(); dirtyStats = false; } return ST; }
 function rating(st) {
-  const dps = st.dmg * st.aspd * (1 + st.crit / 100 * (st.critd / 100 - 1)) * (1 + st.ls / 200);
-  const ehp = st.hp * (1 + st.def / 100) / (1 - st.dodge / 100) / (1 - st.block / 200) + st.regen * 20;
-  return dps * Math.sqrt(ehp);
+  const dps = st.dmg * st.aspd * (1 + st.crit / 100 * (st.critd / 100 - 1)) * (1 + st.ls / 200) * (S.path === 'lamp' ? 1.25 : 1);
+  const r = (st.res.fire + st.res.frost + st.res.shadow) / 3;
+  const ehp = st.hp * (1 + st.def / 100) / (1 - st.dodge / 100) / (1 - st.block / 200) * (1 + r / 200) + st.regen * 20;
+  return dps * Math.sqrt(ehp) * (st.elem !== 'phys' ? 1.05 : 1) * (1 + (st.cp - 1) * .3) * (1 + (st.gold + st.drop) / 2000);
 }
 function ratingWith(item) { const eq = Object.assign({}, S.equip, { [item.slot]: item }); return rating(heroStats(eq)); }
 
@@ -366,7 +516,7 @@ function rollRarity(luck) {
   for (let i = 0; i < ws.length; i++) { t -= ws[i]; if (t <= 0) return i; }
   return 0;
 }
-function makeItem(il, r, slot) {
+function makeItem(il, r, slot, path) {
   slot = slot || pick(SLOTS);
   const R = RAR[r], st = {};
   for (const [k, v] of Object.entries(SLOT_MAIN[slot])) st[k] = roundStat(k, v * (STAT[k].p ? pctScale(il) : flatScale(il)) * R.m * rnd(.85, 1.15));
@@ -377,14 +527,22 @@ function makeItem(il, r, slot) {
     if (!main) main = k;
     st[k] = roundStat(k, STAT[k].base * (STAT[k].p ? pctScale(il) : flatScale(il)) * R.m * rnd(.5, .9));
   }
-  const name = PREFIX[r] + ' ' + pick(BASES[slot]) + (main && r >= 2 ? ' ' + SUFFIX[main] : '');
-  return { id: uid(), slot, r, il, name, stats: st, gs: Math.round((il * 4 + 6) * R.m + R.aff * il * .8), isNew: true };
+  const it = { id: uid(), slot, r, il, stats: st, gs: Math.round((il * 4 + 6) * R.m + R.aff * il * .8), isNew: true };
+  let base;
+  if (slot === 'weapon') {
+    it.path = path || (Math.random() < .5 ? S.path : pick(Object.keys(PATHS)));
+    base = pick(PATHS[it.path].weapons);
+    if (r >= 3 && Math.random() < .55) it.elem = pick(['fire', 'frost', 'shadow', 'radiant']);
+  } else base = pick(BASES[slot]);
+  it.name = PREFIX[r] + ' ' + base + (main && r >= 2 ? ' ' + SUFFIX[main] : '');
+  return it;
 }
 const value = it => Math.round(4 * Math.pow(1.11, it.il - 1) * RAR[it.r].m * (1 + RAR[it.r].aff * .25));
 function statText(k, v) { return STAT[k].p ? `${v}%` : fmt(v); }
 function isUpgrade(it) { return ratingWith(it) > rating(stats()) * 1.0001; }
 
 function gainItem(it, quiet) {
+  if (it.r > S.bestR) S.bestR = it.r;
   if (S.autoSell && it.r < S.autoSell && !isUpgrade(it)) { S.gold += value(it); return 'sold'; }
   if (!S.best || it.r > S.best.r || (it.r === S.best.r && it.gs > S.best.gs)) S.best = { name: it.name, r: it.r, gs: it.gs };
   if (S.bag.length >= BAG_MAX) {
@@ -405,7 +563,7 @@ function equip(it) {
   S.equip[it.slot] = it;
   if (old) S.bag.push(old);
   dirtyStats = true; dirtyPanel = true;
-  const st = stats(); G.hero.hp = Math.min(G.hero.hp, st.hp);
+  G.hero.hp = Math.min(G.hero.hp, stats().hp);
 }
 function sell(it) { S.bag = S.bag.filter(b => b.id !== it.id); S.gold += value(it); dirtyPanel = true; }
 function autoEquip() {
@@ -417,6 +575,44 @@ function autoEquip() {
   }
   return n;
 }
+function setPath(p) {
+  if (S.path === p) return;
+  S.path = p; dirtyStats = true;
+  if (!S.starters[p]) {
+    S.starters[p] = true;
+    const w = makeItem(Math.max(1, S.stage - 1), 2, 'weapon', p);
+    w.isNew = true;
+    if (S.bag.length < BAG_MAX) { S.bag.push(w); log(`You take up the ${PATHS[p].n}. A ${w.name} waits in your bag.`, '#f3b44a'); }
+  } else log(`You take up the ${PATHS[p].n} again.`);
+  const owned = [S.equip.weapon, ...S.bag].filter(i => i && i.slot === 'weapon' && i.path === p);
+  if (S.equip.weapon && S.equip.weapon.path !== p && owned.length) {
+    const best = owned.sort((a, b) => b.gs - a.gs)[0];
+    if (S.bag.includes(best)) equip(best);
+  }
+}
+
+/* ---------- Company ---------- */
+function recruit(quiet) {
+  const kind = pick(Object.keys(KINDS));
+  const r = Math.min(7, rollRarity(stats().luck));
+  const f = { id: uid(), kind, r, lvl: Math.max(1, S.stage), name: pick(NAMES) };
+  if (S.roster.length >= ROSTER_MAX) { if (!quiet) log(`${f.name} the ${KINDS[kind].n} passed by. Your company is full.`); return null; }
+  S.roster.push(f); S.recruited++;
+  if (S.party.length < partySlots()) S.party.push(f.id);
+  dirtyStats = true;
+  if (!quiet) { log(`${f.name}, a ${RAR[r].n} ${KINDS[kind].n}, follows your light.`, RAR[r].col); banner(`${f.name} joins your company`, '#f3b44a'); }
+  if (S.tab === 'company') dirtyPanel = true;
+  markTabs();
+  return f;
+}
+const trainCost = f => Math.round(12 * Math.pow(1.15, f.lvl) * (1 + f.r * .25));
+function folSummary(f, cp) {
+  const p = folPower(f, cp), K = KINDS[f.kind];
+  if (K.atk) return `Hits for about ${fmt(p * K.atk)} ${ELEM[K.el].n.toLowerCase()} every ${K.atk === 1.5 ? '1.5' : '2'} s`;
+  if (f.kind === 'warden') return `+${fmt(p * .6)} defense, +${3 + f.r}% block`;
+  if (f.kind === 'herb') return `Heals ${fmt(p * .5)} HP per second`;
+  return `+${10 + f.r * 5}% gold find, +${5 + f.r * 3}% drop chance`;
+}
 
 /* ---------- Progression ---------- */
 const need = l => Math.round(25 * Math.pow(1.19, l - 1));
@@ -425,7 +621,7 @@ function addXp(x) {
   while (S.xp >= need(S.level)) {
     S.xp -= need(S.level); S.level++; S.points += 3; dirtyStats = true;
     log(`Reached level ${S.level}. +3 attribute points.`, '#f3b44a');
-    fx(HX, GY - 26, 'LEVEL UP', '#f3b44a', 1.4, 6);
+    if (G) fx(HX, GY - 26, 'LEVEL UP', '#f3b44a', 1.4, 6);
   }
   if (S.autoSpend) autoSpend();
   markTabs();
@@ -442,14 +638,15 @@ function enemyBase(stage, wave, boss) {
 }
 const goldPer = (s, boss) => 2 * Math.pow(1.13, s - 1) * (boss ? 6 : 1);
 const xpPer = (s, boss) => 6 * Math.pow(1.12, s - 1) * (boss ? 5 : 1);
+const resMult = (foe, el) => 1 - ((foe.res && foe.res[el]) || 0) / 100;
 
 /* ---------- Runtime ---------- */
 function resetRuntime() {
-  G = { phase: 'walk', walkT: 1.2, enemies: [], hero: { hp: stats().hp, swing: 0, hurt: 0, atkT: 0, dead: 0 }, scroll: 0, fx: [], parts: [], banner: null, t: 0, saveT: 0, hudT: 0 };
+  G = { phase: 'walk', walkT: 1.2, enemies: [], hero: { hp: stats().hp, swing: 0, hurt: 0, atkT: 0, dead: 0 }, folT: {}, proj: [], scroll: 0, fx: [], parts: [], banner: null, t: 0, saveT: 0, hudT: 0 };
   banner(`Stage ${S.stage} · ${ZONES[zoneOf(S.stage)].name}`);
 }
-function banner(text, col) { G.banner = { text, col: col || '#ece4d0', t: 0 }; }
-function fx(x, y, txt, col, life, size) { if (G.fx.length < 40) G.fx.push({ x, y, txt, col, t: 0, life: life || .9, size: size || 5 }); }
+function banner(text, col) { if (G) G.banner = { text, col: col || '#ece4d0', t: 0 }; }
+function fx(x, y, txt, col, life, size) { if (G.fx.length < 50) G.fx.push({ x, y, txt, col, t: 0, life: life || .9, size: size || 5 }); }
 
 function spawnWave() {
   const boss = S.wave === WAVES, z = ZONES[zoneOf(S.stage)];
@@ -457,18 +654,47 @@ function spawnWave() {
   G.enemies = [];
   for (let i = 0; i < n; i++) {
     const f = boss ? z.boss : pick(z.foes), b = enemyBase(S.stage, S.wave, boss);
-    G.enemies.push({ n: f.n, s: f.s, c: f.c, hp: b.hp, max: b.hp, dmg: b.dmg, aspd: boss ? .7 : .8, boss, x: W - 6 + i * 20, t: rnd(.2, .7), flash: 0, dead: false, die: 0, ph: Math.random() * 6 });
+    G.enemies.push({ n: f.n, s: f.s, c: f.c, el: f.el, res: f.res, hp: b.hp, max: b.hp, dmg: b.dmg, aspd: boss ? .7 : .8, boss, x: W - 6 + i * 20, t: rnd(.2, .7), flash: 0, dead: false, die: 0, ph: Math.random() * 6 });
   }
   G.phase = 'fight';
   if (boss) banner(`Guardian: ${z.boss.n}`, '#ff8070');
 }
-function heroHit(e) {
-  const st = stats(), crit = Math.random() * 100 < st.crit;
-  const d = st.dmg * rnd(.9, 1.1) * (crit ? st.critd / 100 : 1);
+function damage(e, raw, el, crit, small) {
+  if (e.dead) return 0;
+  const m = resMult(e, el), d = raw * m;
   e.hp -= d; e.flash = .09;
-  fx(e.x, GY - (e.boss ? 30 : 18), fmt(d), crit ? '#f3b44a' : '#ece4d0', .8, crit ? 6 : 5);
-  if (st.ls) G.hero.hp = Math.min(st.hp, G.hero.hp + d * st.ls / 100);
+  const col = crit ? '#f3b44a' : el === 'phys' ? '#ece4d0' : ELEM[el].col;
+  fx(e.x + rnd(-3, 3), GY - (e.boss ? 30 : 18), fmt(d) + (m > 1.2 ? '!' : ''), col, .8, small ? 4 : crit ? 6 : 5);
   if (e.hp <= 0) kill(e);
+  return d;
+}
+function heroAttack(front) {
+  const st = stats(), crit = Math.random() * 100 < st.crit;
+  const raw = st.dmg * rnd(.9, 1.1) * (crit ? st.critd / 100 : 1);
+  if (S.path === 'blade') {
+    const d = damage(front, raw, st.elem, crit);
+    if (st.ls) G.hero.hp = Math.min(st.hp, G.hero.hp + d * st.ls / 100);
+  } else {
+    G.proj.push({ x: HX + 6, y: GY - 11, tgt: front, sp: S.path === 'bow' ? 220 : 160, kind: S.path === 'bow' ? 'arrow' : 'bolt', el: st.elem, raw, crit, splash: S.path === 'lamp' ? .4 : 0, hero: true });
+  }
+}
+function updateProj(dt) {
+  const st = stats();
+  for (const p of G.proj) {
+    const t = p.tgt;
+    if (!t || t.dead) { p.done = true; continue; }
+    const tx = t.x, ty = GY - (t.boss ? 16 : 8);
+    const dx = tx - p.x, dy = ty - p.y, dist = Math.hypot(dx, dy);
+    if (dist < 4) {
+      p.done = true;
+      const d = damage(t, p.raw, p.el, p.crit, !p.hero);
+      if (p.hero && st.ls) G.hero.hp = Math.min(st.hp, G.hero.hp + d * st.ls / 100);
+      if (p.splash) for (const o of G.enemies) if (o !== t && !o.dead) damage(o, p.raw * p.splash, p.el, false, true);
+      continue;
+    }
+    p.x += dx / dist * p.sp * dt; p.y += dy / dist * p.sp * dt;
+  }
+  G.proj = G.proj.filter(p => !p.done);
 }
 function kill(e) {
   e.dead = true; e.hp = 0;
@@ -481,21 +707,22 @@ function kill(e) {
   if (Math.random() < chance) {
     const it = makeItem(S.stage, rollRarity(st.luck + (e.boss ? 1.5 : 0)));
     const res = gainItem(it);
-    if (res === 'kept' && it.r >= 2) fx(e.x, GY - 34, RAR[it.r].n.toUpperCase(), RAR[it.r].col, 1.4, 5);
+    if (res === 'kept' && it.r >= 2) fx(e.x, GY - 36, RAR[it.r].n.toUpperCase(), RAR[it.r].col, 1.4, 5);
     G.parts.push({ k: 'loot', x: e.x, y: GY - 6, vx: (HX - e.x) / .6, vy: -60, t: 0, life: .6, c: RAR[it.r].col });
   }
 }
 function enemyHit(e) {
   const st = stats(), h = G.hero;
   if (Math.random() * 100 < st.dodge) { fx(HX, GY - 22, 'dodge', '#97a39d', .7, 4); return; }
-  let d = e.dmg * rnd(.9, 1.1) * 100 / (100 + st.def), blocked = false;
+  let d = e.dmg * rnd(.9, 1.1), blocked = false;
+  d *= e.el === 'phys' ? 100 / (100 + st.def) : (1 - st.res[e.el] / 100) * 100 / (100 + st.def * .3);
   if (Math.random() * 100 < st.block) { d *= .5; blocked = true; }
   h.hp -= d; h.hurt = .14;
-  fx(HX - 2, GY - 22, (blocked ? 'block ' : '') + fmt(d), '#ff8070', .8, 4);
+  fx(HX - 2, GY - 22, (blocked ? 'block ' : '') + fmt(d), e.el === 'phys' ? '#ff8070' : ELEM[e.el].col, .8, 4);
   if (h.hp <= 0) heroDie();
 }
 function heroDie() {
-  const h = G.hero; h.hp = 0; h.dead = 2; S.deaths++;
+  const h = G.hero; h.hp = 0; h.dead = 2; S.deaths++; G.proj = [];
   const from = S.stage;
   if (S.stage > 1) S.stage--;
   S.wave = 1;
@@ -503,20 +730,23 @@ function heroDie() {
   banner('Fallen. Regrouping…', '#ff8070');
 }
 function nextWave() {
+  const wasBoss = S.wave === WAVES;
+  if (Math.random() < (wasBoss ? .35 : .02)) recruit();
   S.wave++;
   if (S.wave > WAVES) {
     const z0 = zoneOf(S.stage);
     S.wave = 1;
     if (!S.farm) {
       S.stage++;
-      if (S.stage > S.maxStage) { S.maxStage = S.stage; log(`New record: reached Stage ${S.stage}.`); }
+      if (S.stage > S.maxStage) { S.maxStage = S.stage; log(`New record: reached Stage ${S.stage}.`); dirtyStats = true; }
       const z1 = zoneOf(S.stage);
       if (z1 !== z0) { banner(`New road: ${ZONES[z1].name}`, '#f3b44a'); log(`Entered ${ZONES[z1].name}.`, '#f3b44a'); }
       else banner(`Stage ${S.stage}`);
       if (S.tab === 'map') dirtyPanel = true;
     } else banner(`Stage ${S.stage} again (farming)`);
+    markTabs();
   }
-  G.phase = 'walk'; G.walkT = 1.3;
+  G.phase = 'walk'; G.walkT = 1.3; G.proj = [];
 }
 
 function update(dt) {
@@ -539,6 +769,7 @@ function update(dt) {
     if (G.walkT <= 0) spawnWave();
     return;
   }
+  updateProj(dt);
   const alive = G.enemies.filter(e => !e.dead).sort((a, b) => a.x - b.x);
   alive.forEach((e, i) => {
     const target = HX + 14 + i * 17 + (e.boss ? 4 : 0);
@@ -548,9 +779,19 @@ function update(dt) {
   });
   for (const e of G.enemies) if (e.dead) e.die += dt;
   G.enemies = G.enemies.filter(e => !e.dead || e.die < .5);
-  const front = alive[0];
+  const front = alive.find(e => !e.dead);
   h.atkT -= dt;
-  if (front && !front.dead && front.x <= HX + 18 + (front.boss ? 4 : 0) && h.atkT <= 0 && h.dead <= 0) { h.atkT = 1 / st.aspd; h.swing = .16; heroHit(front); }
+  if (front && front.x <= HX + st.range + (front.boss ? 4 : 0) && h.atkT <= 0 && h.dead <= 0) { h.atkT = 1 / st.aspd; h.swing = .16; heroAttack(front); }
+  // company
+  partyMembers().forEach((f, i) => {
+    const K = KINDS[f.kind]; if (!K.atk) return;
+    G.folT[f.id] = (G.folT[f.id] ?? rnd(.2, 1)) - dt;
+    const tgt = G.enemies.find(e => !e.dead);
+    if (G.folT[f.id] <= 0 && tgt && tgt.x <= HX + 120) {
+      G.folT[f.id] = K.atk;
+      G.proj.push({ x: HX - 14 - i * 12 + 4, y: GY - 9, tgt, sp: f.kind === 'archer' ? 220 : 150, kind: f.kind === 'archer' ? 'arrow' : 'bolt', el: K.el, raw: folPower(f, st.cp) * K.atk * rnd(.9, 1.1), crit: false, splash: f.kind === 'fire' ? .5 : 0, hero: false });
+    }
+  });
   if (!G.enemies.some(e => !e.dead) && h.dead <= 0) nextWave();
 }
 
@@ -578,12 +819,12 @@ function updateParts(dt) {
 /* ---------- Drawing ---------- */
 const cv = $('#cv'), D = cv.getContext('2d');
 const low = document.createElement('canvas'); low.width = W; low.height = H;
-const L = low.getContext('2d');
+let L = low.getContext('2d');
 const dark = document.createElement('canvas'); dark.width = W; dark.height = H;
 const K = dark.getContext('2d');
 function px(x, y, w, h, c) { L.fillStyle = c; L.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h))); }
 function shade(hex, f) {
-  const n = parseInt(hex.slice(1), 16); let r = n >> 16, g = n >> 8 & 255, b = n & 255;
+  const n = parseInt(hex.slice(1), 16); const r = n >> 16, g = n >> 8 & 255, b = n & 255;
   const m = v => clamp(Math.round(f < 0 ? v * (1 + f) : v + (255 - v) * f), 0, 255);
   return '#' + ((1 << 24) | (m(r) << 16) | (m(g) << 8) | m(b)).toString(16).slice(1);
 }
@@ -616,7 +857,8 @@ function drawProp(kind, x, i, z) {
 
 function drawFoe(e) {
   const sc = e.boss ? 1.7 : 1, t = G.t + e.ph;
-  let x = e.x, y = GY;
+  const x = e.x;
+  let y = GY;
   const fade = e.dead ? 1 - e.die / .5 : 1;
   L.globalAlpha = clamp(fade, 0, 1);
   if (e.dead) y += e.die * 8;
@@ -642,7 +884,7 @@ function drawFoe(e) {
     px(x - 4 * sc, y - 5 * sc, 3 * sc, 5 * sc - step, dk); px(x + 1 * sc, y - 5 * sc, 3 * sc, 5 * sc - (1 - step), dk);
     px(x - 5 * sc, y - 15 * sc, 10 * sc, 10 * sc, c); px(x - 5 * sc, y - 15 * sc, 10 * sc, 1, lt);
     px(x - 4 * sc, y - 20 * sc, 8 * sc, 5 * sc, c);
-    px(x - 3 * sc, y - 18 * sc, 2, 1, e.boss ? '#ff6050' : '#f3b44a'); px(x - 0 * sc, y - 18 * sc, 2, 1, e.boss ? '#ff6050' : '#f3b44a');
+    px(x - 3 * sc, y - 18 * sc, 2, 1, e.boss ? '#ff6050' : '#f3b44a'); px(x, y - 18 * sc, 2, 1, e.boss ? '#ff6050' : '#f3b44a');
     px(x - 8 * sc, y - 14 * sc + (G.phase === 'fight' && Math.sin(t * 8) > .6 ? 2 : 0), 3 * sc, 7 * sc, dk);
     px(x + 5 * sc, y - 14 * sc, 3 * sc, 7 * sc, dk);
     if (e.n === 'The Unlit King') { px(x - 4 * sc, y - 23 * sc, 8 * sc, 2, '#d8b84a'); px(x - 4 * sc, y - 25 * sc, 1, 2, '#d8b84a'); px(x - .5 * sc, y - 25 * sc, 1, 2, '#d8b84a'); px(x + 3 * sc, y - 25 * sc, 1, 2, '#d8b84a'); }
@@ -651,7 +893,22 @@ function drawFoe(e) {
   if (!e.dead) {
     const bw = e.boss ? 22 : 12, top = GY - (e.s === 'tall' ? 24 * sc : e.s === 'wisp' ? 26 * sc : 14 * sc) - 3;
     px(x - bw / 2, top, bw, 2, '#2a0f0f'); px(x - bw / 2, top, bw * clamp(e.hp / e.max, 0, 1), 2, e.boss ? '#ff6050' : '#d24a3a');
+    if (e.el !== 'phys') px(x - bw / 2 - 3, top, 2, 2, ELEM[e.el].col);
   }
+}
+
+/* A follower: smaller figure, cloak colour by kind, a tool in hand. */
+function drawFollower(f, x, walking, phase) {
+  const y = GY, K = KINDS[f.kind], step = walking ? Math.floor((G ? G.t : 0) * 8 + phase) % 2 : 0;
+  px(x - 2, y - 3, 1, 3 - step, '#20282d'); px(x + 1, y - 3, 1, 2 + step, '#20282d');
+  px(x - 2, y - 10, 5, 7, K.cloak); px(x - 2, y - 10, 5, 1, shade(K.cloak, .25));
+  px(x - 1, y - 13, 3, 3, shade(K.cloak, -.3)); px(x, y - 12, 2, 1, '#e2c39b');
+  if (f.kind === 'archer') { px(x + 3, y - 12, 1, 7, '#8a6a3a'); px(x + 4, y - 13, 1, 1, '#8a6a3a'); px(x + 4, y - 5, 1, 1, '#8a6a3a'); }
+  else if (f.kind === 'warden') { px(x + 2, y - 9, 3, 5, '#9aa0aa'); px(x + 3, y - 8, 1, 3, '#5a6070'); }
+  else if (f.kind === 'herb') { px(x + 2, y - 6, 3, 2, '#8a6a3a'); px(x + 2, y - 7, 1, 1, '#7fd38b'); }
+  else if (f.kind === 'lamp') { px(x + 3, y - 8, 2, 2, '#f3b44a'); }
+  else { const tip = ELEM[K.el].col; px(x + 3, y - 13, 1, 10, '#6b4a2a'); px(x + 2, y - 15, 3, 2, tip); }
+  px(x - 3, y - 15, 6, 1, RAR[f.r].col);
 }
 
 function drawHero() {
@@ -662,14 +919,25 @@ function drawHero() {
   px(x - 3, y - 12, 7, 8, '#3d5a6b'); px(x - 3, y - 12, 7, 1, '#557a8e'); px(x - 4, y - 8, 1, 4, '#33505f');
   px(x - 3, y - 7, 7, 1, '#6b4a2a');
   px(x - 2, y - 16, 5, 4, '#2f4757'); px(x - 1, y - 15, 3, 2, '#e2c39b'); px(x - 1, y - 15, 1, 1, '#1a1a1a');
-  // lantern (behind, held out)
-  const sway = walking ? (step ? 1 : 0) : 0;
-  px(x - 5, y - 11, 2, 1, '#3d5a6b'); px(x - 7, y - 11 + sway, 1, 2, '#6b4a2a');
-  px(x - 8, y - 9 + sway, 3, 3, '#f3b44a'); px(x - 8, y - 10 + sway, 3, 1, '#6b4a2a'); px(x - 7, y - 8 + sway, 1, 1, '#fff2c0');
-  if (h.swing > 0) { px(x + 4, y - 10, 3, 1, '#3d5a6b'); px(x + 7, y - 11, 9, 1, '#dfe6ea'); px(x + 7, y - 12, 1, 3, '#8a6a3a'); px(x + 15, y - 11, 1, 1, '#ffffff'); }
-  else { px(x + 4, y - 10, 1, 3, '#3d5a6b'); px(x + 4, y - 18, 1, 8, '#dfe6ea'); px(x + 3, y - 10, 3, 1, '#8a6a3a'); }
+  const sway = walking ? step : 0;
+  const st = stats(), ecol = ELEM[st.elem].col;
+  if (S.path === 'lamp') {
+    // lantern held forward on a rod
+    px(x + 3, y - 11, 6, 1, '#6b4a2a'); px(x + 8, y - 11, 1, 2, '#6b4a2a');
+    px(x + 7, y - 9 + sway, 3, 3, h.swing > 0 ? '#fff6d0' : '#f3b44a'); px(x + 8, y - 8 + sway, 1, 1, '#ffffff');
+  } else {
+    px(x - 5, y - 11, 2, 1, '#3d5a6b'); px(x - 7, y - 11 + sway, 1, 2, '#6b4a2a');
+    px(x - 8, y - 9 + sway, 3, 3, '#f3b44a'); px(x - 8, y - 10 + sway, 3, 1, '#6b4a2a'); px(x - 7, y - 8 + sway, 1, 1, '#fff2c0');
+  }
+  if (S.path === 'blade') {
+    if (h.swing > 0) { px(x + 4, y - 10, 3, 1, '#3d5a6b'); px(x + 7, y - 11, 9, 1, st.elem === 'phys' ? '#dfe6ea' : ecol); px(x + 7, y - 12, 1, 3, '#8a6a3a'); px(x + 15, y - 11, 1, 1, '#ffffff'); }
+    else { px(x + 4, y - 10, 1, 3, '#3d5a6b'); px(x + 4, y - 18, 1, 8, st.elem === 'phys' ? '#dfe6ea' : ecol); px(x + 3, y - 10, 3, 1, '#8a6a3a'); }
+  } else if (S.path === 'bow') {
+    const pull = h.swing > 0 ? 1 : 0;
+    px(x + 5 + pull, y - 16, 1, 1, '#8a6a3a'); px(x + 6 + pull, y - 15, 1, 8, '#8a6a3a'); px(x + 5 + pull, y - 7, 1, 1, '#8a6a3a');
+    px(x + 5, y - 15, 1, 7, '#cfc6b0'); px(x + 4, y - 11, 2, 1, '#3d5a6b');
+  }
   if (h.hurt > 0) { L.globalAlpha = .45; px(x - 3, y - 16, 8, 16, '#ff5040'); L.globalAlpha = 1; }
-  const st = stats();
   px(x - 7, y - 21, 14, 2, '#0e1a12'); px(x - 7, y - 21, 14 * clamp(h.hp / st.hp, 0, 1), 2, '#7fd38b');
 }
 
@@ -693,10 +961,17 @@ function draw() {
   }
   L.globalAlpha = 1;
   for (const e of G.enemies) drawFoe(e);
+  const walking = G.phase === 'walk' && G.hero.dead <= 0;
+  partyMembers().forEach((f, i) => drawFollower(f, HX - 14 - i * 12, walking, i));
   drawHero();
+  for (const p of G.proj) {
+    const col = p.el === 'phys' ? '#e8e0c8' : ELEM[p.el].col;
+    if (p.kind === 'arrow') { px(p.x - 4, p.y, 5, 1, '#cfc6b0'); px(p.x, p.y, 1, 1, col); }
+    else { px(p.x - 1, p.y - 1, 3, 3, col); L.globalAlpha = .4; px(p.x - 5, p.y, 4, 1, col); L.globalAlpha = 1; }
+  }
   // lantern light
-  const flick = 46 + Math.sin(G.t * 9) * 1.5 + Math.sin(G.t * 23) * 1;
-  const lx = HX - 7, ly = GY - 9;
+  const flick = (S.path === 'lamp' ? 54 : 46) + Math.sin(G.t * 9) * 1.5 + Math.sin(G.t * 23);
+  const lx = S.path === 'lamp' ? HX + 8 : HX - 7, ly = GY - 9;
   K.globalCompositeOperation = 'source-over'; K.clearRect(0, 0, W, H);
   K.fillStyle = `rgba(3,5,9,${z.dark})`; K.fillRect(0, 0, W, H);
   K.globalCompositeOperation = 'destination-out';
@@ -734,6 +1009,15 @@ function sizeCanvas() {
   const w = Math.max(W, Math.round(r.width * dpr));
   if (cv.width !== w) { cv.width = w; cv.height = Math.round(w * H / W); }
 }
+/* Portrait of a follower for the Company tab, drawn with the same routine. */
+function portrait(canvas, f) {
+  const prev = L, c = canvas.getContext('2d');
+  L = c; c.clearRect(0, 0, 20, 20);
+  const savedGY = GY;
+  c.save(); c.translate(10 - 0, 18 - savedGY);
+  drawFollower(f, 0, false, 0);
+  c.restore(); L = prev;
+}
 
 /* ---------- HUD ---------- */
 const hud = { stage: $('#hudStage'), zone: $('#hudZone'), lvl: $('#hudLvl'), xp: $('#hudXp'), gold: $('#hudGold'), hp: $('#hudHp'), hpt: $('#hudHpTxt'), farm: $('#farmBtn'), pts: $('#ptsBtn') };
@@ -752,17 +1036,21 @@ function updateHud() {
   hud.pts.textContent = `${S.points} point${S.points === 1 ? '' : 's'} to spend`;
   document.title = `Lantern Road · Stage ${S.stage} ${S.wave}/${WAVES}`;
 }
+function featDone(f) { return f.cur() >= f.goal; }
 function markTabs() {
-  const set = (id, on) => { const b = document.getElementById(id); let d = b.querySelector('.dot'); if (on && !d) { d = document.createElement('span'); d.className = 'dot'; b.appendChild(d); } if (!on && d) d.remove(); };
+  const set = (id, on) => { const b = document.getElementById(id); if (!b) return; let d = b.querySelector('.dot'); if (on && !d) { d = document.createElement('span'); d.className = 'dot'; b.appendChild(d); } if (!on && d) d.remove(); };
   set('tab-hero', S.points > 0);
   set('tab-bag', S.bag.some(i => i.isNew));
+  set('tab-company', S.roster.some(f => f.isNew));
   set('tab-talents', TALENTS.some(t => !S.talents[t.id] && talAvail(t) && S.gold >= talCost()));
+  set('tab-feats', FEATS.some(f => !S.feats[f.id] && featDone(f)));
 }
 
 /* ---------- Panels ---------- */
 const panel = $('#panel');
 function talAvail(t) { return TALENTS.some(o => S.talents[o.id] && Math.abs(o.x - t.x) + Math.abs(o.y - t.y) === 1); }
-function talCost() { const owned = TALENTS.filter(t => S.talents[t.id]).length; return Math.round(20 * Math.pow(2.1, owned - 1)); }
+function talCost() { return Math.round(20 * Math.pow(1.55, ownedCount() - 1)); }
+const elemTag = el => `<span class="el" style="color:${ELEM[el].col}">${ELEM[el].n}</span>`;
 
 function itemCard(it, mode) {
   const eq = S.equip[it.slot], st = stats();
@@ -774,6 +1062,11 @@ function itemCard(it, mode) {
     if (ov !== null) { const diff = Math.round((v - ov) * 10) / 10; d = diff === 0 ? '<span class="sub">=</span>' : `<span class="${diff > 0 ? 'good' : 'bad'}">${diff > 0 ? '+' : ''}${statText(k, diff)}</span>`; }
     rows += `<span class="k">${STAT[k].l}</span><span class="v">${v ? statText(k, v) : '–'}</span><span class="d">${d}</span>`;
   }
+  let extra = '';
+  if (it.slot === 'weapon') {
+    extra = `<p class="sub">For the <b>${PATHS[it.path].n}</b> path${it.elem ? ` · deals ${elemTag(it.elem)} damage` : ''}.</p>`;
+    if (it.path !== S.path) extra += `<p class="bad verdict">You walk the ${PATHS[S.path].n} path: this weapon gives only half its damage.</p>`;
+  }
   let verdict = '';
   if (mode === 'bag') {
     const now = rating(st), then = ratingWith(it), pct = (then / now - 1) * 100;
@@ -783,31 +1076,36 @@ function itemCard(it, mode) {
     ? `<div class="row"><button class="btn primary" data-act="equip" data-id="${it.id}">Equip</button><button class="btn" data-act="sell" data-id="${it.id}">Sell for ${fmt(value(it))} gold</button></div>`
     : `<div class="row"><button class="btn" data-act="unequip" data-slot="${it.slot}">Move to bag</button></div>`;
   return `<article class="item" style="--rc:${RAR[it.r].col}">
-    <header><img class="icon" alt="" src="${icon(it.slot, it.r)}"><div><h3>${esc(it.name)}</h3>
+    <header><img class="icon" alt="" src="${itemIcon(it)}"><div><h3>${esc(it.name)}</h3>
     <div class="meta">${RAR[it.r].n} ${SLOT_LABEL[it.slot]} · Item level ${it.il} · Gearscore ${it.gs}</div></div></header>
+    ${extra}
     <div class="cmp"><span class="k"></span><span class="v sub">This</span><span class="d sub">${mode === 'bag' && eq ? 'vs worn' : ''}</span>${rows}</div>
     ${verdict}${btns}</article>`;
 }
 
 function renderHero() {
   const st = stats();
+  const paths = Object.entries(PATHS).map(([k, p]) => `<button class="path" data-act="path" data-p="${k}" aria-pressed="${S.path === k}"><b>${p.n}</b><small>${p.d}</small></button>`).join('');
   const slots = SLOTS.map(s => {
     const it = S.equip[s];
-    return it ? `<button class="slot ${selEq === s ? 'sel' : ''}" style="--rc:${RAR[it.r].col}" data-act="seleq" data-slot="${s}" aria-label="${SLOT_LABEL[s]}: ${esc(it.name)}"><img alt="" src="${icon(s, it.r)}"><span class="lab">${SLOT_LABEL[s]}</span><span class="gs">GS ${it.gs}</span></button>`
-      : `<button class="slot empty" data-act="tobag" aria-label="${SLOT_LABEL[s]}: empty"><img alt="" src="${icon(s, 0)}" style="opacity:.25"><span class="lab">${SLOT_LABEL[s]}</span><span class="gs">empty</span></button>`;
+    return it ? `<button class="slot ${selEq === s ? 'sel' : ''}" style="--rc:${RAR[it.r].col}" data-act="seleq" data-slot="${s}" aria-label="${SLOT_LABEL[s]}: ${esc(it.name)}"><img alt="" src="${itemIcon(it)}"><span class="lab">${SLOT_LABEL[s]}</span><span class="gs">GS ${it.gs}</span></button>`
+      : `<button class="slot empty" data-act="tobag" aria-label="${SLOT_LABEL[s]}: empty"><img alt="" src="${icon(s === 'weapon' ? S.path : s, 0)}" style="opacity:.25"><span class="lab">${SLOT_LABEL[s]}</span><span class="gs">empty</span></button>`;
   }).join('');
-  const rows = [['Max HP', fmt(st.hp)], ['Damage', fmt(st.dmg)], ['Attacks / sec', st.aspd.toFixed(2)], ['Crit chance', st.crit.toFixed(1) + '%'], ['Crit damage', Math.round(st.critd) + '%'],
-    ['Defense', fmt(st.def) + ` (−${Math.round(100 - 10000 / (100 + st.def))}% dmg)`], ['Dodge', st.dodge.toFixed(1) + '%'], ['Block', st.block.toFixed(1) + '%'], ['Regen', fmt(st.regen) + ' / sec'],
-    ['Lifesteal', st.ls.toFixed(1) + '%'], ['Gold find', '+' + Math.round(st.gold) + '%'], ['XP gain', '+' + Math.round(st.xp) + '%'], ['Drop chance', '+' + Math.round(st.drop) + '%']]
+  const gsTotal = SLOTS.reduce((a, s) => a + (S.equip[s] ? S.equip[s].gs : 0), 0);
+  const rows = [['Path', PATHS[S.path].n], ['Damage type', elemTag(st.elem)], ['Max HP', fmt(st.hp)], ['Damage', fmt(st.dmg)], ['Attacks / sec', st.aspd.toFixed(2)], ['Crit chance', st.crit.toFixed(1) + '%'], ['Crit damage', Math.round(st.critd) + '%'],
+    ['Defense', fmt(st.def) + ` (−${Math.round(100 - 10000 / (100 + st.def))}% physical)`], ['Dodge', st.dodge.toFixed(1) + '%'], ['Block', st.block.toFixed(1) + '%'], ['Regen', fmt(st.regen) + ' / sec'],
+    ['Fire resist', st.res.fire.toFixed(1) + '%'], ['Frost resist', st.res.frost.toFixed(1) + '%'], ['Shadow resist', st.res.shadow.toFixed(1) + '%'],
+    ['Lifesteal', st.ls.toFixed(1) + '%'], ['Gold find', '+' + Math.round(st.gold) + '%'], ['XP gain', '+' + Math.round(st.xp) + '%'], ['Drop chance', '+' + Math.round(st.drop) + '%'], ['Company power', '+' + Math.round((st.cp - 1) * 100) + '%']]
     .map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
   const attrs = ATTRS.map(a => `<div class="attr"><div><b>${a.n}</b><small>${a.d} per point</small></div><span class="val">${S.attrs[a.k]}</span>
     <button class="plus" data-act="attr" data-k="${a.k}" ${S.points ? '' : 'disabled'} aria-label="Add a point to ${a.n}">+</button></div>`).join('');
-  panel.innerHTML = `<div class="split">
-    <div class="card"><h2>Worn gear</h2><div class="equip">${slots}</div>
+  panel.innerHTML = `<div class="card"><div class="row between"><h2>Path</h2><span class="sub">Switch any time. Each path's first visit gives you a weapon for it.</span></div><div class="paths">${paths}</div></div>
+  <div class="split">
+    <div class="card"><div class="row between"><h2>Worn gear</h2><span class="sub">Total gearscore ${gsTotal}</span></div><div class="equip">${slots}</div>
       ${selEq && S.equip[selEq] ? itemCard(S.equip[selEq], 'eq') : '<p class="hint">Tap a slot to inspect it. New gear lands in your Bag.</p>'}</div>
-    <div class="card"><h2>The Wanderer · Lv ${S.level}</h2><p class="sub">Power rating ${fmt(rating(st))}</p><dl class="stats">${rows}</dl></div>
+    <div class="card"><h2>The Wanderer · Lv ${S.level}</h2><p class="sub">Power rating ${fmt(rating(st))} · Renown ${renown()} (+${renown() * 2}% damage and gold)</p><dl class="stats">${rows}</dl></div>
   </div>
-  <div class="card"><div class="row" style="justify-content:space-between"><h2>Attributes</h2><span class="pill ${S.points ? 'pts' : ''}">${S.points} unspent</span></div>${attrs}</div>`;
+  <div class="card"><div class="row between"><h2>Attributes</h2><span class="pill ${S.points ? 'pts' : ''}">${S.points} unspent</span></div>${attrs}</div>`;
 }
 function renderBag() {
   const cells = [];
@@ -815,11 +1113,11 @@ function renderBag() {
     const it = S.bag[i];
     if (!it) { cells.push('<div class="cell empty" aria-hidden="true"></div>'); continue; }
     cells.push(`<button class="cell ${selBag === it.id ? 'sel' : ''}" style="--rc:${RAR[it.r].col}" data-act="selbag" data-id="${it.id}" aria-label="${RAR[it.r].n} ${esc(it.name)}">
-      <img alt="" src="${icon(it.slot, it.r)}">${isUpgrade(it) ? '<span class="up" title="Upgrade">▲</span>' : ''}${it.isNew ? '<span class="new"></span>' : ''}</button>`);
+      <img alt="" src="${itemIcon(it)}">${isUpgrade(it) ? '<span class="up" title="Upgrade">▲</span>' : ''}${it.isNew ? '<span class="new"></span>' : ''}</button>`);
   }
   const sel = S.bag.find(b => b.id === selBag);
   panel.innerHTML = `<div class="card">
-    <div class="row" style="justify-content:space-between"><h2>Bag · ${S.bag.length}/${BAG_MAX}</h2>
+    <div class="row between"><h2>Bag · ${S.bag.length}/${BAG_MAX}</h2>
       <div class="row"><button class="btn primary small" data-act="autoequip">Equip best</button>
       <button class="btn small" data-act="sellbelow" data-r="2">Sell Worn &amp; Common</button>
       <button class="btn small" data-act="sellbelow" data-r="3">Sell Fine &amp; below</button></div></div>
@@ -827,8 +1125,30 @@ function renderBag() {
     <div class="bag">${cells.join('')}</div></div>
     ${sel ? itemCard(sel, 'bag') : '<p class="hint">Tap an item to compare it with what you are wearing. Green numbers beat your current gear, red ones are worse.</p>'}`;
 }
+function renderCompany() {
+  const st = stats(), slots = partySlots(), members = partyMembers();
+  const bar = Array.from({ length: slots }, (_, i) => { const f = members[i]; return f ? `<span class="pslot on" style="--rc:${RAR[f.r].col}">${esc(f.name)} · ${KINDS[f.kind].n}</span>` : '<span class="pslot">Empty slot</span>'; }).join('');
+  const nextSlot = S.maxStage < 6 ? 'Next slot at Stage 6.' : S.maxStage < 16 ? 'Next slot at Stage 16.' : TAL.banner && !S.talents.banner ? 'One more slot from the Banner waystone.' : '';
+  const cards = S.roster.map(f => {
+    const inParty = S.party.includes(f.id), cost = trainCost(f), K = KINDS[f.kind];
+    return `<article class="fol" style="--rc:${RAR[f.r].col}">
+      <header><canvas width="20" height="20" data-por="${f.id}"></canvas><div><h3>${esc(f.name)}</h3><div class="meta">${RAR[f.r].n} ${K.n} · Lv ${f.lvl}</div></div>${inParty ? '<span class="tagpill" style="margin-left:auto">Walking</span>' : ''}</header>
+      <p>${K.role}. ${folSummary(f, st.cp)}.</p>
+      <div class="row">
+        ${inParty ? `<button class="btn small" data-act="rest" data-id="${f.id}">Rest</button>` : `<button class="btn small ${members.length < slots ? 'primary' : ''}" data-act="walk" data-id="${f.id}" ${members.length < slots ? '' : 'disabled'}>Walk with me</button>`}
+        <button class="btn small" data-act="train" data-id="${f.id}" ${S.gold >= cost ? '' : 'disabled'}>Train · ${fmt(cost)} gold</button>
+        ${confirmDismiss === f.id ? `<button class="btn small" data-act="dismiss2" data-id="${f.id}">Confirm farewell</button>` : `<button class="btn small" data-act="dismiss1" data-id="${f.id}">Farewell</button>`}
+      </div></article>`;
+  }).join('');
+  panel.innerHTML = `<div class="card"><div class="row between"><h2>Company · ${S.roster.length}/${ROSTER_MAX}</h2><span class="sub">${nextSlot}</span></div>
+    <p class="sub">Lost travellers sometimes follow your lantern after a wave, and often after a guardian falls. Up to ${slots} walk with you; the rest wait at camp.</p>
+    <div class="partybar">${bar}</div></div>
+    ${S.roster.length ? `<div class="roster">${cards}</div>` : '<p class="hint">No one has followed your light yet. Keep walking: guardians give the best chance.</p>'}`;
+  panel.querySelectorAll('canvas[data-por]').forEach(c => { const f = S.roster.find(x => x.id === c.dataset.por); if (f) portrait(c, f); });
+  S.roster.forEach(f => { f.isNew = false; });
+}
 function renderTalents() {
-  const cost = talCost(), pos = t => [10 + t.x * 20, 10 + t.y * 20];
+  const cost = talCost(), pos = t => [100 / 14 + t.x * 100 / 7, 100 / 14 + t.y * 100 / 7];
   let lines = '';
   for (const a of TALENTS) for (const b of TALENTS) if (a.id < b.id && Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1) {
     const on = S.talents[a.id] && S.talents[b.id];
@@ -840,34 +1160,50 @@ function renderTalents() {
     return `<button class="node ${own ? 'owned' : av ? 'avail' : ''} ${selTal === t.id ? 'sel' : ''}" style="left:${x}%;top:${y}%" data-act="seltal" data-id="${t.id}" aria-label="${t.n}: ${own ? 'unlocked' : av ? 'available' : 'locked'}">${t.n}</button>`;
   }).join('');
   const s = TAL[selTal];
-  let detail = '<p class="hint">Unlock stones next to ones you own. Each stone costs more than the last.</p>';
+  let detail = '<p class="hint">North stones sharpen your attack, west ones harden you, east ones speed you up, south ones fill your purse. The inner corners strengthen your company and elements.</p>';
   if (s) {
     const own = S.talents[s.id], av = talAvail(s);
     detail = `<div class="card"><h2>${s.n}</h2><p class="sub">${s.d}</p>${own ? '<p class="good verdict">Unlocked</p>' : av
       ? `<button class="btn primary" data-act="unlock" data-id="${s.id}" ${S.gold >= cost ? '' : 'disabled'}>Unlock for ${fmt(cost)} gold</button>${S.gold < cost ? `<p class="sub">You need ${fmt(Math.ceil(cost - S.gold))} more gold.</p>` : ''}`
       : '<p class="sub">Locked. Unlock a neighbouring stone first.</p>'}</div>`;
   }
-  panel.innerHTML = `<div class="split"><div class="card"><h2>Waystones</h2><p class="sub">Next stone costs ${fmt(cost)} gold · you have ${fmt(Math.floor(S.gold))}</p>
-    <div class="tree"><svg viewBox="0 0 100 100" aria-hidden="true">${lines}</svg>${nodes}</div></div>${detail}</div>`;
+  panel.innerHTML = `<div class="split"><div class="card"><h2>Waystones · ${ownedCount()}/${TALENTS.length}</h2><p class="sub">Next stone costs ${fmt(cost)} gold · you have ${fmt(Math.floor(S.gold))}</p>
+    <div class="tree" lang="en"><svg viewBox="0 0 100 100" aria-hidden="true">${lines}</svg>${nodes}</div></div>${detail}</div>`;
 }
 function renderMap() {
   const cur = zoneOf(S.stage);
+  const resTxt = f => { const e = Object.entries(f.res || {}); return e.length ? e.map(([k, v]) => `${v < 0 ? 'weak to' : 'resists'} ${elemTag(k)}`).join(', ') : 'no resistances'; };
   const cards = ZONES.map((z, i) => {
     const first = i * 5 + 1, last = i === ZONES.length - 1 ? '∞' : first + 4, open = S.maxStage >= first;
     const status = i === cur ? '<span class="status cur">You are here</span>' : open ? (S.maxStage > first + 4 && i < ZONES.length - 1 ? '<span class="status">Cleared</span>' : '<span class="status">Open</span>') : `<span class="status">Locked · reach Stage ${first}</span>`;
+    const foes = [...z.foes, z.boss].map(f => `<span>${f.n}${f === z.boss ? ' (guardian)' : ''}: hits with ${elemTag(f.el)}, ${resTxt(f)}</span>`).join('');
     return `<article class="zone ${open ? '' : 'locked'}"><div class="sky" style="background:linear-gradient(${z.sky[0]},${z.sky[1]} 70%,${z.top} 70%,${z.ground})"><span>${z.name}</span></div>
-      <div class="body">${status}<span>Stages ${first}–${last}</span><span class="sub">Foes: ${z.foes.map(f => f.n).join(', ')} · Guardian: ${z.boss.n}</span>
+      <div class="body">${status}<span>Stages ${first}–${last}</span><div class="sub" style="display:flex;flex-direction:column;gap:2px">${foes}</div>
       ${open && i !== cur ? `<div class="row"><button class="btn small" data-act="travel" data-s="${first}">Travel to Stage ${first}</button></div>` : ''}</div></article>`;
   }).join('');
-  panel.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between"><div><h2>The road so far</h2><p class="sub">Furthest: Stage ${S.maxStage}. Losing a fight sends you back one stage, never further.</p></div>
+  panel.innerHTML = `<div class="card"><div class="row between"><div><h2>The road so far</h2><p class="sub">Furthest: Stage ${S.maxStage}. Losing a fight sends you back one stage, never further. Match your weapon element to what foes are weak to.</p></div>
     <div class="row"><button class="btn small ${S.farm ? 'primary' : ''}" data-act="farm">${S.farm ? 'Farming this stage' : 'Farm this stage'}</button>
     ${S.stage < S.maxStage ? `<button class="btn small" data-act="travel" data-s="${S.maxStage}">Push to Stage ${S.maxStage}</button>` : ''}</div></div></div>
     <div class="zones">${cards}</div>`;
 }
+function renderFeats() {
+  const reward = Math.round(goldPer(S.maxStage) * 25);
+  const cards = FEATS.map(f => {
+    const cur = f.cur(), done = cur >= f.goal, claimed = !!S.feats[f.id];
+    const prog = f.rar ? (done ? 1 : 0) : clamp(cur / f.goal, 0, 1);
+    const ptxt = f.rar ? (done ? 'Found' : `Best so far: ${RAR[S.bestR].n}`) : `${fmt(Math.min(cur, f.goal))} / ${fmt(f.goal)}`;
+    return `<article class="feat ${done ? 'done' : ''} ${claimed ? 'claimed' : ''}"><b>${f.n}</b><span class="sub">${f.d}</span>
+      <div class="prog"><i style="width:${(prog * 100).toFixed(0)}%"></i></div>
+      <div class="row between"><span class="sub">${ptxt}</span>${claimed ? '<span class="tagpill">Claimed</span>' : done ? `<button class="btn small primary" data-act="claim" data-id="${f.id}">Claim</button>` : ''}</div></article>`;
+  }).join('');
+  panel.innerHTML = `<div class="card"><h2>Feats · ${renown()}/${FEATS.length} claimed</h2>
+    <p class="sub">Each claimed feat adds 1 renown: +2% damage and +2% gold for good, plus ${fmt(reward)} gold now (the gold grows with your furthest stage).</p></div>
+    <div class="feats">${cards}</div>`;
+}
 function renderJournal() {
   const ago = t => { const s = (Date.now() - t) / 1000; return s < 60 ? 'now' : s < 3600 ? Math.floor(s / 60) + 'm' : Math.floor(s / 3600) + 'h'; };
   const logs = S.log.length ? S.log.map(l => `<li><time>${ago(l.t)}</time><span ${l.c ? `style="color:${l.c}"` : ''}>${esc(l.m)}</span></li>`).join('') : '<li class="sub">Nothing yet. Your story starts on Mossbarrow Lane.</li>';
-  const opts = ['Off', 'Worn', 'Common and below', 'Fine and below', 'Rare and below'].map((n, i) => `<option value="${i}" ${S.autoSell === i ? 'selected' : ''}>${n}</option>`).join('');
+  const opts = ['Off', 'Worn', 'Common and below', 'Fine and below', 'Rare and below', 'Epic and below'].map((n, i) => `<option value="${i}" ${S.autoSell === i ? 'selected' : ''}>${n}</option>`).join('');
   panel.innerHTML = `<div class="split">
     <div class="card"><h2>Journal</h2><ul class="log">${logs}</ul></div>
     <div class="card"><h2>Settings</h2>
@@ -875,7 +1211,7 @@ function renderJournal() {
       <label class="chk"><input type="checkbox" id="autoSpend" ${S.autoSpend ? 'checked' : ''}> Spend attribute points automatically</label>
       <h2>Records</h2><dl class="stats">
         <dt>Enemies defeated</dt><dd>${fmt(S.kills)}</dd><dt>Times fallen</dt><dd>${fmt(S.deaths)}</dd>
-        <dt>Furthest stage</dt><dd>${S.maxStage}</dd><dt>Time on the road</dt><dd>${dur(S.played)}</dd>
+        <dt>Furthest stage</dt><dd>${S.maxStage}</dd><dt>Travellers recruited</dt><dd>${S.recruited}</dd><dt>Time on the road</dt><dd>${dur(S.played)}</dd>
         <dt>Best find</dt><dd ${S.best ? `style="color:${RAR[S.best.r].col}"` : ''}>${S.best ? esc(S.best.name) + ' · GS ' + S.best.gs : '–'}</dd></dl>
       <p class="sub">Progress is saved in this browser only.</p>
       ${confirmReset ? `<div class="row"><span class="bad verdict">Erase this hero and start over?</span><button class="btn small" data-act="reset2">Erase</button><button class="btn small primary" data-act="reset0">Keep playing</button></div>`
@@ -885,13 +1221,13 @@ function renderJournal() {
 function renderPanel() {
   dirtyPanel = false;
   document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === S.tab)));
-  ({ hero: renderHero, bag: renderBag, talents: renderTalents, map: renderMap, journal: renderJournal })[S.tab]();
+  ({ hero: renderHero, bag: renderBag, company: renderCompany, talents: renderTalents, map: renderMap, feats: renderFeats, journal: renderJournal }[S.tab] || renderHero)();
   markTabs();
 }
 
 document.querySelector('.tabs').addEventListener('click', e => {
   const b = e.target.closest('.tab'); if (!b) return;
-  S.tab = b.dataset.tab; confirmReset = false; renderPanel();
+  S.tab = b.dataset.tab; confirmReset = false; confirmDismiss = null; renderPanel();
 });
 panel.addEventListener('change', e => {
   if (e.target.id === 'autoSell') S.autoSell = +e.target.value;
@@ -901,22 +1237,30 @@ panel.addEventListener('change', e => {
 panel.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act, id = b.dataset.id;
+  if (a !== 'dismiss2' && a !== 'dismiss1') confirmDismiss = null;
   if (a === 'selbag') { selBag = selBag === id ? null : id; const it = S.bag.find(x => x.id === id); if (it) it.isNew = false; }
   if (a === 'equip') { const it = S.bag.find(x => x.id === id); if (it) { equip(it); selBag = null; } }
   if (a === 'sell') { const it = S.bag.find(x => x.id === id); if (it) { sell(it); selBag = null; } }
   if (a === 'sellbelow') { const r = +b.dataset.r; let g = 0, n = 0; S.bag = S.bag.filter(it => { if (it.r < r && !isUpgrade(it)) { g += value(it); n++; return false; } return true; }); S.gold += g; if (n) log(`Sold ${n} item${n > 1 ? 's' : ''} for ${fmt(g)} gold.`); selBag = null; }
-  if (a === 'autoequip') { const n = autoEquip(); log(n ? `Equipped ${n} upgrade${n > 1 ? 's' : ''}.` : 'Nothing in the bag beats your current gear.'); S.bag.forEach(i => i.isNew = false); }
+  if (a === 'autoequip') { const n = autoEquip(); log(n ? `Equipped ${n} upgrade${n > 1 ? 's' : ''}.` : 'Nothing in the bag beats your current gear.'); S.bag.forEach(i => { i.isNew = false; }); }
   if (a === 'seleq') selEq = selEq === b.dataset.slot ? null : b.dataset.slot;
   if (a === 'tobag') S.tab = 'bag';
   if (a === 'unequip') { const s = b.dataset.slot; if (S.bag.length < BAG_MAX && S.equip[s]) { S.bag.push(S.equip[s]); S.equip[s] = null; dirtyStats = true; selEq = null; } else log('Bag is full. Sell something first.'); }
   if (a === 'attr' && S.points > 0) { S.attrs[b.dataset.k]++; S.points--; dirtyStats = true; }
+  if (a === 'path') setPath(b.dataset.p);
   if (a === 'seltal') selTal = id;
   if (a === 'unlock') { const c = talCost(); if (S.gold >= c && talAvail(TAL[id]) && !S.talents[id]) { S.gold -= c; S.talents[id] = true; dirtyStats = true; log(`Unlocked the ${TAL[id].n} waystone.`, '#f3b44a'); } }
-  if (a === 'travel') { S.stage = +b.dataset.s; S.wave = 1; G.enemies = []; G.phase = 'walk'; G.walkT = 1; banner(`Stage ${S.stage} · ${ZONES[zoneOf(S.stage)].name}`); }
+  if (a === 'travel') { S.stage = +b.dataset.s; S.wave = 1; G.enemies = []; G.proj = []; G.phase = 'walk'; G.walkT = 1; banner(`Stage ${S.stage} · ${ZONES[zoneOf(S.stage)].name}`); }
   if (a === 'farm') S.farm = !S.farm;
+  if (a === 'walk') { if (partyMembers().length < partySlots() && !S.party.includes(id)) { S.party.push(id); dirtyStats = true; } }
+  if (a === 'rest') { S.party = S.party.filter(x => x !== id); dirtyStats = true; }
+  if (a === 'train') { const f = S.roster.find(x => x.id === id), c = f && trainCost(f); if (f && S.gold >= c) { S.gold -= c; f.lvl++; dirtyStats = true; } }
+  if (a === 'dismiss1') confirmDismiss = id;
+  if (a === 'dismiss2') { const f = S.roster.find(x => x.id === id); if (f) { S.roster = S.roster.filter(x => x.id !== id); S.party = S.party.filter(x => x !== id); dirtyStats = true; log(`${f.name} went their own way.`); } confirmDismiss = null; }
+  if (a === 'claim') { const f = FEATS.find(x => x.id === id); if (f && !S.feats[id] && featDone(f)) { const g = Math.round(goldPer(S.maxStage) * 25); S.feats[id] = true; S.gold += g; dirtyStats = true; log(`Feat claimed: ${f.n}. +1 renown, +${fmt(g)} gold.`, '#f3b44a'); } }
   if (a === 'reset1') confirmReset = true;
   if (a === 'reset0') confirmReset = false;
-  if (a === 'reset2') { S = fresh(); confirmReset = false; selBag = selEq = selTal = null; dirtyStats = true; resetRuntime(); log('A new wanderer lights the lantern.'); }
+  if (a === 'reset2') { S = newGame(); confirmReset = false; selBag = selEq = selTal = null; dirtyStats = true; resetRuntime(); }
   save(); updateHud(); renderPanel();
 });
 $('#farmBtn').addEventListener('click', () => { S.farm = !S.farm; log(S.farm ? `Farming Stage ${S.stage}.` : 'Pushing forward again.'); save(); updateHud(); if (S.tab === 'map') renderPanel(); });
@@ -935,8 +1279,10 @@ $('#exitStrip').addEventListener('click', () => setStrip(false));
 /* ---------- Offline progress ---------- */
 function simulateAway(sec) {
   sec = Math.min(sec, 12 * 3600);
-  const st = stats(), s = S.stage;
-  const dps = st.dmg * st.aspd * (1 + st.crit / 100 * (st.critd / 100 - 1));
+  const st = stats(), s = S.stage, z = ZONES[zoneOf(s)];
+  const avgRes = [...z.foes].reduce((a, f) => a + resMult(f, st.elem), 0) / z.foes.length;
+  let dps = st.dmg * st.aspd * (1 + st.crit / 100 * (st.critd / 100 - 1)) * avgRes * (S.path === 'lamp' ? 1.25 : 1);
+  for (const f of partyMembers()) { const Kd = KINDS[f.kind]; if (Kd.atk) dps += folPower(f, st.cp) * z.foes.reduce((a, o) => a + resMult(o, Kd.el), 0) / z.foes.length; }
   const avgHp = enemyBase(s, 5, false).hp;
   const waveTime = 1.3 + 1.55 * avgHp / dps + .6;
   const kills = Math.floor(sec / waveTime * 1.55 * .9);
@@ -952,18 +1298,23 @@ function simulateAway(sec) {
     const before = S.gold, res = gainItem(it, true);
     if (res === 'kept') kept.push(it); else { sold++; soldGold += S.gold - before; }
   }
-  log(`While away (${dur(sec)}): ${fmt(kills)} enemies, ${fmt(gold)} gold, ${kept.length} items kept.`);
-  return { sec, kills, gold: gold + soldGold, levels: S.level - lv0, kept, sold };
+  const joined = [];
+  const tries = Math.min(3, Math.floor(kills / 400));
+  for (let i = 0; i < tries; i++) if (Math.random() < .5) { const f = recruit(true); if (f) joined.push(f); }
+  log(`While away (${dur(sec)}): ${fmt(kills)} enemies, ${fmt(gold)} gold, ${kept.length} items kept${joined.length ? `, ${joined.length} new follower${joined.length > 1 ? 's' : ''}` : ''}.`);
+  return { sec, kills, gold: gold + soldGold, levels: S.level - lv0, kept, sold, joined };
 }
 function showAway(r) {
   const card = $('#awayCard');
   const list = r.kept.slice().sort((a, b) => b.r - a.r || b.gs - a.gs).slice(0, 8)
-    .map(it => `<li><img alt="" src="${icon(it.slot, it.r)}"><span style="color:${RAR[it.r].col}">${esc(it.name)}</span><span class="sub">GS ${it.gs}</span></li>`).join('');
+    .map(it => `<li><img alt="" src="${itemIcon(it)}"><span style="color:${RAR[it.r].col}">${esc(it.name)}</span><span class="sub">GS ${it.gs}</span></li>`).join('');
+  const joined = r.joined.map(f => `<li><span style="color:${RAR[f.r].col}">${esc(f.name)}</span><span class="sub">${RAR[f.r].n} ${KINDS[f.kind].n}</span></li>`).join('');
   card.innerHTML = `<h2 id="awayTitle">While you were away</h2>
     <p class="sub" style="text-align:center">Your wanderer kept fighting on Stage ${S.stage}.</p>
     <div class="tiles"><div><b>${dur(r.sec)}</b><small>Time away</small></div><div><b>${fmt(r.kills)}</b><small>Enemies</small></div>
       <div><b>+${r.levels}</b><small>Levels</small></div><div><b>+${fmt(r.gold)}</b><small>Gold</small></div></div>
     ${r.kept.length ? `<p class="sub">${r.kept.length} item${r.kept.length > 1 ? 's' : ''} added to your bag${r.sold ? `, ${r.sold} sold for gold (auto-sell or full bag)` : ''}.</p><ul class="found">${list}</ul>` : `<p class="sub">${r.sold ? r.sold + ' drops were sold for gold.' : 'No gear dropped this time.'}</p>`}
+    ${r.joined.length ? `<p class="sub">New travellers followed your light:</p><ul class="found">${joined}</ul>` : ''}
     <button class="btn primary" id="awayOk" type="button">Back to the road</button>`;
   $('#overlay').hidden = false;
   $('#awayOk').focus();
@@ -974,12 +1325,12 @@ function catchUp() {
   if (gap > 60) { const r = simulateAway(gap); if (r) showAway(r); }
   S.lastSeen = Date.now();
 }
+let last = performance.now();
 document.addEventListener('visibilitychange', () => { if (document.hidden) save(); else { catchUp(); save(); last = performance.now(); } });
 window.addEventListener('pagehide', save);
 window.addEventListener('resize', sizeCanvas);
 
 /* ---------- Loop ---------- */
-let last = performance.now();
 function frame(now) {
   const dt = Math.min(.1, (now - last) / 1000); last = now;
   update(dt); draw();
@@ -987,15 +1338,15 @@ function frame(now) {
   G.saveT += dt; if (G.saveT > 5) { G.saveT = 0; save(); }
   requestAnimationFrame(frame);
 }
-
+function newGame() {
+  S = fresh();
+  S.equip.weapon = makeItem(1, 1, 'weapon', 'blade'); S.equip.weapon.isNew = false; S.equip.weapon.name = 'Plain Shortsword';
+  log('A wanderer lights the lantern and sets out down Mossbarrow Lane.');
+  return S;
+}
 function start(data) {
-  const saved = (data && data.S) || load();
-  if (saved) S = saved;
-  else {
-    S = fresh();
-    S.equip.weapon = makeItem(1, 1, 'weapon'); S.equip.weapon.isNew = false; S.equip.weapon.name = 'Plain Shortsword';
-    log('A wanderer lights the lantern and sets out down Mossbarrow Lane.');
-  }
+  const saved = (data && data.S) ? migrate(data.S) : load();
+  if (saved) S = saved; else newGame();
   dirtyStats = true;
   resetRuntime();
   sizeCanvas();
