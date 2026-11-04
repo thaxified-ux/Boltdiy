@@ -303,7 +303,30 @@ const ZONES = [
   { name: 'Starfall Ruins', sky: ['#080918', '#2a2350'], far: '#1b1934', mid: '#2a2645', ground: '#222036', top: '#4a4570', dark: .56, prop: 'pillar', part: 'star',
     foes: [{ n: 'Star Moth', s: 'wisp', c: '#f0e6a0', el: 'shadow', res: { radiant: 50, shadow: -30 } }, { n: 'Lost Sentinel', s: 'tall', c: '#8a88b0', el: 'shadow', res: { phys: 30, radiant: -50 } }],
     boss: { n: 'The Unlit King', s: 'tall', c: '#4a3a66', el: 'shadow', res: { shadow: 70, radiant: -60 } } },
+  { name: 'Frostfang Pass', sky: ['#0c1726', '#5a7a9a'], far: '#3a5068', mid: '#24443a', ground: '#b8c6d4', top: '#eef4ff', dark: .3, prop: 'pine', part: 'snow', shape: 'peaks', weather: 'snow',
+    foes: [{ n: 'Snow Wolf', el: 'frost', res: { frost: 60, fire: -40 } }, { n: 'Frost Wraith', el: 'frost', res: { frost: 70, phys: 30, fire: -50 } }],
+    boss: { n: 'Glacier Troll', el: 'frost', res: { frost: 60, phys: 30, fire: -50 } } },
+  { name: 'Sunken Archive', sky: ['#081216', '#2a4a50'], far: '#16282e', mid: '#4a3424', ground: '#22302e', top: '#3a6a6a', dark: .5, prop: 'shelf', part: 'mist', shape: 'shelves', weather: 'rain',
+    foes: [{ n: 'Ink Slime', el: 'shadow', res: { shadow: 50, radiant: -40 } }, { n: 'Page Swarm', el: 'phys', res: { phys: 20, fire: -60 } }],
+    boss: { n: 'The Drowned Librarian', el: 'frost', res: { frost: 50, shadow: 30, fire: -40 } } },
+  { name: 'Thornveil Woods', sky: ['#120a1a', '#4a2a50'], far: '#2a1a30', mid: '#5a2a5a', ground: '#2a1e24', top: '#6a3a6a', dark: .45, prop: 'thorn', part: 'firefly', shape: 'thorns', weather: 'spores',
+    foes: [{ n: 'Spore Toad', el: 'phys', res: { fire: -40, frost: 20 } }, { n: 'Thorn Stalker', el: 'phys', res: { phys: 30, fire: -50 } }],
+    boss: { n: 'Briar Mother', el: 'shadow', res: { phys: 40, shadow: 30, fire: -60 } } },
+  { name: 'Ashen Citadel', sky: ['#140a08', '#5a2a1a'], far: '#2a1a18', mid: '#4a3a36', ground: '#2a2222', top: '#4a3a3a', dark: .4, prop: 'wall', part: 'ember', shape: 'castle', weather: 'ash',
+    foes: [{ n: 'Cinder Knight', el: 'fire', res: { fire: 50, phys: 40, frost: -40 } }, { n: 'Ash Bat', el: 'fire', res: { fire: 40, radiant: -40 } }],
+    boss: { n: 'The Warden of Ash', el: 'fire', res: { fire: 70, phys: 30, frost: -50 } } },
+  { name: 'The Hollow Sky', sky: ['#05040e', '#2a1a4a'], far: '#1a1430', mid: '#3a3060', ground: '#2a2440', top: '#8a7ad0', dark: .5, prop: 'island', part: 'star', shape: 'islands', weather: 'stars',
+    foes: [{ n: 'Void Eye', el: 'shadow', res: { shadow: 60, radiant: -50 } }, { n: 'Sky Serpent', el: 'frost', res: { frost: 40, shadow: -40 } }],
+    boss: { n: 'The Light-Eater', el: 'shadow', res: { shadow: 80, phys: 20, radiant: -70 } } },
 ];
+// The first five zones predate per-zone skylines and weather.
+[['hills', 'spores'], ['hills', 'rain'], ['peaks', 'ash'], ['dunes', 'sand'], ['spires', 'stars']].forEach(([shape, weather], i) => Object.assign(ZONES[i], { shape, weather }));
+const WEATHER_NAME = { spores: 'Spore drift', rain: 'Rain', ash: 'Ashfall', sand: 'Sandstorm', stars: 'Starfall', snow: 'Blizzard' };
+/* Every stage inside a zone has its own look: clear, misty, weather, dusk, then a blood moon before the guardian stage ends the zone. */
+const variantOf = stage => (stage - 1) % 5;
+const variantName = (stage, z) => ['Clear night', 'Misty', WEATHER_NAME[z.weather], 'Dusk', 'Blood moon'][variantOf(stage)];
+/* Foes grow fiercer deeper into a zone: a darker coat and a title. */
+const TIER_TITLE = ['', 'Feral ', 'Elder ', 'Dread ', 'Dread '];
 const zoneOf = s => Math.min(ZONES.length - 1, Math.floor((s - 1) / 5));
 
 /* Waystones: a 7×7 grid. North = offense, west = defense, east = speed, south = fortune, corners = company and elements. */
@@ -402,7 +425,10 @@ const FEATS = [
   { id: 's11', n: 'Through the Ash', d: 'Reach Stage 11', goal: 11, cur: () => S.maxStage },
   { id: 's16', n: 'Glass Underfoot', d: 'Reach Stage 16', goal: 16, cur: () => S.maxStage },
   { id: 's21', n: 'Under Fallen Stars', d: 'Reach Stage 21', goal: 21, cur: () => S.maxStage },
+  { id: 's26', n: 'Into the Cold', d: 'Reach Stage 26', goal: 26, cur: () => S.maxStage },
   { id: 's30', n: 'Past the Map’s Edge', d: 'Reach Stage 30', goal: 30, cur: () => S.maxStage },
+  { id: 's36', n: 'Among the Thorns', d: 'Reach Stage 36', goal: 36, cur: () => S.maxStage },
+  { id: 's46', n: 'The Hollow Sky', d: 'Reach Stage 46', goal: 46, cur: () => S.maxStage },
   { id: 's50', n: 'The Long Road', d: 'Reach Stage 50', goal: 50, cur: () => S.maxStage },
   { id: 'r3', n: 'A Blue Glint', d: 'Find a Rare item', goal: 3, cur: () => S.bestR, rar: 1 },
   { id: 'r4', n: 'Violet Luck', d: 'Find an Epic item', goal: 4, cur: () => S.bestR, rar: 1 },
@@ -717,8 +743,24 @@ const SPECIALS = {
   'Star Moth': [{ k: 'blind', n: 'Glitter Dust', cd: 8 }],
   'Lost Sentinel': [{ k: 'guard', n: 'Shield Wall', cd: 9 }],
   'The Unlit King': [{ k: 'summon', n: 'Call the Lost', cd: 12 }, { k: 'slam', n: 'Eclipse', cd: 7 }],
+  'Snow Wolf': [{ k: 'pounce', n: 'Pack Leap', cd: 6 }],
+  'Frost Wraith': [{ k: 'chill', n: 'Grave Chill', cd: 7 }],
+  'Glacier Troll': [{ k: 'snare', n: 'Frozen Grip', cd: 8 }, { k: 'slam', n: 'Avalanche', cd: 7 }],
+  'Ink Slime': [{ k: 'blind', n: 'Ink Splash', cd: 7 }],
+  'Page Swarm': [{ k: 'poison', n: 'Paper Cuts', cd: 6 }],
+  'The Drowned Librarian': [{ k: 'chill', n: 'Cold Silence', cd: 9 }, { k: 'summon', n: 'Loose Pages', cd: 12, foe: 'Page Swarm' }],
+  'Spore Toad': [{ k: 'poison', n: 'Toxic Croak', cd: 6 }],
+  'Thorn Stalker': [{ k: 'reflect', n: 'Bramble Hide', cd: 8 }],
+  'Briar Mother': [{ k: 'snare', n: 'Strangling Vines', cd: 8 }, { k: 'summon', n: 'Brood', cd: 12, foe: 'Thorn Stalker' }],
+  'Cinder Knight': [{ k: 'guard', n: 'Iron Ranks', cd: 9 }],
+  'Ash Bat': [{ k: 'burn', n: 'Cinder Bite', cd: 6 }],
+  'The Warden of Ash': [{ k: 'reflect', n: 'Furnace Plate', cd: 10 }, { k: 'slam', n: 'Judgement', cd: 7 }],
+  'Void Eye': [{ k: 'drain', n: 'Hollow Gaze', cd: 7 }],
+  'Sky Serpent': [{ k: 'evade', n: 'Cloud Dive', cd: 7 }],
+  'The Light-Eater': [{ k: 'blind', n: 'Swallow the Light', cd: 7, hit: 1.4 }, { k: 'chill', n: 'Endless Cold', cd: 10 }, { k: 'summon', n: 'Call the Void', cd: 13, foe: 'Void Eye' }],
 };
-const SP_DESC = { poison: 'poisons you', frenzy: 'attacks twice as fast for a while', snare: 'roots you so you cannot attack, and heals itself', shell: 'takes 70% less damage for a while', drain: 'drains your HP to heal itself', slam: 'a heavy hit', burn: 'sets you on fire', pounce: 'leaps in for a heavy hit', reflect: 'reflects 30% of the damage it takes', evade: 'dodges most hits for a while', blind: 'blinds you so half your attacks miss', guard: 'shields every foe in the wave', summon: 'calls two Lost Sentinels' };
+function foeByName(n) { for (const z of ZONES) for (const f of [...z.foes, z.boss]) if (f.n === n) return f; return ZONES[4].foes[1]; }
+const SP_DESC = { poison: 'poisons you', frenzy: 'attacks twice as fast for a while', snare: 'roots you so you cannot attack, and heals itself', shell: 'takes 70% less damage for a while', drain: 'drains your HP to heal itself', slam: 'a heavy hit', burn: 'sets you on fire', pounce: 'leaps in for a heavy hit', reflect: 'reflects 30% of the damage it takes', evade: 'dodges most hits for a while', blind: 'blinds you so half your attacks miss', guard: 'shields every foe in the wave', summon: 'calls two minions to its side', chill: 'chills you so you attack 40% slower' };
 const goldPer = (s, boss) => 2 * Math.pow(1.13, s - 1) * (boss ? 6 : 1);
 const xpPer = (s, boss) => 6 * Math.pow(1.12, s - 1) * (boss ? 5 : 1);
 const resMult = (foe, el) => 1 - ((foe.res && foe.res[el]) || 0) / 100;
@@ -732,8 +774,8 @@ function banner(text, col) { if (G) G.banner = { text, col: col || '#ece4d0', t:
 function fx(x, y, txt, col, life, size) { if (G.fx.length < 50) G.fx.push({ x, y, txt, col, t: 0, life: life || .9, size: size || 5 }); }
 
 function makeFoe(f, b, boss, x, elite) {
-  const m = elite ? 2.5 : 1;
-  return { n: f.n, s: f.s, c: f.c, el: f.el, res: f.res, hp: b.hp * m, max: b.hp * m, dmg: b.dmg * (elite ? 1.4 : 1), aspd: boss ? .7 : .8, boss, elite, x, t: rnd(.2, .7),
+  const m = elite ? 2.5 : 1, tier = boss ? 0 : variantOf(S.stage);
+  return { tier, title: (elite ? 'Elite ' : '') + TIER_TITLE[tier] + f.n, n: f.n, s: f.s, c: f.c, el: f.el, res: f.res, hp: b.hp * m, max: b.hp * m, dmg: b.dmg * (elite ? 1.4 : 1), aspd: boss ? .7 : .8, boss, elite, x, t: rnd(.2, .7),
     flash: 0, dead: false, die: 0, ph: Math.random() * 6, sp: SPECIALS[f.n] || [], spT: (SPECIALS[f.n] || []).map(sp => sp.cd * rnd(.4, .9)), shell: 0, shellM: 1, haste: 0, evade: 0, reflect: 0 };
 }
 function spawnWave() {
@@ -823,8 +865,9 @@ function useSpecial(e, sp) {
     case 'reflect': e.reflect = 3; break;
     case 'evade': e.evade = 2; break;
     case 'blind': h.blind = 3; if (sp.hit) enemyHit(e, sp.hit); break;
+    case 'chill': h.chill = 3.5; break;
     case 'summon': {
-      const alive = G.enemies.filter(o => !o.dead).length, foe = ZONES[4].foes[1];
+      const alive = G.enemies.filter(o => !o.dead).length, foe = foeByName(sp.foe || 'Lost Sentinel');
       for (let k = 0; k < 2 && alive + k < 5; k++) {
         const b = enemyBase(S.stage, S.wave, false), m = makeFoe(foe, { hp: b.hp * .6, dmg: b.dmg * .7 }, false, W + 4 + k * 20, false);
         m.minion = true; G.enemies.push(m);
@@ -849,7 +892,7 @@ function heroDie(killer) {
   const from = S.stage;
   if (S.stage > 1) S.stage--;
   S.wave = 1;
-  const who = killer ? killer.n : 'The road';
+  const who = killer ? (killer.title || killer.n) : 'The road';
   log(from > 1 ? `${who} beat you on Stage ${from}. Regrouping at Stage ${S.stage}, wave 1.` : `${who} beat you. Starting Stage 1 again from wave 1.`, '#ff8070');
   if (S.points || S.bag.some(isUpgrade)) log(`Tip: ${S.points ? `spend your ${S.points} attribute points (Hero tab)` : ''}${S.points && S.bag.some(isUpgrade) ? ' and ' : ''}${S.bag.some(isUpgrade) ? 'equip the ▲ upgrades in your Bag' : ''} before the next try.`, '#f3b44a');
   banner(`${who} beat you`, '#ff8070');
@@ -886,11 +929,11 @@ function update(dt) {
   if (h.dead > 0) {
     h.dead -= dt;
     for (const e of G.enemies) e.x += 40 * dt;
-    if (h.dead <= 0) { G.enemies = []; h.hp = st.hp; h.stun = h.blind = 0; h.dots = []; G.phase = 'walk'; G.walkT = 1.5; banner(G.fallBanner || `Stage ${S.stage} · ${ZONES[zoneOf(S.stage)].name}`, '#ff8070'); G.fallBanner = null; }
+    if (h.dead <= 0) { G.enemies = []; h.hp = st.hp; h.stun = h.blind = h.chill = 0; h.dots = []; G.phase = 'walk'; G.walkT = 1.5; banner(G.fallBanner || `Stage ${S.stage} · ${ZONES[zoneOf(S.stage)].name}`, '#ff8070'); G.fallBanner = null; }
     return;
   }
   h.hp = Math.min(st.hp, h.hp + (st.regen + (G.phase === 'walk' ? st.hp * .15 : 0)) * dt);
-  h.stun = Math.max(0, (h.stun || 0) - dt); h.blind = Math.max(0, (h.blind || 0) - dt);
+  h.stun = Math.max(0, (h.stun || 0) - dt); h.blind = Math.max(0, (h.blind || 0) - dt); h.chill = Math.max(0, (h.chill || 0) - dt);
   h.dots = (h.dots || []).filter(d => (d.t -= dt) > 0);
   for (const d of h.dots) h.hp -= d.dps * dt;
   if (h.hp <= 0) { heroDie(G.enemies.find(e => !e.dead)); return; }
@@ -915,7 +958,7 @@ function update(dt) {
   for (const e of G.enemies) if (e.dead) e.die += dt;
   G.enemies = G.enemies.filter(e => !e.dead || e.die < .5);
   const front = alive.find(e => !e.dead);
-  if (!(h.stun > 0)) h.atkT -= dt;
+  if (!(h.stun > 0)) h.atkT -= dt * (h.chill > 0 ? .6 : 1);
   if (front && !(h.stun > 0) && front.x <= HX + st.range + (front.boss ? 6 : 0) && h.atkT <= 0 && h.dead <= 0) { h.atkT = 1 / st.aspd; h.swing = .16; heroAttack(front); }
   // company
   partyMembers().forEach((f, i) => {
@@ -941,14 +984,26 @@ function updateParts(dt) {
     if (z.part === 'ember') Object.assign(p, { x: rnd(0, W), y: GY, vx: rnd(-6, 4), vy: rnd(-16, -8), c: '#ff9a4a' });
     if (z.part === 'sand') Object.assign(p, { x: W, y: rnd(20, GY), vx: rnd(-90, -60), vy: rnd(-2, 2), c: 'rgba(240,215,160,.5)', life: 3 });
     if (z.part === 'star') Object.assign(p, { x: rnd(40, W + 40), y: 0, vx: -40, vy: 30, c: '#f0e6a0', life: 1.2 });
+    if (z.part === 'snow') Object.assign(p, { k: 'snow', x: rnd(0, W + 20), y: -2, vx: rnd(-8, -3), vy: rnd(8, 14), c: '#eef4ff', life: 6 });
+    if (z.part === 'firefly' && z.top === '#6a3a6a') p.c = '#ff9ad8';
     G.parts.push(p);
+  }
+  if (!reduced && variantOf(S.stage) === 2 && G.parts.length < 90 && Math.random() < dt * 30) {
+    const w = z.weather, q = { t: 0, life: 4 };
+    if (w === 'rain') Object.assign(q, { k: 'rain', x: rnd(0, W + 60), y: -3, vx: -35, vy: 170, c: 'rgba(170,200,230,.6)', life: .7 });
+    else if (w === 'snow') Object.assign(q, { k: 'snow', x: rnd(0, W + 60), y: -2, vx: rnd(-40, -20), vy: rnd(20, 34), c: '#ffffff' });
+    else if (w === 'ash') Object.assign(q, { k: 'snow', x: rnd(0, W + 30), y: -2, vx: rnd(-10, -4), vy: rnd(10, 18), c: '#9a8a86', life: 6 });
+    else if (w === 'spores') Object.assign(q, { k: 'snow', x: rnd(0, W), y: GY + 2, vx: rnd(-6, 6), vy: rnd(-10, -5), c: z.top === '#6a3a6a' ? '#f0a0e0' : '#c8e870', life: 6 });
+    else if (w === 'sand') Object.assign(q, { k: 'sand', x: W, y: rnd(10, GY), vx: rnd(-120, -80), vy: rnd(-2, 2), c: 'rgba(240,215,160,.55)', life: 3 });
+    else Object.assign(q, { k: 'star', x: rnd(40, W + 60), y: 0, vx: -60, vy: 45, c: '#ffe6a0', life: 1.2 });
+    G.parts.push(q);
   }
   for (const p of G.parts) {
     p.t += dt;
     if (p.k === 'loot') { p.x += p.vx * dt; p.vy += 240 * dt; p.y += p.vy * dt; if (p.y > GY - 6) p.y = GY - 6; continue; }
     p.x += (p.vx - (G.phase === 'walk' ? 16 : 0)) * dt; p.y += p.vy * dt;
   }
-  G.parts = G.parts.filter(p => p.t < p.life && p.x > -30);
+  G.parts = G.parts.filter(p => p.t < p.life && p.x > -30 && p.y < H + 2);
 }
 
 /* ---------- Drawing ---------- */
@@ -1209,6 +1264,163 @@ const SPR = {
     '.r...aAAa.aAAa..',
     '.....aAAa..aAAa.',
     '.....aaaa..aaaa.'],
+  wolf: { rows: [
+    '..ff............',
+    '.fFFf...........',
+    'fFeFFffffffff...',
+    'nFFFFFFFFFFFFf..',
+    '.ffFFFFFFFFFFFFf',
+    '..fffffffffffd.f',
+    '...fd.fd..fd.fd.',
+    '...f..f...f..f..'],
+    alt: { 6: '..fd..fd.fd..fd.', 7: '..f...f..f...f..' } },
+  troll: [
+    '.......iiiii..........',
+    '......dTTTTTd.........',
+    '.....dTTTTTTTd........',
+    '.....dTeTTTeTd........',
+    '.....dTTTTTTTd........',
+    '......dTwwwTd.........',
+    '...ddddTTTTTdddd......',
+    '..dTTTTTTTTTTTTTd.....',
+    '.dTTiTTTTTTTTTiTTd....',
+    '.dTTTdTTTTTTTdTTTd....',
+    '.dTTdddTTTTTdddTTd....',
+    '.dTd..dTTTTTd..dTd....',
+    '.ddd..dTTTTTd..ddd....',
+    '.iii..dTTdTTd..iii....',
+    '......dTTddTTd........',
+    '.....dTTd..dTTd.......',
+    '.....dddd..dddd.......'],
+  pages: { fly: 1, rows: ['..pp...pp..', '.pPPp.pPPp.', '.pPip.pPip.', '..pp.e.pp..', '.pp.pip.pp.', 'pPPp...pPPp', '.pp.....pp.'],
+    alt: { 0: '...........', 1: '..pp...pp..', 2: '.pPPp.pPPp.', 3: '.pPip.pPip.', 4: '..pp.e.pp..', 5: '.pp.pip.pp.', 6: 'pPPp...pPPp' } },
+  librarian: [
+    '.......hh.........',
+    '......hhhh........',
+    '.....hhhhhh.......',
+    '....hhhhhhhh......',
+    '.....ssssss.......',
+    '.....sesses.......',
+    '.....ssssss.......',
+    '....rRRRRRRr......',
+    '...rRRrrrrRRr.....',
+    '..rRRbBBBbRRRr..c.',
+    '..rRRbpppbRRRr..h.',
+    '..rRRbBBBbRRRr..h.',
+    '..rRRRRRRRRRRr..h.',
+    '..rRRRRRRRRRRr....',
+    '...rRRRRRRRRr.....',
+    '...rRRRrrRRRr.....',
+    '..rrrrr..rrrrr....'],
+  toad: { rows: ['..GG....GG....', '.GyyG..GyyG...', '.GykG..GykG...', '.gggggggggggg.', 'gggsggggggsggg', 'ggggggggggggdd', 'gdkkkkkkkkkgdd', '.ggggggggggdd.', 'gg.dd....dd.gg'],
+    alt: { 0: '..............', 1: '..GG....GG....', 2: '.GyyG..GyyG...', 3: '.GykGgggGykGg.', 8: 'g..dd....dd..g' } },
+  stalker: { rows: [
+    '..t...t.........',
+    '.aAa.tAt........',
+    'aeAAAAAAAtA.t...',
+    'AAAAAAAAAAAAAt..',
+    '.aAAAAAAAAAAAAa.',
+    '..aaaaaaaaaaaa.t',
+    '...ad.ad..ad.ad.',
+    '...a..a...a..a..'],
+    alt: { 6: '..ad..ad.ad..ad.', 7: '..a...a..a...a..' } },
+  briar: [
+    '....f.....f.....f.....',
+    '...fff...fff...fff....',
+    '....v.....v.....v.....',
+    '....vv...vvv...vv.....',
+    '.....vvVVVVVVVvv......',
+    '....vVVVVVVVVVVVv.....',
+    '...vVVeVVVVVVeVVVv....',
+    '...vVVVVVVVVVVVVVv....',
+    '..tvVVVVVtttVVVVVvt...',
+    '...vVVVVVVVVVVVVVv....',
+    '..vVlVVVVVVVVVVlVVv...',
+    '.vVVllVVVVVVVVllVVVv..',
+    '.v.t..vVVVVVVv..t..v..',
+    '.v....vVVvvVVv.....v..',
+    '..t..vVVv..vVVv...t...',
+    '.....vvvv..vvvv.......'],
+  bat: { fly: 1, rows: ['b...........b', 'bb.........bb', 'bBb..b.b..bBb', 'bBBb.bbb.bBBb', '.bBBbBeBbBBb.', '..bbbBBBbbb..', '.....b.b.....'],
+    alt: { 0: '.............', 1: '.............', 2: '.....b.b.....', 3: '.....bbb.....', 4: '..bbbBeBbbb..', 5: '.bBBbBBBbBBb.', 6: 'bBb..b.b..bBb' } },
+  eye: { fly: 1, rows: ['...ooooo...', '..oOOOOOo..', '.oOwwwwwOo.', 'oOwwpppwwOo', 'oOwppkppwOo', 'oOwwpppwwOo', '.oOwwwwwOo.', '..oOOOOOo..', '...ooooo...', '....o.o....', '...o...o...'],
+    alt: { 9: '...o.o.....', 10: '....o..o...' } },
+  serpent: { fly: 1, rows: ['..ss............', '.sSSs.....ss....', 'seSSSs...sSSs...', 'wSSSSSs.sSSSSs..', '.ssSSSSsSSssSSs.', '...ssSSSSs..sSSs', '.....ssss....ss.'],
+    alt: { 1: '.sSSs......ss...', 2: 'seSSSs....sSSs..', 3: 'wSSSSSs..sSSSSs.', 4: '.ssSSSSssSSssSSs', 5: '...ssSSSSSs..sSS' } },
+  lighteater: { fly: 1, rows: [
+    '.s......vvvvv......s..',
+    '......vVVVVVVVv.......',
+    '.....vVVVVVVVVVv......',
+    '....vVVeVVVVVeVVv.....',
+    '....vVVVVVVVVVVVv..s..',
+    '....vVVmmmmmmmVVv.....',
+    '.....vVmVmVmVmVv......',
+    '..vv..vVVVVVVVv..vv...',
+    '.vHHv..vVVVVVv..vHHv..',
+    'vHVVHvvVVVVVVVvvHVVHv.',
+    '.vVVVVVVVVVVVVVVVVVv..',
+    '..vvVVVVVVVVVVVVVvv...',
+    '....vVVVVvvvVVVVv.....',
+    '.....vVVv...vVVv......',
+    '......vv.....vv.......'],
+    alt: { 0: '...s....vvvvv....s....', 4: '....vVVVVVVVVVVVv.s...' } },
+  pine: [
+    '.....S.....',
+    '....SLS....',
+    '....LLL....',
+    '...SLLLS...',
+    '...LLLLL...',
+    '..SLLLLLS..',
+    '..LLLLLDL..',
+    '.SLLLLLLLS.',
+    '.LLLLLLLDL.',
+    'SLLLLLLLLDS',
+    'LLLLLLLLLDD',
+    '....tT.....',
+    '....tT.....',
+    '...ttTT....'],
+  shelf: [
+    'HHHHHHHHHHHH',
+    'LDDDDDDDDDDL',
+    'LrgbrrbgrgDL',
+    'LrgbrrbgrgDL',
+    'LHHHHHHHHHHL',
+    'LbrgDrgbbrDL',
+    'LbrgDrgbbrDL',
+    'LHHHHHHHHHHL',
+    'LgbrbgrDgbDL',
+    'LgbrbgrDgbDL',
+    'LHHHHHHHHHHL',
+    'LDDDDDDDDDDL',
+    'LL........LL'],
+  thorn: [
+    '.....H......',
+    '..H..L..H...',
+    '..LL.L.LL...',
+    '...LLLLL..H.',
+    '.H..LLL..LL.',
+    '.LL.LLL.LL..',
+    '..LLLLLLL...',
+    '...LLLLL....',
+    '..LLDLDLL...',
+    '.LLDLLLDLL..',
+    'LLDLLLLLDLL.'],
+  wall: [
+    'HH..HH..HH......',
+    'LL..LL..LL......',
+    'LLLLLLLLLLH.....',
+    'LDLLLDLLLLL.....',
+    'LLLLLLLLLDL..H..',
+    'LLrrLLLLLLLL.L..',
+    'LLrrLDLLLLLLLL..',
+    'LLrrLLLLLDLLLLH.',
+    'LLrrLLLLLLLLLLL.',
+    'LL.rLLLDLLLLDLL.',
+    'LLLLLLLLLLLLLLLL',
+    'DDDDDDDDDDDDDDDD'],
+  island: ['..l.l...l.....', '.HHHHHHHHHH...', 'HLLLLLLLLLLH..', '.LLLLLLLLLLD..', '..LLLLLLLLD...', '...DLLLLLD....', '....DLLLD.....', '.....DLD......', '......D.......'],
+  cloudA: ['....cccc......', '..ccCCCCcc....', '.cCCCCCCCCcc..', 'cCCCCCCCCCCCcc', '.cccccccccccc.'],
+  cloudB: ['.....ccc...', '..cccCCCcc.', 'ccCCCCCCCCc', '.ccccccccc.'],
   tree: [
     '.....HHHH.....',
     '...HHLLLLHH...',
@@ -1257,6 +1469,21 @@ const PAL = {
   matron: { S: '#7fbaba', s: '#4f8a8a', D: '#2e5a5a', p: '#f0f0ff', c: '#a05a40', C: '#d08060', e: '#ffffff', k: '#111111' },
   golem: { d: '#3a302c', R: '#7a6a60', H: '#9a8a7e', f: '#ff8a3d', F: '#ffd27a' },
   wyrm: { d: '#3a6088', B: '#8cc4ec', W: '#ffffff', e: '#ff60a0' },
+  snowwolf: { f: '#c8d2dc', F: '#f4f8ff', d: '#7a8898', e: '#4ab0ff', n: '#222222' },
+  frostwisp: { y: '#3a6a90', Y: '#a8d8ff', W: '#ffffff', k: '#0a1a2a' },
+  troll: { t: '#7a9ab0', T: '#a8c4d8', d: '#4a6478', i: '#d8f4ff', e: '#2a3a48', w: '#ffffff' },
+  ink: { g: '#2a2a40', G: '#4a4a6a', d: '#141420', w: '#9fe0ff', k: '#000000' },
+  pages: { p: '#e8e0c8', P: '#ffffff', i: '#2a2a3a', e: '#ff6050' },
+  librarian: { r: '#2a3a5a', R: '#3e527a', b: '#8a3a2a', B: '#c05a3a', p: '#e8e0c8', e: '#9fe0ff', s: '#9ab0a0', h: '#1a2438', c: '#f3b44a' },
+  toad: { g: '#7a5aa8', G: '#a888d0', d: '#4a3470', y: '#f3e04a', k: '#111111', s: '#e8a0c8' },
+  stalker: { a: '#3a4a2a', A: '#5a7a3a', t: '#b050c8', e: '#ff60a0', d: '#26301c' },
+  briar: { v: '#3a2a40', V: '#6a4a78', t: '#c060d0', l: '#5a8a3a', e: '#ffe060', f: '#ff80b0' },
+  cinderknight: { m: '#3a2a26', M: '#7a5a4a', d: '#2a1a16', e: '#ff8a3d' },
+  bat: { b: '#3a3030', B: '#5a4a48', e: '#ff8a3d', w: '#2a2222' },
+  ashwarden: { a: '#3a2420', A: '#6a3a2a', H: '#9a5a3a', c: '#ffb84a', e: '#ff6030', k: '#1a0a08', r: '#2a1410' },
+  eye: { o: '#2a1a40', O: '#5a3a8a', w: '#e8e0ff', p: '#ff40a0', k: '#000000' },
+  serpent: { s: '#3a6aa0', S: '#8ac0f0', w: '#ffffff', e: '#ffe060', d: '#24406a' },
+  lighteater: { v: '#1a1030', V: '#3a2a60', H: '#6a5aa0', e: '#ffffff', m: '#ff40a0', s: '#ffe680' },
   king: { a: '#2a2240', A: '#4a3a6a', H: '#6a5a90', c: '#d8b84a', e: '#c070ff', k: '#0a0812', r: '#24162f' },
 };
 const FOE_ART = {
@@ -1265,7 +1492,19 @@ const FOE_ART = {
   'Ember Wisp': ['wisp', 'ember'], 'Ash Hound': ['hound', 'hound'], 'Kiln Golem': ['golem', 'golem'],
   'Glass Scarab': ['scarab', 'scarab'], 'Mirage': ['slime', 'mirage', .75], 'Prism Wyrm': ['wyrm', 'wyrm'],
   'Star Moth': ['moth', 'moth'], 'Lost Sentinel': ['sentinel', 'sentinel'], 'The Unlit King': ['king', 'king'],
+  'Snow Wolf': ['wolf', 'snowwolf'], 'Frost Wraith': ['wisp', 'frostwisp', .85], 'Glacier Troll': ['troll', 'troll'],
+  'Ink Slime': ['slime', 'ink'], 'Page Swarm': ['pages', 'pages'], 'The Drowned Librarian': ['librarian', 'librarian'],
+  'Spore Toad': ['toad', 'toad'], 'Thorn Stalker': ['stalker', 'stalker'], 'Briar Mother': ['briar', 'briar'],
+  'Cinder Knight': ['sentinel', 'cinderknight'], 'Ash Bat': ['bat', 'bat'], 'The Warden of Ash': ['king', 'ashwarden'],
+  'Void Eye': ['eye', 'eye'], 'Sky Serpent': ['serpent', 'serpent'], 'The Light-Eater': ['lighteater', 'lighteater'],
 };
+/* Darker coats for deeper tiers, built once per palette and tier. */
+function tierPal(pk, tier) {
+  if (!tier) return pk;
+  const key = `${pk}~${tier}`;
+  if (!PAL[key]) PAL[key] = Object.fromEntries(Object.entries(PAL[pk]).map(([k, v]) => [k, shade(v, -.11 * Math.min(tier, 3))]));
+  return key;
+}
 function buildSprite(rows, pal, outline) {
   const h = rows.length, w = Math.max(...rows.map(r => r.length));
   const c = document.createElement('canvas'); c.width = w + 2; c.height = h + 2;
@@ -1281,14 +1520,15 @@ function buildSprite(rows, pal, outline) {
 }
 const sprCache = {};
 function getSpr(name, frame, palKey, pal, flash, noOutline) {
-  const key = `${name}|${frame}|${palKey}|${flash ? 1 : 0}${noOutline ? 'n' : ''}`;
+  const key = `${name}|${frame}|${palKey}|${flash || 0}${noOutline ? 'n' : ''}`;
   if (sprCache[key]) return sprCache[key];
   const def = SPR[name];
   let rows = def.rows || def;
   if (frame && def.alt) { rows = rows.slice(); for (const k in def.alt) rows[+k] = def.alt[k]; }
   let p = pal || PAL[palKey];
-  if (flash) p = Object.fromEntries(Object.keys(p).map(k => [k, '#ffffff']));
-  return (sprCache[key] = buildSprite(rows, p, noOutline ? null : flash ? '#ffffff' : OUTLINE));
+  const fc = flash === true ? '#ffffff' : flash;
+  if (flash) p = Object.fromEntries(Object.keys(p).map(k => [k, fc]));
+  return (sprCache[key] = buildSprite(rows, p, noOutline ? null : flash ? fc : OUTLINE));
 }
 function blit(c, x, y) { L.drawImage(c, Math.round(x), Math.round(y)); }
 const urlCache = {};
@@ -1302,19 +1542,20 @@ function folPal(kind) {
   const c = KINDS[kind].cloak;
   return { h: shade(c, -.35), H: shade(c, -.15), s: '#e2c39b', e: '#1a1a1a', c, C: shade(c, .22), d: shade(c, -.3), b: '#5a3e24', l: '#20282d', k: '#2a1d14' };
 }
-function propPal(z) { return { L: z.mid, H: shade(z.mid, .18), D: shade(z.mid, -.3), t: '#24190f', T: '#3a2a1a', c: '#6b5a3a' }; }
+function propPal(z) { return { L: z.mid, H: shade(z.mid, .18), D: shade(z.mid, -.3), t: '#24190f', T: '#3a2a1a', c: '#6b5a3a', S: '#eef4ff', r: '#7a3a3a', g: '#3a6a4a', b: '#3a4a7a', l: '#6fae4a' }; }
 
 function drawProp(kind, x, i, z) {
   const r = hash(i);
   const c = getSpr(kind, 0, 'prop:' + z.name, propPal(z), false, true);
   const cut = kind === 'pillar' ? Math.floor(r * 12) : kind === 'tree' ? Math.floor(r * 3) : 0;
-  const h = c.height - cut, y = GY - h + 1;
+  const h = c.height - cut, y = GY - h + 1 - (kind === 'island' ? 24 + Math.round(r * 10) : 0);
   if (r > .5) { L.save(); L.scale(-1, 1); L.drawImage(c, 0, cut, c.width, h, -Math.round(x) - c.width, y, c.width, h); L.restore(); }
   else L.drawImage(c, 0, cut, c.width, h, Math.round(x), y, c.width, h);
 }
 
 function drawFoe(e) {
-  const [sn, pk, alpha] = FOE_ART[e.n] || ['slime', 'moss'];
+  const [sn, pk0, alpha] = FOE_ART[e.n] || ['slime', 'moss'];
+  const pk = tierPal(pk0, e.tier || 0);
   const def = SPR[sn], t = G.t + e.ph;
   const frame = Math.floor(t * (def.fly ? 7 : 5)) % 2;
   const c = getSpr(sn, frame, pk, null, false);
@@ -1324,7 +1565,12 @@ function drawFoe(e) {
   const fade = e.dead ? clamp(1 - e.die / .5, 0, 1) : 1;
   if (e.dead) y += e.die * 8;
   L.globalAlpha = fade * (alpha || 1);
-  if (e.elite && !e.dead) { L.globalAlpha = fade * .35; L.fillStyle = '#f3b44a'; L.fillRect(Math.round(e.x - c.width / 2) - 1, Math.round(y) - 1, c.width + 2, c.height + 2); L.globalAlpha = fade * (alpha || 1); }
+  if (e.elite && !e.dead) { // a thin gold rim that follows the sprite
+    const gold = getSpr(sn, frame, pk, null, '#f3b44a'), gx = e.x - c.width / 2;
+    L.globalAlpha = fade * (.55 + .25 * Math.sin(G.t * 5));
+    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) blit(gold, gx + dx, y + dy);
+    L.globalAlpha = fade * (alpha || 1);
+  }
   blit(c, e.x - c.width / 2, y);
   if (e.flash > 0 && !e.dead) { const a = L.globalAlpha; L.globalAlpha = a * .5; blit(getSpr(sn, frame, pk, null, true), e.x - c.width / 2, y); L.globalAlpha = a; }
   if (!e.dead && (e.shell > 0 || e.evade > 0 || e.reflect > 0 || e.haste > 0)) {
@@ -1373,10 +1619,134 @@ function drawHero() {
   if (h.hurt > 0) { L.globalAlpha = .45; px(ox + 2, oy + 1, 12, 18, '#ff5040'); L.globalAlpha = 1; }
   if (h.dots && h.dots.length) { L.globalAlpha = .3; px(ox + 2, oy + 1, 12, 18, h.dots[h.dots.length - 1].col); L.globalAlpha = 1; }
   if (h.blind > 0) { L.globalAlpha = .6; px(ox + 4, oy + 3, 8, 2, '#2a1a40'); L.globalAlpha = 1; }
+  if (h.chill > 0) { L.globalAlpha = .3; px(ox + 2, oy + 1, 12, 18, '#9fdcff'); L.globalAlpha = 1; }
   if (h.stun > 0) for (let k = 0; k < 3; k++) { const a = G.t * 6 + k * 2.1; px(x + Math.cos(a) * 5, oy - 6 + Math.sin(a) * 1.5, 1, 1, '#f3e04a'); }
   px(x - 7, oy - 3, 14, 2, '#0e1a12'); px(x - 7, oy - 3, 14 * clamp(h.hp / st.hp, 0, 1), 2, '#7fd38b');
 }
 function lightPos() { return S.path === 'lamp' ? [HX + 6, GY - 15] : [HX - 10, GY - 8]; }
+
+/* ---------- Backdrop textures ----------
+   Sky in dithered pixel bands, a per-zone skyline, textured ground with tufts, and dark near-camera grass. */
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+function mix(a, b, t) {
+  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  const ch = sh => Math.round(((pa >> sh) & 255) * (1 - t) + ((pb >> sh) & 255) * t);
+  return '#' + ((1 << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).slice(1);
+}
+const bgCache = {};
+function cached(key, w, h, fn) {
+  if (bgCache[key]) return bgCache[key];
+  const c = document.createElement('canvas'); c.width = w; c.height = h; fn(c.getContext('2d'), w, h);
+  return (bgCache[key] = c);
+}
+function skyCanvas(z, v) {
+  return cached(`sky|${z.name}|${v}`, W, GY, (x, w, h) => {
+    const top = v === 4 ? mix(z.sky[0], '#1a0408', .4) : z.sky[0];
+    const bot = v === 3 ? mix(z.sky[1], '#d0703a', .45) : v === 4 ? mix(z.sky[1], '#7a1a2a', .55) : v === 1 ? mix(z.sky[1], '#8a9aa8', .25) : z.sky[1];
+    const bands = 7, cols = Array.from({ length: bands + 1 }, (_, i) => mix(top, bot, i / bands));
+    for (let y = 0; y < h; y++) for (let i = 0; i < w; i++) {
+      const b = Math.min(bands, Math.floor((y / (h - 1)) * bands + BAYER[(y & 3) * 4 + (i & 3)] / 16));
+      x.fillStyle = cols[b]; x.fillRect(i, y, 1, 1);
+    }
+  });
+}
+const SKY_W = 480;
+function skylineHeight(shape, i) {
+  const t = i / SKY_W * Math.PI * 2, hs = hash(Math.floor(i / 6) + 3);
+  switch (shape) {
+    case 'peaks': { const tri = (per, amp) => { const q = (i % per) / per; return amp * (1 - Math.abs(2 * q - 1)); }; return 60 - tri(160, 26) - tri(96, 12) * .7; }
+    case 'dunes': return 52 + Math.sin(t * 2) * 6 + Math.sin(t * 7) * 2.5;
+    case 'spires': { const seg = i % 40; const sh = hash(Math.floor(i / 40)); return seg < 5 ? 54 - 12 - sh * 22 : 56 + Math.sin(t * 5) * 2; }
+    case 'shelves': { const sh = hash(Math.floor(i / 22) + 9); return 58 - Math.floor(sh * 5) * 4 - (i % 22 < 2 ? 0 : 1); }
+    case 'castle': { const tower = i % 120 < 14; return (tower ? 30 : 46) - ((i >> 2) % 2 ? 3 : 0); }
+    case 'thorns': return 54 + Math.sin(t * 3) * 4 - hs * 7 * (i % 3 === 0 ? 1 : .3);
+    case 'islands': return 99;
+    default: return 46 + Math.sin(t * 2) * 5 + Math.sin(t * 8) * 2;
+  }
+}
+function skylineCanvas(z) {
+  return cached(`far|${z.name}`, SKY_W, GY, (x, w, h) => {
+    const back = mix(z.far, z.sky[1], .5), edge = shade(z.far, .18);
+    for (let i = 0; i < w; i++) {
+      // distant layer: the same outline, shifted and softened
+      const hb = skylineHeight(z.shape, (i + 137) % w) - 6;
+      if (hb < h) { x.fillStyle = back; x.fillRect(i, Math.round(hb), 1, h - Math.round(hb)); }
+    }
+    for (let i = 0; i < w; i++) {
+      const hf = Math.round(skylineHeight(z.shape, i));
+      if (hf >= h) continue;
+      x.fillStyle = z.far; x.fillRect(i, hf, 1, h - hf);
+      x.fillStyle = edge; x.fillRect(i, hf, 1, 1);
+      if (z.shape === 'peaks' && hf < 44) { x.fillStyle = '#e8f0f8'; x.fillRect(i, hf, 1, Math.max(1, Math.round((44 - hf) / 3))); }
+      if (z.shape === 'castle' && (i % 120 === 6) ) { x.fillStyle = '#f3b44a'; x.fillRect(i, hf + 6, 2, 3); }
+    }
+    if (z.shape === 'islands') for (let k = 0; k < 7; k++) {
+      const cx = hash(k + 40) * w, cy = 22 + hash(k + 50) * 26, rw = 10 + hash(k + 60) * 18;
+      for (let dy = 0; dy < rw / 2; dy++) { const ww = Math.round(rw * (1 - dy / (rw / 2))); x.fillStyle = dy ? z.far : edge; x.fillRect(Math.round(cx - ww / 2), Math.round(cy + dy), ww, 1); }
+    }
+  });
+}
+function groundCanvas(z) {
+  const gh = H - GY + 3;
+  return cached(`ground|${z.name}`, 64, gh, (x, w, h) => {
+    const top = z.top, dirt = z.ground, dark = shade(dirt, -.25), light = shade(dirt, .16), lip = shade(top, -.3);
+    for (let i = 0; i < w; i++) {
+      const r = hash(i * 7 + 1);
+      if (r > .72) { x.fillStyle = shade(top, .15); x.fillRect(i, 3 - (r > .9 ? 2 : 1), 1, r > .9 ? 2 : 1); } // tufts above the edge
+      for (let y = 3; y < h; y++) {
+        const depth = (y - 3) / (h - 3), b = BAYER[(y & 3) * 4 + (i & 3)] / 16;
+        let c = y < 5 ? top : y === 5 ? lip : (depth + b * .35 > .75 ? dark : dirt);
+        if (y === 5 && hash(i + 99) > .6) c = top; // grass hanging over the lip
+        if (y > 6 && hash(i * 13 + y * 31) > .965) c = light; // pebbles
+        if (y === 11 && hash(i * 3 + 7) > .45) c = dark; // a stratum line
+        x.fillStyle = c; x.fillRect(i, y, 1, 1);
+      }
+    }
+  });
+}
+function nearGrassCanvas(z) {
+  return cached('near|' + z.name, 96, 9, (x, w, h) => {
+    x.fillStyle = shade(z.ground, -.7);
+    for (let i = 0; i < w; i++) { const r = hash(i * 5 + 17); if (r > .62) { const bh = 2 + Math.round((r - .62) / .38 * 6); x.fillRect(i, h - bh, 1, bh); } }
+  });
+}
+function darkLevel(z) { return clamp(z.dark + [0, .05, .08, -.1, .14][variantOf(S.stage)], 0, .8); }
+function drawBackdrop(z, sc) {
+  const v = variantOf(S.stage);
+  L.drawImage(skyCanvas(z, v), 0, 0);
+  if (v !== 3) for (const [sx, sy, k] of STARS) { L.globalAlpha = (.3 + .3 * Math.sin(G.t * 2 + sx)) * (z.dark > .3 ? 1 : .5); px((sx - sc * .02 + W) % W, sy, 1, 1, k ? '#cfd8e8' : '#fff4c8'); }
+  L.globalAlpha = 1;
+  const moon = v === 4 ? '#ff6050' : v === 3 ? '#ffd090' : 'rgba(236,228,200,.85)';
+  L.fillStyle = moon; L.beginPath(); L.arc(196, 16, v === 4 ? 8 : 6, 0, Math.PI * 2); L.fill();
+  if (v !== 4) { L.fillStyle = z.sky[0]; L.beginPath(); L.arc(199, 14, 5, 0, Math.PI * 2); L.fill(); }
+  // clouds drift slowly, faster than the hills
+  const cloudCol = mix(z.sky[1], '#ffffff', v === 1 ? .35 : .18);
+  const cp = { c: shade(cloudCol, -.15), C: cloudCol };
+  for (let k = 0; k < 5; k++) {
+    const spr = getSpr(k % 2 ? 'cloudA' : 'cloudB', 0, 'cloud:' + z.name + v, cp, false, true);
+    const xx = ((hash(k + 70) * SKY_W - sc * .08 - G.t * (2 + k)) % SKY_W + SKY_W) % SKY_W - 30;
+    L.globalAlpha = .55; L.drawImage(spr, Math.round(xx), Math.round(6 + hash(k + 80) * 22)); L.globalAlpha = 1;
+  }
+  const far = skylineCanvas(z), fo = Math.round(sc * .15) % SKY_W;
+  L.drawImage(far, -fo, 0); L.drawImage(far, SKY_W - fo, 0);
+  const sp = 34, off = (sc * .5) % sp, base = Math.floor(sc * .5 / sp);
+  for (let k = -1; k < W / sp + 2; k++) drawProp(z.prop, k * sp - off + hash(base + k) * 10, base + k, z);
+  const gr = groundCanvas(z), go = Math.round(sc) % 64;
+  for (let x0 = -go; x0 < W; x0 += 64) L.drawImage(gr, x0, GY - 3);
+}
+function drawFront(z, sc) {
+  const v = variantOf(S.stage);
+  if (v === 1 || z.part === 'mist') { // ground mist
+    for (let y = GY - 14; y < GY + 4; y++) { L.globalAlpha = .05 + .1 * (1 - Math.abs(y - (GY - 4)) / 12); L.fillStyle = '#c8d8e0'; L.fillRect(0, y, W, 1); }
+    L.globalAlpha = 1;
+  }
+  const ng = nearGrassCanvas(z), no = Math.round(sc * 1.4) % 96;
+  L.globalAlpha = .7; for (let x0 = -no; x0 < W; x0 += 96) L.drawImage(ng, x0, H - 9); L.globalAlpha = 1;
+  if (v === 4) { // storm: rare lightning
+    if (Math.random() < .004) G.bolt = .14;
+    if (G.bolt > 0) { L.globalAlpha = G.bolt * 2.5; L.fillStyle = '#e8e0ff'; L.fillRect(0, 0, W, H); L.globalAlpha = 1; G.bolt -= 1 / 60; }
+  }
+}
 
 /* The full sprite sheet, for anyone who wants the art outside the game. */
 function artSheet(scale) {
@@ -1384,8 +1754,8 @@ function artSheet(scale) {
   const groups = [
     ['The Wanderer', [['hero', 0, 'hero'], ['hero', 1, 'hero'], ['lantern', 0, 'lantern'], ['sword', 0, 'sw:phys', swordPal('phys')], ['swing', 0, 'sw:fire', swordPal('fire')], ['bow', 0, 'bow'], ['bow', 1, 'bow'], ['staff', 0, 'staff'], ['staff', 0, 'staffLit']]],
     ['Company', Object.keys(KINDS).map(k => ['fol', 0, 'fol:' + k, folPal(k)]).concat([['fbow', 0, 'fbow'], ['shield', 0, 'shield'], ['basket', 0, 'basket'], ['pole', 0, 'pole'], ['orb', 0, 'orb:fire', { o: '#ff8a3d', O: '#ffd2b0', t: '#6b4a2a' }]])],
-    ['Foes', Object.values(FOE_ART).filter(([sn]) => !['stump', 'matron', 'golem', 'wyrm', 'king'].includes(sn)).flatMap(([sn, pk]) => [[sn, 0, pk], [sn, 1, pk]])],
-    ['Guardians', [['stump', 0, 'stump'], ['matron', 0, 'matron'], ['golem', 0, 'golem'], ['wyrm', 0, 'wyrm'], ['king', 0, 'king']]],
+    ['Foes', ZONES.flatMap(z => z.foes).map(f => FOE_ART[f.n]).map(([sn, pk]) => [sn, 0, pk])],
+    ['Guardians', ZONES.map(z => FOE_ART[z.boss.n]).map(([sn, pk]) => [sn, 0, pk])],
     ['Scenery', ZONES.map(z => [z.prop, 0, 'prop:' + z.name, propPal(z), false, true])],
   ];
   const pad = 6, rowsOut = groups.map(([title, list]) => [title, list.map(a => getSpr(...a))]);
@@ -1408,21 +1778,11 @@ window.lanternRoadArt = artSheet;
 
 function draw() {
   const z = ZONES[zoneOf(S.stage)], sc = G.scroll;
-  const g = L.createLinearGradient(0, 0, 0, GY); g.addColorStop(0, z.sky[0]); g.addColorStop(1, z.sky[1]);
-  L.fillStyle = g; L.fillRect(0, 0, W, H);
-  if (z.dark > .3) for (const [sx, sy, k] of STARS) { L.globalAlpha = .35 + .3 * Math.sin(G.t * 2 + sx); px((sx - sc * .02 + W) % W, sy, 1, 1, k ? '#cfd8e8' : '#fff4c8'); }
-  L.globalAlpha = 1;
-  L.fillStyle = 'rgba(236,228,200,.8)'; L.beginPath(); L.arc(196, 16, 6, 0, Math.PI * 2); L.fill();
-  L.fillStyle = z.sky[0]; L.beginPath(); L.arc(199, 14, 5, 0, Math.PI * 2); L.fill();
-  for (let x = 0; x < W; x++) { const u = x + sc * .15; const y = 46 + Math.sin(u * .045) * 5 + Math.sin(u * .13) * 2; px(x, y, 1, GY - y, z.far); }
-  const sp = 34, off = (sc * .5) % sp, base = Math.floor(sc * .5 / sp);
-  for (let k = -1; k < W / sp + 2; k++) drawProp(z.prop, k * sp - off + hash(base + k) * 10, base + k, z);
-  px(0, GY, W, H - GY, z.ground); px(0, GY, W, 2, z.top); px(0, GY + 2, W, 1, shade(z.ground, -.3));
-  for (let i = 0; i < 14; i++) { const x = ((i * 37 - sc) % W + W) % W; px(x, GY + 5 + (i * 7) % 12, 2 + i % 2, 1, shade(z.ground, .18)); }
+  drawBackdrop(z, sc);
   for (const p of G.parts) {
     if (p.k === 'loot') { px(p.x - 1, p.y - 1, 3, 3, p.c); continue; }
     L.globalAlpha = Math.sin(Math.PI * clamp(p.t / p.life, 0, 1));
-    if (p.k === 'mist') px(p.x, p.y, p.w, 2, p.c); else if (p.k === 'sand') px(p.x, p.y, 4, 1, p.c); else px(p.x, p.y, 1, 1, p.c);
+    if (p.k === 'mist') px(p.x, p.y, p.w, 2, p.c); else if (p.k === 'sand') px(p.x, p.y, 4, 1, p.c); else if (p.k === 'rain') { px(p.x, p.y, 1, 3, p.c); } else px(p.x, p.y, 1, 1, p.c);
   }
   L.globalAlpha = 1;
   for (const e of G.enemies) drawFoe(e);
@@ -1434,11 +1794,12 @@ function draw() {
     if (p.kind === 'arrow') { px(p.x - 4, p.y, 5, 1, '#cfc6b0'); px(p.x, p.y, 1, 1, col); }
     else { px(p.x - 1, p.y - 1, 3, 3, col); L.globalAlpha = .4; px(p.x - 5, p.y, 4, 1, col); L.globalAlpha = 1; }
   }
+  drawFront(z, sc);
   // lantern light
   const flick = (S.path === 'lamp' ? 54 : 46) + Math.sin(G.t * 9) * 1.5 + Math.sin(G.t * 23);
   const [lx, ly] = lightPos();
   K.globalCompositeOperation = 'source-over'; K.clearRect(0, 0, W, H);
-  K.fillStyle = `rgba(3,5,9,${z.dark})`; K.fillRect(0, 0, W, H);
+  K.fillStyle = `rgba(3,5,9,${darkLevel(z)})`; K.fillRect(0, 0, W, H);
   K.globalCompositeOperation = 'destination-out';
   const rg = K.createRadialGradient(lx, ly, 2, lx, ly, flick); rg.addColorStop(0, 'rgba(0,0,0,1)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
   K.fillStyle = rg; K.fillRect(0, 0, W, H);
@@ -1461,7 +1822,7 @@ function draw() {
     D.lineWidth = k * 1.1; D.strokeStyle = '#000'; D.strokeText(f.txt, f.x * k, y); D.fillStyle = f.col; D.fillText(f.txt, f.x * k, y);
   }
   D.globalAlpha = 1;
-  if (boss) { D.font = `500 ${4.2 * k}px "Pixelify Sans", monospace`; D.fillStyle = '#ffd0c8'; D.fillText(boss.n, 120 * k, 12 * k); }
+  if (boss) { D.font = `500 ${4.2 * k}px "Pixelify Sans", monospace`; D.fillStyle = '#ffd0c8'; D.fillText(boss.title || boss.n, 120 * k, 12 * k); }
   if (G.banner) {
     const b = G.banner, a = b.t < .25 ? b.t / .25 : b.t > 1.8 ? 1 - (b.t - 1.8) / .4 : 1;
     D.globalAlpha = clamp(a, 0, 1); D.font = `700 ${7 * k}px "Pixelify Sans", monospace`;
@@ -1488,7 +1849,7 @@ const hud = { power: $('#hudPower'), xpt: $('#hudXpTxt'), stage: $('#hudStage'),
 function updateHud() {
   const st = stats();
   hud.stage.textContent = `Stage ${S.stage} · Wave ${S.wave}/${WAVES}${S.wave === WAVES ? ' (guardian)' : ''}`;
-  hud.zone.textContent = ZONES[zoneOf(S.stage)].name;
+  { const zz = ZONES[zoneOf(S.stage)]; hud.zone.textContent = `${zz.name} · ${variantName(S.stage, zz)}`; }
   hud.lvl.textContent = `Lv ${S.level}`;
   const xpPct = 100 * S.xp / need(S.level);
   hud.xp.style.width = xpPct.toFixed(1) + '%';
