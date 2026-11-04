@@ -377,7 +377,7 @@ const TALENTS = [
   { id: 'starsight', x: 5, y: 7, n: 'Starsight', d: 'Shifts drop odds toward rarer items', k: 'luck', v: 1 },
   { id: 'kindred', x: 3, y: 3, n: 'Kindred', d: '+15% company power', k: 'comp', v: 15 },
   { id: 'focus', x: 5, y: 3, n: 'Element Focus', d: '+15% elemental damage (any weapon element other than physical)', k: 'elem', v: 15 },
-  { id: 'banner', x: 3, y: 5, n: 'Banner', d: '+1 company slot', k: 'slots', v: 1 },
+  { id: 'banner', x: 3, y: 5, n: 'Banner', d: '+15% company power', k: 'comp', v: 15 },
   { id: 'mentor', x: 5, y: 5, n: 'Mentor', d: '+15% company power', k: 'comp', v: 15 },
 ];
 /* Fill every other cell of the 9×9 board with a smaller stone that fits its side of the board. */
@@ -521,6 +521,7 @@ function migrate(d) {
   if (d.v === 1) { s.bestR = d.best ? d.best.r : 0; }
   if (d.v < 3) Object.assign(s, { autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true });
   s.farm = false; s.v = 3;
+  s.party = (s.party || []).slice(0, 1 + ['company_slot_1', 'company_slot_2', 'company_slot_3'].filter(id => (s.owned || {})[id]).length + ((s.owned || {}).supporter_pack ? 1 : 0));
   s.owned = s.owned || {}; s.look = Object.assign({ lantern: 'amber', outfit: 'wanderer', company: 'plain' }, s.look || {});
   return s;
 }
@@ -564,6 +565,9 @@ const PRODUCTS = [
   { id: 'outfit_ember', kind: 'once', price: '€1.99', look: ['outfit', 'ember'], n: 'Emberguard outfit', d: 'A deep red cloak and hood for the hero.' },
   { id: 'outfit_frost', kind: 'once', price: '€1.99', look: ['outfit', 'frost'], n: 'Frostwalker outfit', d: 'A pale blue cloak for the cold roads.' },
   { id: 'outfit_royal', kind: 'once', price: '€3.99', look: ['outfit', 'royal'], n: 'Night Royal outfit', d: 'Purple robes with a gold hood.' },
+  { id: 'company_slot_1', kind: 'once', slot: 1, price: '€1.99', n: 'Company slot I', d: 'A second follower walks and fights beside you.' },
+  { id: 'company_slot_2', kind: 'once', slot: 2, price: '€1.99', n: 'Company slot II', d: 'A third follower walks with you.' },
+  { id: 'company_slot_3', kind: 'once', slot: 3, price: '€1.99', n: 'Company slot III', d: 'A fourth follower walks with you.' },
   { id: 'company_banners', kind: 'once', price: '€2.99', look: ['company', 'banners'], n: 'Company Banners', d: 'Every follower gets bright cloaks with gold trim.' },
 ];
 const PROD = Object.fromEntries(PRODUCTS.map(x => [x.id, x]));
@@ -628,7 +632,9 @@ function talentBonus() {
 }
 const ownedCount = () => TALENTS.filter(t => S.talents[t.id]).length;
 const renown = () => Object.keys(S.feats).length;
-const partySlots = () => 1 + (S.maxStage >= 6) + (S.maxStage >= 16) + talentBonus().slots + (hasSupporter() ? 1 : 0);
+const paidSlots = () => ['company_slot_1', 'company_slot_2', 'company_slot_3'].filter(id => S.owned[id]).length + (hasSupporter() ? 1 : 0);
+const partySlots = () => 1 + paidSlots();
+const nextSlotProduct = () => ['company_slot_1', 'company_slot_2', 'company_slot_3'].find(id => !S.owned[id]);
 const partyMembers = () => S.party.map(id => S.roster.find(f => f.id === id)).filter(Boolean);
 function compPower(gearComp, t) { return 1 + ((gearComp || 0) + t.comp) / 100; }
 function folPower(f, cp) { return 5 * Math.pow(1.13, f.lvl - 1) * RAR[f.r].m * cp; }
@@ -2067,8 +2073,10 @@ function renderBag() {
 }
 function renderCompany() {
   const st = stats(), slots = partySlots(), members = partyMembers();
-  const bar = Array.from({ length: slots }, (_, i) => { const f = members[i]; return f ? `<span class="pslot on" style="--rc:${RAR[f.r].col}">${esc(f.name)} · ${KINDS[f.kind].n}</span>` : '<span class="pslot">Empty slot</span>'; }).join('');
-  const nextSlot = S.maxStage < 6 ? 'Next slot at Stage 6.' : S.maxStage < 16 ? 'Next slot at Stage 16.' : TAL.banner && !S.talents.banner ? 'One more slot from the Banner waystone.' : '';
+  const nx = nextSlotProduct();
+  const bar = Array.from({ length: slots }, (_, i) => { const f = members[i]; return f ? `<span class="pslot on" style="--rc:${RAR[f.r].col}">${esc(f.name)} · ${KINDS[f.kind].n}</span>` : '<span class="pslot">Empty slot</span>'; }).join('')
+    + (nx ? `<button class="pslot" data-act="toshop" style="cursor:pointer">\u{1F512} Extra slot · ${priceOf(PROD[nx])} in the Shop</button>` : '');
+  const nextSlot = slots === 1 ? 'Your first follower walks with you for free.' : '';
   const cards = S.roster.map(f => {
     const inParty = S.party.includes(f.id), cost = trainCost(f), K = KINDS[f.kind];
     return `<article class="fol" style="--rc:${RAR[f.r].col}">
@@ -2081,7 +2089,7 @@ function renderCompany() {
       </div></article>`;
   }).join('');
   panel.innerHTML = `<div class="card"><div class="row between"><h2>Company · ${S.roster.length}/${ROSTER_MAX}</h2><span class="sub">${nextSlot}</span></div>
-    <p class="sub">Lost travellers sometimes follow your lantern after a wave, and often after a guardian falls. Up to ${slots} walk with you; the rest wait at camp.</p>
+    <p class="sub">Lost travellers sometimes follow your lantern after a wave, and often after a guardian falls. ${slots === 1 ? 'One walks with you for free' : `${slots} walk with you`}; the rest wait at camp. More slots are in the Shop.</p>
     <div class="partybar">${bar}</div></div>
     ${S.roster.length ? `<div class="roster">${cards}</div>` : '<p class="hint">No one has followed your light yet. Keep walking: guardians give the best chance.</p>'}`;
   panel.querySelectorAll('canvas[data-por]').forEach(c => { const f = S.roster.find(x => x.id === c.dataset.por); if (f) portrait(c, f); });
@@ -2206,6 +2214,9 @@ function renderShop() {
     <div class="card"><h2>Boosts</h2><p class="sub">Faster gold and XP for a while. Free players reach every stage too; this only shortens the walls.</p><div class="shop">${boost(PROD.road_pass)}${boost(PROD.ember_charm)}</div></div>
     <div class="card"><h2>Lanterns</h2><p class="sub">Your lantern lights the whole road in its color.</p><div class="shop">${wares('lantern', LANTERNS)}</div></div>
     <div class="card"><h2>Outfits</h2><div class="shop">${wares('outfit', OUTFITS)}</div></div>
+    <div class="card"><h2>Company slots</h2><p class="sub">Your first follower walks with you for free. Each slot lets one more follower fight beside you. The Supporter Pack also adds one. Up to ${1 + 4} can walk together.</p>
+      <div class="shop">${['company_slot_1', 'company_slot_2', 'company_slot_3'].map((id, i, all) => { const x = PROD[id], locked = i > 0 && !S.owned[all[i - 1]];
+        return `<article class="ware ${S.owned[id] ? 'owned' : ''}"><h3>${x.n}</h3><p>${x.d}</p><div class="row">${locked ? '<span class="sub">Unlocks after the slot before it.</span>' : btn(x)}</div></article>`; }).join('')}</div></div>
     <div class="card"><h2>Company looks</h2><div class="shop">${wares('company', COMPANY_LOOKS)}</div></div>
     ${live ? '<div class="row"><button class="btn small" data-act="restore">Restore purchases</button></div>' : ''}`;
   panel.querySelectorAll('[data-prev]').forEach(d => { const [k, key] = d.dataset.prev.split(':'); d.appendChild(previewCanvas(k, key)); });
@@ -2251,6 +2262,7 @@ panel.addEventListener('click', e => {
   if (a === 'dismiss1') confirmDismiss = id;
   if (a === 'dismiss2') { const f = S.roster.find(x => x.id === id); if (f) { S.roster = S.roster.filter(x => x.id !== id); S.party = S.party.filter(x => x !== id); dirtyStats = true; log(`${f.name} went their own way.`); } confirmDismiss = null; }
   if (a === 'claim') { const f = FEATS.find(x => x.id === id); if (f && !S.feats[id] && featDone(f)) { const g = Math.round(goldPer(S.maxStage) * 25); S.feats[id] = true; S.gold += g; dirtyStats = true; log(`Feat claimed: ${f.n}. +1 renown, +${fmt(g)} gold.`, '#f3b44a'); } }
+  if (a === 'toshop') { S.tab = 'shop'; renderPanel(); return; }
   if (a === 'buy') { buy(id); return; }
   if (a === 'restore') { restorePurchases(); return; }
   if (a === 'look') { if (lookOwned(b.dataset.slot, b.dataset.key)) { S.look[b.dataset.slot] = b.dataset.key; sprCacheReset(); } }
