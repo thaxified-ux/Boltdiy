@@ -201,7 +201,6 @@ body.strip .exitstrip{display:block}
     <div class="purse"><span><span class="coin"></span><span id="hudGold">0</span></span></div>
     <div class="hudrow2">
       <div class="hp"><span>HP</span><div class="hpbar"><i id="hudHp"></i></div><span id="hudHpTxt" style="font-variant-numeric:tabular-nums">100/100</span></div>
-      <button class="pill" id="farmBtn" type="button" title="Stay on this stage instead of pushing forward">Farming: off</button>
       <button class="pill pts" id="ptsBtn" type="button" hidden>0 points to spend</button>
     </div>
   </section>
@@ -417,10 +416,10 @@ const itemIcon = it => icon(iconKey(it), it.r);
 /* ---------- State ---------- */
 function emptyEquip() { return Object.fromEntries(SLOTS.map(s => [s, null])); }
 function fresh() {
-  return { v: 2, level: 1, xp: 0, gold: 0, points: 0, attrs: { mig: 0, vit: 0, agi: 0, for: 0 },
+  return { v: 3, level: 1, xp: 0, gold: 0, points: 0, attrs: { mig: 0, vit: 0, agi: 0, for: 0 },
     equip: emptyEquip(), bag: [], talents: { hearth: true }, path: 'blade', starters: { blade: true },
     roster: [], party: [], recruited: 0, feats: {}, bestR: 0,
-    stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: false, kills: 0, deaths: 0, best: null,
+    stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true, kills: 0, deaths: 0, best: null,
     played: 0, lastSeen: Date.now(), log: [], tab: 'hero', created: Date.now() };
 }
 let S = fresh();
@@ -433,11 +432,13 @@ function save() {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable: play continues unsaved */ }
 }
 function migrate(d) {
-  if (!d || (d.v !== 1 && d.v !== 2)) return null;
+  if (!d || ![1, 2, 3].includes(d.v)) return null;
   const s = Object.assign(fresh(), d);
   s.equip = Object.assign(emptyEquip(), d.equip || {});
   for (const it of [...Object.values(s.equip), ...s.bag]) if (it && it.slot === 'weapon' && !it.path) it.path = 'blade';
-  if (d.v === 1) { s.bestR = d.best ? d.best.r : 0; s.v = 2; }
+  if (d.v === 1) { s.bestR = d.best ? d.best.r : 0; }
+  if (d.v < 3) Object.assign(s, { autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true });
+  s.farm = false; s.v = 3;
   return s;
 }
 function load() {
@@ -742,16 +743,13 @@ function nextWave() {
   if (S.wave > WAVES) {
     const z0 = zoneOf(S.stage);
     S.wave = 1;
-    if (!S.farm) {
+    {
       S.stage++;
       if (S.stage > S.maxStage) { S.maxStage = S.stage; log(`New record: reached Stage ${S.stage}.`); dirtyStats = true; }
       const z1 = zoneOf(S.stage);
       if (z1 !== z0) { banner(`New road: ${ZONES[z1].name}`, '#f3b44a'); log(`Entered ${ZONES[z1].name}.`, '#f3b44a'); }
       else banner(`Stage ${S.stage}`);
       if (S.tab === 'map') dirtyPanel = true;
-    } else {
-      banner(`Farming is on: replaying Stage ${S.stage}`, '#f3b44a');
-      if (!G.farmNoted) { G.farmNoted = true; log(`Stage ${S.stage} cleared. Farming is on, so you replay it. Tap "Farming: on" under the road to move forward.`, '#f3b44a'); }
     }
     markTabs();
   }
@@ -1347,7 +1345,7 @@ function portrait(canvas, f) {
 }
 
 /* ---------- HUD ---------- */
-const hud = { stage: $('#hudStage'), zone: $('#hudZone'), lvl: $('#hudLvl'), xp: $('#hudXp'), gold: $('#hudGold'), hp: $('#hudHp'), hpt: $('#hudHpTxt'), farm: $('#farmBtn'), pts: $('#ptsBtn') };
+const hud = { stage: $('#hudStage'), zone: $('#hudZone'), lvl: $('#hudLvl'), xp: $('#hudXp'), gold: $('#hudGold'), hp: $('#hudHp'), hpt: $('#hudHpTxt'), pts: $('#ptsBtn') };
 function updateHud() {
   const st = stats();
   hud.stage.textContent = `Stage ${S.stage} · Wave ${S.wave}/${WAVES}${S.wave === WAVES ? ' (guardian)' : ''}`;
@@ -1357,8 +1355,6 @@ function updateHud() {
   hud.gold.textContent = fmt(Math.floor(S.gold));
   hud.hp.style.width = (100 * clamp(G.hero.hp / st.hp, 0, 1)).toFixed(1) + '%';
   hud.hpt.textContent = `${fmt(Math.max(0, G.hero.hp))}/${fmt(st.hp)}`;
-  hud.farm.textContent = S.farm ? 'Farming: on · tap to move forward' : 'Farming: off';
-  hud.farm.classList.toggle('on', S.farm);
   hud.pts.hidden = !S.points;
   hud.pts.textContent = `${S.points} point${S.points === 1 ? '' : 's'} to spend`;
   document.title = `Lantern Road · Stage ${S.stage} ${S.wave}/${WAVES}`;
@@ -1508,9 +1504,8 @@ function renderMap() {
       <div class="body">${status}<span>Stages ${first}–${last}</span><div class="sub" style="display:flex;flex-direction:column;gap:2px">${foes}</div>
       ${open && i !== cur ? `<div class="row"><button class="btn small" data-act="travel" data-s="${first}">Travel to Stage ${first}</button></div>` : ''}</div></article>`;
   }).join('');
-  panel.innerHTML = `<div class="card"><div class="row between"><div><h2>The road so far</h2><p class="sub">Furthest: Stage ${S.maxStage}. Losing a fight sends you back one stage, never further. Match your weapon element to what foes are weak to.</p></div>
-    <div class="row"><button class="btn small ${S.farm ? 'primary' : ''}" data-act="farm">${S.farm ? 'Farming this stage' : 'Farm this stage'}</button>
-    ${S.stage < S.maxStage ? `<button class="btn small" data-act="travel" data-s="${S.maxStage}">Push to Stage ${S.maxStage}</button>` : ''}</div></div></div>
+  panel.innerHTML = `<div class="card"><div class="row between"><div><h2>The road so far</h2><p class="sub">Furthest: Stage ${S.maxStage}. The hero moves forward on its own. If a stage is too hard, it drops back one stage, grows stronger there, and tries again. Match your weapon element to what foes are weak to.</p></div>
+    ${S.stage < S.maxStage ? `<div class="row"><button class="btn small" data-act="travel" data-s="${S.maxStage}">Jump to Stage ${S.maxStage}</button></div>` : ''}</div></div>
     <div class="zones">${cards}</div>`;
 }
 function renderFeats() {
@@ -1535,7 +1530,12 @@ function renderJournal() {
     <div class="card"><h2>Journal</h2><ul class="log">${logs}</ul></div>
     <div class="card"><h2>Settings</h2>
       <label for="autoSell">Auto-sell drops (upgrades are always kept)</label><select id="autoSell">${opts}</select>
-      <label class="chk"><input type="checkbox" id="autoSpend" ${S.autoSpend ? 'checked' : ''}> Spend attribute points automatically</label>
+      <h2>Automatic play</h2><p class="sub">The hero always moves forward by itself. These handle the upgrades too; switch any off to do it by hand.</p>
+      <label class="chk"><input type="checkbox" id="autoSpend" ${S.autoSpend ? 'checked' : ''}> Spend attribute points</label>
+      <label class="chk"><input type="checkbox" id="autoEquip" ${S.autoEquip ? 'checked' : ''}> Equip better gear and sell Worn to Fine junk when the bag fills</label>
+      <label class="chk"><input type="checkbox" id="autoStones" ${S.autoStones ? 'checked' : ''}> Unlock waystones</label>
+      <label class="chk"><input type="checkbox" id="autoCompany" ${S.autoCompany ? 'checked' : ''}> Pick the strongest company and train them</label>
+      <label class="chk"><input type="checkbox" id="autoClaim" ${S.autoClaim ? 'checked' : ''}> Claim feats</label>
       <h2>Records</h2><dl class="stats">
         <dt>Enemies defeated</dt><dd>${fmt(S.kills)}</dd><dt>Times fallen</dt><dd>${fmt(S.deaths)}</dd>
         <dt>Furthest stage</dt><dd>${S.maxStage}</dd><dt>Travellers recruited</dt><dd>${S.recruited}</dd><dt>Time on the road</dt><dd>${dur(S.played)}</dd>
@@ -1558,7 +1558,7 @@ document.querySelector('.tabs').addEventListener('click', e => {
 });
 panel.addEventListener('change', e => {
   if (e.target.id === 'autoSell') S.autoSell = +e.target.value;
-  if (e.target.id === 'autoSpend') { S.autoSpend = e.target.checked; if (S.autoSpend) autoSpend(); updateHud(); }
+  if (['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim'].includes(e.target.id)) { S[e.target.id] = e.target.checked; autoPlay(); updateHud(); }
   save();
 });
 panel.addEventListener('click', e => {
@@ -1578,7 +1578,6 @@ panel.addEventListener('click', e => {
   if (a === 'seltal') selTal = id;
   if (a === 'unlock') { const c = talCost(); if (S.gold >= c && talAvail(TAL[id]) && !S.talents[id]) { S.gold -= c; S.talents[id] = true; dirtyStats = true; log(`Unlocked the ${TAL[id].n} waystone.`, '#f3b44a'); } }
   if (a === 'travel') { S.stage = +b.dataset.s; S.wave = 1; G.enemies = []; G.proj = []; G.phase = 'walk'; G.walkT = 1; banner(`Stage ${S.stage} · ${ZONES[zoneOf(S.stage)].name}`); }
-  if (a === 'farm') S.farm = !S.farm;
   if (a === 'walk') { if (partyMembers().length < partySlots() && !S.party.includes(id)) { S.party.push(id); dirtyStats = true; } }
   if (a === 'rest') { S.party = S.party.filter(x => x !== id); dirtyStats = true; }
   if (a === 'train') { const f = S.roster.find(x => x.id === id), c = f && trainCost(f); if (f && S.gold >= c) { S.gold -= c; f.lvl++; dirtyStats = true; } }
@@ -1590,7 +1589,6 @@ panel.addEventListener('click', e => {
   if (a === 'reset2') { S = newGame(); confirmReset = false; selBag = selEq = selTal = null; dirtyStats = true; resetRuntime(); }
   save(); updateHud(); renderPanel();
 });
-$('#farmBtn').addEventListener('click', () => { S.farm = !S.farm; log(S.farm ? `Farming Stage ${S.stage}.` : 'Pushing forward again.'); save(); updateHud(); if (S.tab === 'map') renderPanel(); });
 $('#ptsBtn').addEventListener('click', () => { S.tab = 'hero'; renderPanel(); });
 
 /* Strip mode: only the road, for a pinned tab or a narrow side window */
@@ -1602,6 +1600,48 @@ async function setStrip(on) {
 }
 $('#stripBtn').addEventListener('click', () => setStrip(true));
 $('#exitStrip').addEventListener('click', () => setStrip(false));
+
+/* ---------- Automatic play ----------
+   Runs every couple of seconds and after time away. Everything here can also be done by hand. */
+const STONE_ORDER = ['whet', 'quick', 'skin', 'stone', 'keen', 'purse', 'kindred', 'banner', 'mentor', 'exec', 'flurry', 'runner', 'wind', 'bulwark', 'magpie', 'scholar', 'thirst', 'focus', 'edge', 'deadeye', 'sense', 'tempest', 'phantom', 'giant', 'rampart', 'hoard', 'gleaner', 'emberward', 'frostward', 'duskward', 'bloodrite', 'starsight'];
+function autoPlay(quiet) {
+  let changed = false;
+  if (S.autoSpend && S.points) { autoSpend(); changed = true; }
+  if (S.autoEquip) {
+    const n = autoEquip();
+    if (n) { changed = true; if (!quiet) log(`Equipped ${n} better item${n > 1 ? 's' : ''} automatically.`); }
+    if (S.bag.length >= BAG_MAX - 3) {
+      let g = 0, k = 0;
+      S.bag = S.bag.filter(it => { if (it.r < 3 && !isUpgrade(it)) { g += value(it); k++; return false; } return true; });
+      if (k) { S.gold += g; changed = true; if (!quiet) log(`Bag nearly full: sold ${k} Worn to Fine items for ${fmt(g)} gold.`); }
+    }
+  }
+  if (S.autoClaim) for (const f of FEATS) if (!S.feats[f.id] && featDone(f)) {
+    const g = Math.round(goldPer(S.maxStage) * 25); S.feats[f.id] = true; S.gold += g; dirtyStats = true; changed = true;
+    if (!quiet) log(`Feat claimed: ${f.n}. +1 renown, +${fmt(g)} gold.`, '#f3b44a');
+  }
+  if (S.autoStones) {
+    for (let guard = 0; guard < 40; guard++) {
+      const id = STONE_ORDER.find(i => TAL[i] && !S.talents[i] && talAvail(TAL[i]));
+      const c = talCost();
+      if (!id || S.gold < c) break;
+      S.gold -= c; S.talents[id] = true; dirtyStats = true; changed = true;
+      if (!quiet) log(`Unlocked the ${TAL[id].n} waystone.`, '#f3b44a');
+    }
+  }
+  if (S.autoCompany && S.roster.length) {
+    const cp = stats().cp, best = S.roster.slice().sort((a, b) => folPower(b, cp) * (KINDS[b.kind].atk ? 1.2 : 1) - folPower(a, cp) * (KINDS[a.kind].atk ? 1.2 : 1)).slice(0, partySlots()).map(f => f.id);
+    if (best.join() !== S.party.join()) { S.party = best; dirtyStats = true; changed = true; }
+    const reserve = S.autoStones && STONE_ORDER.some(i => TAL[i] && !S.talents[i]) ? talCost() : 0;
+    for (let guard = 0; guard < 50; guard++) {
+      const f = partyMembers().sort((a, b) => trainCost(a) - trainCost(b))[0];
+      if (!f || S.gold - trainCost(f) < reserve) break;
+      S.gold -= trainCost(f); f.lvl++; dirtyStats = true; changed = true;
+    }
+  }
+  if (changed) { dirtyPanel = true; markTabs(); }
+  return changed;
+}
 
 /* ---------- Offline progress ---------- */
 function simulateAway(sec) {
@@ -1649,7 +1689,7 @@ function showAway(r) {
 }
 function catchUp() {
   const gap = (Date.now() - S.lastSeen) / 1000;
-  if (gap > 60) { const r = simulateAway(gap); if (r) showAway(r); }
+  if (gap > 60) { const r = simulateAway(gap); autoPlay(true); if (r) showAway(r); }
   S.lastSeen = Date.now();
 }
 let last = performance.now();
@@ -1662,6 +1702,7 @@ function frame(now) {
   const dt = Math.min(.1, (now - last) / 1000); last = now;
   update(dt); draw();
   G.hudT += dt; if (G.hudT > .2) { G.hudT = 0; updateHud(); if (dirtyPanel && $('#overlay').hidden) renderPanel(); }
+  G.autoT = (G.autoT || 0) + dt; if (G.autoT > 2) { G.autoT = 0; autoPlay(); }
   G.saveT += dt; if (G.saveT > 5) { G.saveT = 0; save(); }
   requestAnimationFrame(frame);
 }
