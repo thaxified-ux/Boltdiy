@@ -1039,7 +1039,7 @@ function update(dt) {
   G.fx = G.fx.filter(f => f.t < f.life);
   updateParts(dt);
   if (h.dead > 0) {
-    h.dead -= dt;
+    h.dead -= dt; G.moving = false;
     for (const e of G.enemies) e.x += 40 * dt;
     if (h.dead <= 0) { G.enemies = []; h.hp = st.hp; h.stun = h.blind = h.chill = 0; h.dots = []; G.phase = 'walk'; G.walkT = 1.5; banner(G.fallBanner || `Stage ${S.stage} · ${ZONES[zoneOf(S.stage)].name}`, '#ff8070'); G.fallBanner = null; }
     return;
@@ -1050,15 +1050,20 @@ function update(dt) {
   for (const d of h.dots) h.hp -= d.dps * dt;
   if (h.hp <= 0) { heroDie(G.enemies.find(e => !e.dead)); return; }
   if (G.phase === 'walk') {
+    G.moving = true;
     G.scroll += 32 * dt; G.walkT -= dt;
     if (G.walkT <= 0) spawnWave();
     return;
   }
   updateProj(dt);
   const alive = G.enemies.filter(e => !e.dead).sort((a, b) => a.x - b.x);
+  // The hero keeps walking toward the wave and only stops once the front foe is in reach.
+  const lead = alive[0];
+  G.moving = !!lead && !(h.stun > 0) && lead.x > HX + st.range + (lead.boss ? 6 : 0) + 1;
+  if (G.moving) { G.scroll += 32 * dt; for (const e of G.enemies) if (e.dead) e.x -= 32 * dt; }
   alive.forEach((e, i) => {
     const target = HX + 16 + i * 18 + (e.boss ? 6 : 0);
-    if (e.x > target) e.x = Math.max(target, e.x - 48 * dt);
+    if (e.x > target) e.x = Math.max(target, e.x - (48 + (G.moving ? 32 : 0)) * dt);
     e.flash = Math.max(0, e.flash - dt);
     for (const k of ['shell', 'haste', 'evade', 'reflect']) e[k] = Math.max(0, e[k] - dt);
     if (e.x <= target + .5 && i < 3) {
@@ -1113,7 +1118,7 @@ function updateParts(dt) {
   for (const p of G.parts) {
     p.t += dt;
     if (p.k === 'loot') { p.x += p.vx * dt; p.vy += 240 * dt; p.y += p.vy * dt; if (p.y > GY - 6) p.y = GY - 6; continue; }
-    p.x += (p.vx - (G.phase === 'walk' ? 16 : 0)) * dt; p.y += p.vy * dt;
+    p.x += (p.vx - (G.moving ? 16 : 0)) * dt; p.y += p.vy * dt;
   }
   G.parts = G.parts.filter(p => p.t < p.life && p.x > -30 && p.y < H + 2);
 }
@@ -1759,7 +1764,7 @@ function drawFollower(f, x, walking, phase) {
 }
 
 function drawHero() {
-  const h = G.hero, x = HX, walking = G.phase === 'walk' && h.dead <= 0;
+  const h = G.hero, x = HX, walking = G.moving && h.dead <= 0;
   const st = stats();
   if (h.dead > 0) { px(x - 7, GY - 3, 12, 3, '#3d5a6b'); px(x + 5, GY - 4, 4, 3, '#2f4757'); px(x - 9, GY - 3, 3, 3, '#6b4a2a'); return; }
   const frame = walking ? Math.floor(G.t * 8) % 2 : 0;
@@ -1975,7 +1980,7 @@ function draw() {
   }
   L.globalAlpha = 1;
   for (const e of G.enemies) drawFoe(e);
-  const walking = G.phase === 'walk' && G.hero.dead <= 0;
+  const walking = G.moving && G.hero.dead <= 0;
   partyMembers().forEach((f, i) => drawFollower(f, HX - 18 - i * 13, walking, i));
   drawHero();
   for (const p of G.proj) {
