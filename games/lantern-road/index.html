@@ -204,6 +204,7 @@ body.strip .exitstrip{display:block}
     <div class="purse"><span><span class="coin"></span><span id="hudGold">0</span></span></div>
     <div class="hudrow2">
       <div class="hp"><span>HP</span><div class="hpbar"><i id="hudHp"></i></div><span id="hudHpTxt" style="font-variant-numeric:tabular-nums">100/100</span></div>
+      <span class="pill" id="hudPower" title="Power rating: damage and toughness combined. It should keep climbing.">Power 0</span>
       <button class="pill pts" id="ptsBtn" type="button" hidden>0 points to spend</button>
     </div>
   </section>
@@ -544,7 +545,7 @@ function stats() { if (dirtyStats) { ST = heroStats(); dirtyStats = false; } ret
 function rating(st) {
   const dps = st.dmg * st.aspd * (1 + st.crit / 100 * (st.critd / 100 - 1)) * (1 + st.ls / 200) * (S.path === 'lamp' ? 1.25 : 1);
   const r = (st.res.fire + st.res.frost + st.res.shadow) / 3;
-  const ehp = st.hp * (1 + st.def / 100) / (1 - st.dodge / 100) / (1 - st.block / 200) * (1 + r / 200) + st.regen * 20;
+  const ehp = st.hp * (1 + st.def / armorK(S.stage)) / (1 - st.dodge / 100) / (1 - st.block / 200) * (1 + r / 200) + st.regen * 20;
   return dps * Math.sqrt(ehp) * (st.elem !== 'phys' ? 1.05 : 1) * (1 + (st.cp - 1) * .3) * (1 + (st.gold + st.drop) / 2000);
 }
 function ratingWith(item) { const eq = Object.assign({}, S.equip, { [item.slot]: item }); return rating(heroStats(eq)); }
@@ -589,9 +590,16 @@ function gainItem(it, quiet) {
   if (S.autoSell && it.r < S.autoSell && !isUpgrade(it)) { S.gold += value(it); return 'sold'; }
   if (!S.best || it.r > S.best.r || (it.r === S.best.r && it.gs > S.best.gs)) S.best = { name: it.name, r: it.r, gs: it.gs };
   if (S.bag.length >= BAG_MAX) {
-    S.gold += value(it);
-    if (!quiet) log(`Bag full. Sold ${it.name} for ${fmt(value(it))} gold.`);
-    return 'sold';
+    // Never throw away an upgrade: make room by selling the weakest non-upgrade instead.
+    if (isUpgrade(it)) {
+      const junk = S.bag.filter(b => !isUpgrade(b)).sort((a, b) => a.r - b.r || a.gs - b.gs)[0];
+      if (junk) { S.bag = S.bag.filter(b => b !== junk); S.gold += value(junk); }
+    }
+    if (S.bag.length >= BAG_MAX) {
+      S.gold += value(it);
+      if (!quiet) log(`Bag full. Sold ${it.name} for ${fmt(value(it))} gold.`);
+      return 'sold';
+    }
   }
   S.bag.push(it);
   if (!quiet && it.r >= 3) log(`Found ${RAR[it.r].n}: ${it.name} (GS ${it.gs})`, RAR[it.r].col);
@@ -638,8 +646,16 @@ function setPath(p) {
 function recruit(quiet) {
   const kind = pick(Object.keys(KINDS));
   const r = Math.min(7, rollRarity(stats().luck));
-  const f = { id: uid(), kind, r, lvl: Math.max(1, S.stage), name: pick(NAMES) };
-  if (S.roster.length >= ROSTER_MAX) { if (!quiet) log(`${f.name} the ${KINDS[kind].n} passed by. Your company is full.`); return null; }
+  const taken = new Set(S.roster.map(x => x.name)), free = NAMES.filter(n => !taken.has(n));
+  const f = { id: uid(), kind, r, lvl: Math.max(1, S.stage), name: pick(free.length ? free : NAMES) };
+  if (S.roster.length >= ROSTER_MAX) {
+    // With automatic company on, a stronger newcomer replaces the weakest traveller waiting at camp.
+    const cp = stats().cp, power = x => folPower(x, cp) * (KINDS[x.kind].atk ? 1.2 : 1);
+    const weakest = S.autoCompany ? S.roster.filter(x => !S.party.includes(x.id)).sort((a, b) => power(a) - power(b))[0] : null;
+    if (!weakest || power(weakest) >= power(f)) { if (!quiet) log(`${f.name} the ${KINDS[kind].n} passed by. Your company is full.`); return null; }
+    S.roster = S.roster.filter(x => x !== weakest);
+    if (!quiet) log(`${weakest.name} stays behind at camp so ${f.name} can join.`);
+  }
   S.roster.push(f); S.recruited++;
   if (S.party.length < partySlots()) S.party.push(f.id);
   dirtyStats = true;
@@ -674,8 +690,13 @@ function autoSpend() {
   while (S.points > 0) { S.attrs[order[(S.attrs.mig + S.attrs.vit + S.attrs.agi + S.attrs.for) % order.length]]++; S.points--; }
   dirtyStats = true;
 }
+/* Enemy scaling. Defense is measured against the stage, so armor has to keep up with the road. */
+const HP_BASE = 30, HP_GROW = 1.24, DMG_BASE = 6, DMG_GROW = 1.23;
+const armorK = stage => 100 * Math.pow(1.12, stage - 1);
 function enemyBase(stage, wave, boss) {
-  let hp = 26 * Math.pow(1.175, stage - 1) * (1 + (wave - 1) * .03), dmg = 5.2 * Math.pow(1.155, stage - 1);
+  // Both ramps start at 1× on Stage 1 so the first zone stays gentle; the real walls begin in the Saltmarsh.
+  let hp = HP_BASE * Math.pow(HP_GROW, stage - 1) * Math.min(5, 1 + (stage - 1) * .3) * (1 + (wave - 1) * .03);
+  let dmg = DMG_BASE * Math.pow(DMG_GROW, stage - 1) * Math.min(3, 1 + (stage - 1) * .15);
   if (boss) { hp *= 6; dmg *= 1.6; }
   return { hp, dmg };
 }
@@ -816,7 +837,8 @@ function enemyHit(e, mult) {
   const st = stats(), h = G.hero;
   if (Math.random() * 100 < st.dodge) { fx(HX, GY - 22, 'dodge', '#97a39d', .7, 4); return; }
   let d = e.dmg * rnd(.9, 1.1) * (mult || 1), blocked = false;
-  d *= e.el === 'phys' ? 100 / (100 + st.def) : (1 - st.res[e.el] / 100) * 100 / (100 + st.def * .3);
+  const k = armorK(S.stage);
+  d *= e.el === 'phys' ? k / (k + st.def) : (1 - st.res[e.el] / 100) * k / (k + st.def * .3);
   if (Math.random() * 100 < st.block) { d *= .5; blocked = true; }
   h.hp -= d; h.hurt = .14;
   fx(HX - 2, GY - 22, (blocked ? 'block ' : '') + fmt(d), e.el === 'phys' ? '#ff8070' : ELEM[e.el].col, .8, 4);
@@ -1295,7 +1317,7 @@ function drawFoe(e) {
   const [sn, pk, alpha] = FOE_ART[e.n] || ['slime', 'moss'];
   const def = SPR[sn], t = G.t + e.ph;
   const frame = Math.floor(t * (def.fly ? 7 : 5)) % 2;
-  const c = getSpr(sn, frame, pk, null, e.flash > 0 && !e.dead);
+  const c = getSpr(sn, frame, pk, null, false);
   let y = GY - c.height + 1;
   if (def.fly) y -= 5 + Math.round(Math.sin(t * 3) * 2);
   else if (e.boss) y += frame;
@@ -1304,6 +1326,7 @@ function drawFoe(e) {
   L.globalAlpha = fade * (alpha || 1);
   if (e.elite && !e.dead) { L.globalAlpha = fade * .35; L.fillStyle = '#f3b44a'; L.fillRect(Math.round(e.x - c.width / 2) - 1, Math.round(y) - 1, c.width + 2, c.height + 2); L.globalAlpha = fade * (alpha || 1); }
   blit(c, e.x - c.width / 2, y);
+  if (e.flash > 0 && !e.dead) { const a = L.globalAlpha; L.globalAlpha = a * .5; blit(getSpr(sn, frame, pk, null, true), e.x - c.width / 2, y); L.globalAlpha = a; }
   if (!e.dead && (e.shell > 0 || e.evade > 0 || e.reflect > 0 || e.haste > 0)) {
     const col = e.shell > 0 ? '#8fd8ff' : e.evade > 0 ? '#c8c8c8' : e.reflect > 0 ? '#ff8a3d' : '#ff5a3a';
     L.globalAlpha = .4 + .2 * Math.sin(G.t * 10); L.strokeStyle = col; L.lineWidth = 1;
@@ -1461,7 +1484,7 @@ function portrait(canvas, f) {
 }
 
 /* ---------- HUD ---------- */
-const hud = { xpt: $('#hudXpTxt'), stage: $('#hudStage'), zone: $('#hudZone'), lvl: $('#hudLvl'), xp: $('#hudXp'), gold: $('#hudGold'), hp: $('#hudHp'), hpt: $('#hudHpTxt'), pts: $('#ptsBtn') };
+const hud = { power: $('#hudPower'), xpt: $('#hudXpTxt'), stage: $('#hudStage'), zone: $('#hudZone'), lvl: $('#hudLvl'), xp: $('#hudXp'), gold: $('#hudGold'), hp: $('#hudHp'), hpt: $('#hudHpTxt'), pts: $('#ptsBtn') };
 function updateHud() {
   const st = stats();
   hud.stage.textContent = `Stage ${S.stage} · Wave ${S.wave}/${WAVES}${S.wave === WAVES ? ' (guardian)' : ''}`;
@@ -1473,6 +1496,7 @@ function updateHud() {
   hud.gold.textContent = fmt(Math.floor(S.gold));
   hud.hp.style.width = (100 * clamp(G.hero.hp / st.hp, 0, 1)).toFixed(1) + '%';
   hud.hpt.textContent = `${fmt(Math.max(0, G.hero.hp))}/${fmt(st.hp)}`;
+  hud.power.textContent = `Power ${fmt(rating(st))}`;
   hud.pts.hidden = !S.points;
   hud.pts.textContent = `${S.points} point${S.points === 1 ? '' : 's'} to spend`;
   document.title = `Lantern Road · Stage ${S.stage} ${S.wave}/${WAVES}`;
@@ -1534,7 +1558,7 @@ function renderHero() {
   }).join('');
   const gsTotal = SLOTS.reduce((a, s) => a + (S.equip[s] ? S.equip[s].gs : 0), 0);
   const rows = [['Path', PATHS[S.path].n], ['Damage type', elemTag(st.elem)], ['Max HP', fmt(st.hp)], ['Damage', fmt(st.dmg)], ['Attacks / sec', st.aspd.toFixed(2)], ['Crit chance', st.crit.toFixed(1) + '%'], ['Crit damage', Math.round(st.critd) + '%'],
-    ['Defense', fmt(st.def) + ` (−${Math.round(100 - 10000 / (100 + st.def))}% physical)`], ['Dodge', st.dodge.toFixed(1) + '%'], ['Block', st.block.toFixed(1) + '%'], ['Regen', fmt(st.regen) + ' / sec'],
+    ['Defense', fmt(st.def) + ` (−${Math.round(100 * st.def / (armorK(S.stage) + st.def))}% physical here)`], ['Dodge', st.dodge.toFixed(1) + '%'], ['Block', st.block.toFixed(1) + '%'], ['Regen', fmt(st.regen) + ' / sec'],
     ['Fire resist', st.res.fire.toFixed(1) + '%'], ['Frost resist', st.res.frost.toFixed(1) + '%'], ['Shadow resist', st.res.shadow.toFixed(1) + '%'],
     ['Lifesteal', st.ls.toFixed(1) + '%'], ['Gold find', '+' + Math.round(st.gold) + '%'], ['XP gain', '+' + Math.round(st.xp) + '%'], ['Drop chance', '+' + Math.round(st.drop) + '%'], ['Company power', '+' + Math.round((st.cp - 1) * 100) + '%']]
     .map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
@@ -1650,7 +1674,7 @@ function renderJournal() {
       <label for="autoSell">Auto-sell drops (upgrades are always kept)</label><select id="autoSell">${opts}</select>
       <h2>Automatic play</h2><p class="sub">The hero always moves forward by itself. These handle the upgrades too; switch any off to do it by hand.</p>
       <label class="chk"><input type="checkbox" id="autoSpend" ${S.autoSpend ? 'checked' : ''}> Spend attribute points</label>
-      <label class="chk"><input type="checkbox" id="autoEquip" ${S.autoEquip ? 'checked' : ''}> Equip better gear and sell Worn to Fine junk when the bag fills</label>
+      <label class="chk"><input type="checkbox" id="autoEquip" ${S.autoEquip ? 'checked' : ''}> Equip better gear, and when the bag fills sell everything below Mythic that isn't an upgrade</label>
       <label class="chk"><input type="checkbox" id="autoStones" ${S.autoStones ? 'checked' : ''}> Unlock waystones</label>
       <label class="chk"><input type="checkbox" id="autoCompany" ${S.autoCompany ? 'checked' : ''}> Pick the strongest company and train them</label>
       <label class="chk"><input type="checkbox" id="autoClaim" ${S.autoClaim ? 'checked' : ''}> Claim feats</label>
@@ -1730,8 +1754,8 @@ function autoPlay(quiet) {
     if (n) { changed = true; if (!quiet) log(`Equipped ${n} better item${n > 1 ? 's' : ''} automatically.`); }
     if (S.bag.length >= BAG_MAX - 3) {
       let g = 0, k = 0;
-      S.bag = S.bag.filter(it => { if (it.r < 3 && !isUpgrade(it)) { g += value(it); k++; return false; } return true; });
-      if (k) { S.gold += g; changed = true; if (!quiet) log(`Bag nearly full: sold ${k} Worn to Fine items for ${fmt(g)} gold.`); }
+      S.bag = S.bag.filter(it => { if (it.r < 5 && !isUpgrade(it)) { g += value(it); k++; return false; } return true; });
+      if (k) { S.gold += g; changed = true; if (!quiet) log(`Bag nearly full: sold ${k} items you don't need for ${fmt(g)} gold. Mythic and better are kept.`); }
     }
   }
   if (S.autoClaim) for (const f of FEATS) if (!S.feats[f.id] && featDone(f)) {
