@@ -42,7 +42,9 @@ h1{font:700 1.7rem/1 var(--display);margin:0;letter-spacing:.02em;color:var(--la
 .road{position:relative;border:2px solid #000;border-radius:8px;overflow:hidden;background:#000;box-shadow:0 0 0 1px var(--line),0 10px 30px -12px rgba(243,180,74,.25)}
 .road canvas{display:block;width:100%;height:auto;image-rendering:pixelated}
 .roadhud{position:absolute;inset:0 0 auto 0;display:flex;justify-content:space-between;gap:8px;padding:6px 9px;font:500 .8rem/1 var(--display);letter-spacing:.06em;text-transform:uppercase;text-shadow:0 1px 0 #000,0 0 4px #000;pointer-events:none}
-.roadhud .zone{color:var(--lamp)}
+.roadhud .zone{color:var(--lamp);text-align:right}
+.roadhud span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+@media (max-width:520px){.roadhud{font-size:.58rem;letter-spacing:.03em;padding:5px 7px}}
 .exitstrip{position:absolute;right:8px;bottom:8px;display:none}
 
 .hud{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
@@ -177,6 +179,20 @@ h2{font:700 1.1rem/1.2 var(--display);margin:0;letter-spacing:.03em;text-wrap:ba
 .hero-offer ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:2px}
 .notice{border:1px dashed var(--lamp);border-radius:8px;padding:10px 12px;font-size:.9rem;color:var(--paper);background:#1d1a10;margin:0}
 .timer{font-weight:700;color:var(--good);font-variant-numeric:tabular-nums}
+.toasts{position:absolute;left:50%;top:26px;transform:translateX(-50%);display:flex;flex-direction:column;gap:4px;align-items:center;pointer-events:none;z-index:2;width:max-content;max-width:90%}
+.toast{background:rgba(13,19,23,.92);border:1px solid var(--lamp);border-radius:999px;padding:4px 12px;font-size:.8rem;display:flex;gap:6px;align-items:center;animation:toastIn 3.2s ease forwards}
+.toast b{color:var(--lamp);font-family:var(--display);font-weight:500;letter-spacing:.04em;text-transform:uppercase;font-size:.72rem}
+@keyframes toastIn{0%{opacity:0;transform:translateY(-6px)}10%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
+.coach{display:flex;gap:10px;align-items:center;background:#2a2110;border:1px solid var(--lamp);border-radius:8px;padding:8px 10px;font-size:.92rem}
+.coach span:nth-child(2){flex:1;min-width:0}
+.coach .hand{width:22px;height:16px;flex:none;background:linear-gradient(var(--lamp),var(--lamp)) 0 6px/14px 4px no-repeat,linear-gradient(var(--lamp),var(--lamp)) 12px 3px/8px 10px no-repeat;animation:poke 1s ease-in-out infinite}
+@keyframes poke{50%{transform:translateX(4px)}}
+.tab.pulse{animation:pulse 1.2s ease-in-out infinite;border-radius:6px 6px 0 0}
+@keyframes pulse{50%{background:rgba(243,180,74,.18);color:var(--lamp)}}
+.attr .next{color:var(--good);font-variant-numeric:tabular-nums}
+.foe.unknown img{filter:brightness(0) opacity(.7)}
+html.big{font-size:112.5%}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}.coach .hand,.tab.pulse{animation:none}}
 .log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:320px;overflow:auto;font-size:.9rem}
 .log li{display:flex;gap:8px;border-bottom:1px solid #1e2a30;padding:4px 0}
 .log time{color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
@@ -208,6 +224,7 @@ body.strip .exitstrip{display:block}
 
   <section class="road" aria-label="The road">
     <canvas id="cv" width="960" height="360"></canvas>
+    <div class="toasts" id="toasts" aria-live="polite"></div>
     <div class="roadhud"><span id="hudStage">Stage 1 · Wave 1/10</span><span class="zone" id="hudZone">Mossbarrow Lane</span></div>
     <button class="btn small exitstrip" id="exitStrip" type="button">Show menus</button>
   </section>
@@ -223,6 +240,7 @@ body.strip .exitstrip{display:block}
     </div>
   </section>
 
+  <div class="coach" id="coach" hidden><span class="hand" aria-hidden="true"></span><span id="coachText"></span><button class="btn small" id="coachOk" type="button">Got it</button></div>
   <nav class="tabs" role="tablist" aria-label="Menus">
     <button class="tab" role="tab" data-tab="hero" id="tab-hero">Hero</button>
     <button class="tab" role="tab" data-tab="bag" id="tab-bag">Bag</button>
@@ -502,7 +520,8 @@ function fresh() {
     roster: [], party: [], recruited: 0, feats: {}, bestR: 0,
     stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true, kills: 0, deaths: 0, best: null,
     played: 0, lastSeen: Date.now(), log: [], tab: 'hero', created: Date.now(),
-    owned: {}, passUntil: 0, charmUntil: 0, look: { lantern: 'amber', outfit: 'wanderer', company: 'plain' }, testShop: false, shopNoted: false };
+    owned: {}, passUntil: 0, charmUntil: 0, look: { lantern: 'amber', outfit: 'wanderer', company: 'plain' }, testShop: false, shopNoted: false,
+    seen: {}, tips: {}, featSeen: {}, gfx: { numbers: true, weather: true, shake: true, fps30: false, big: false } };
 }
 let S = fresh();
 let G, ST;
@@ -521,6 +540,12 @@ function migrate(d) {
   if (d.v === 1) { s.bestR = d.best ? d.best.r : 0; }
   if (d.v < 3) Object.assign(s, { autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true });
   s.farm = false; s.v = 3;
+  s.gfx = Object.assign({ numbers: true, weather: true, shake: true, fps30: false, big: false }, s.gfx || {});
+  s.tips = s.tips || {}; s.featSeen = s.featSeen || {};
+  if (!s.seen) { // older saves: everything already passed counts as met
+    s.seen = {}; const zc = Math.min(9, Math.floor((s.maxStage - 1) / 5));
+    ZONES.forEach((z, i) => { if (i <= zc) z.foes.forEach(f => { s.seen[f.n] = true; }); if (i < zc) s.seen[z.boss.n] = true; });
+  }
   s.party = (s.party || []).slice(0, 1 + ['company_slot_1', 'company_slot_2', 'company_slot_3'].filter(id => (s.owned || {})[id]).length + ((s.owned || {}).supporter_pack ? 1 : 0));
   s.owned = s.owned || {}; s.look = Object.assign({ lantern: 'amber', outfit: 'wanderer', company: 'plain' }, s.look || {});
   return s;
@@ -623,6 +648,34 @@ async function restorePurchases() {
   catch (e) { log('Could not reach the store to restore purchases.'); }
   dirtyStats = true; sprCacheReset(); save(); renderPanel();
 }
+
+/* ---------- Toasts and guided tips ---------- */
+function toast(title, text) {
+  const box = document.getElementById('toasts'); if (!box) return;
+  while (box.children.length > 2) box.firstChild.remove();
+  const t = document.createElement('div'); t.className = 'toast'; t.innerHTML = `<b>${esc(title)}</b><span>${esc(text)}</span>`;
+  box.appendChild(t); setTimeout(() => t.remove(), 3300);
+}
+/* One-time tips that point at the tab to open next. They appear in order and never repeat. */
+const TIPS = {
+  bag: { tab: 'bag', text: 'New gear dropped. Open the Bag to compare it with what you wear.' },
+  company: { tab: 'company', text: 'A traveller follows your light. Open Company to meet them.' },
+  talents: { tab: 'talents', text: 'You unlocked a waystone. Each one is a permanent bonus.' },
+  map: { tab: 'map', text: 'New zone. The Map shows what every foe is weak to.' },
+  feats: { tab: 'feats', text: 'Feat complete. Each one adds permanent damage and gold.' },
+};
+let tipQueue = [];
+function tip(id) { if (S.tips[id] || tipQueue.includes(id)) return; tipQueue.push(id); showTip(); }
+function showTip() {
+  const box = document.getElementById('coach'); if (!box) return;
+  document.querySelectorAll('.tab.pulse').forEach(b => b.classList.remove('pulse'));
+  const id = tipQueue[0];
+  if (!id || S.tab === TIPS[id].tab) { if (id) doneTip(id); box.hidden = !tipQueue.length; return; }
+  document.getElementById('coachText').textContent = TIPS[id].text;
+  const tb = document.getElementById('tab-' + TIPS[id].tab); if (tb) tb.classList.add('pulse');
+  box.hidden = false;
+}
+function doneTip(id) { S.tips[id] = true; tipQueue = tipQueue.filter(x => x !== id); showTip(); }
 
 /* ---------- Stats ---------- */
 function talentBonus() {
@@ -738,6 +791,7 @@ function gainItem(it, quiet) {
     }
   }
   S.bag.push(it);
+  if (!quiet) tip('bag');
   if (!quiet && it.r >= 3) log(`Found ${RAR[it.r].n}: ${it.name} (GS ${it.gs})`, RAR[it.r].col);
   if (S.tab === 'bag') dirtyPanel = true;
   markTabs();
@@ -795,7 +849,7 @@ function recruit(quiet) {
   S.roster.push(f); S.recruited++;
   if (S.party.length < partySlots()) S.party.push(f.id);
   dirtyStats = true;
-  if (!quiet) { log(`${f.name}, a ${RAR[r].n} ${KINDS[kind].n}, follows your light.`, RAR[r].col); banner(`${f.name} joins your company`, '#f3b44a'); }
+  if (!quiet) { log(`${f.name}, a ${RAR[r].n} ${KINDS[kind].n}, follows your light.`, RAR[r].col); banner(`${f.name} joins your company`, '#f3b44a'); toast('New follower', `${f.name} the ${KINDS[kind].n}`); tip('company'); }
   if (S.tab === 'company') dirtyPanel = true;
   markTabs();
   return f;
@@ -816,7 +870,7 @@ function addXp(x) {
   while (S.xp >= need(S.level)) {
     S.xp -= need(S.level); S.level++; S.points += 3; dirtyStats = true;
     log(`Reached level ${S.level}. +3 attribute points.`, '#f3b44a');
-    if (G) fx(HX, GY - 26, 'LEVEL UP', '#f3b44a', 1.4, 6);
+    if (G) { fx(HX, GY - 26, 'LEVEL UP', '#f3b44a', 1.4, 6); burst(HX, GY - 10, ['#f3b44a', '#fff2c0'], 14, 70); }
   }
   if (S.autoSpend) autoSpend();
   markTabs();
@@ -910,7 +964,7 @@ function damage(e, raw, el, crit, small) {
   e.hp -= d; e.flash = .09;
   if (e.reflect > 0 && G.hero.dead <= 0) { G.hero.hp -= d * .3 * (1 - stats().res.fire / 100); if (G.hero.hp <= 0) heroDie(e); }
   const col = crit ? '#f3b44a' : el === 'phys' ? '#ece4d0' : ELEM[el].col;
-  fx(e.x + rnd(-3, 3), GY - (e.boss ? 30 : 18), fmt(d) + (m > 1.2 ? '!' : ''), col, .8, small ? 4 : crit ? 6 : 5);
+  if (S.gfx.numbers) fx(e.x + rnd(-3, 3), GY - (e.boss ? 30 : 18), fmt(d) + (m > 1.2 ? '!' : ''), col, .8, small ? 4 : crit ? 6 : 5);
   if (e.hp <= 0) kill(e);
   return d;
 }
@@ -945,6 +999,9 @@ function updateProj(dt) {
 }
 function kill(e) {
   e.dead = true; e.hp = 0;
+  if (!S.seen[e.n]) { S.seen[e.n] = true; toast('New foe', e.n); log(`Discovered: ${e.n}. The Map now shows its weaknesses.`); if (S.tab === 'map') dirtyPanel = true; }
+  { const [, pk] = FOE_ART[e.n] || [, 'moss']; const cols = Object.values(PAL[pk] || {}).slice(0, 3); burst(e.x, GY - (e.boss ? 14 : 7), cols.length ? cols : ['#ffffff'], e.boss ? 26 : 12, e.boss ? 80 : 55); }
+  if (e.boss) shake(2.5);
   const st = stats();
   const em = e.elite ? 3 : e.minion ? .3 : 1;
   const g = goldPer(S.stage, e.boss) * (1 + st.gold / 100) * rnd(.85, 1.15) * em * boostGold();
@@ -972,7 +1029,7 @@ function useSpecial(e, sp) {
     case 'shell': e.shell = 2.5; e.shellM = .3; break;
     case 'guard': for (const o of G.enemies) if (!o.dead) { o.shell = 3; o.shellM = .5; } break;
     case 'drain': { const before = h.hp; enemyHit(e, 1.3); e.hp = Math.min(e.max, e.hp + Math.max(0, before - h.hp)); break; }
-    case 'slam': enemyHit(e, e.boss ? 2.6 : 2.2); break;
+    case 'slam': enemyHit(e, e.boss ? 2.6 : 2.2); shake(e.boss ? 3 : 1.5); break;
     case 'pounce': enemyHit(e, 1.8); break;
     case 'reflect': e.reflect = 3; break;
     case 'evade': e.evade = 2; break;
@@ -996,7 +1053,8 @@ function enemyHit(e, mult) {
   d *= e.el === 'phys' ? k / (k + st.def) : (1 - st.res[e.el] / 100) * k / (k + st.def * .3);
   if (Math.random() * 100 < st.block) { d *= .5; blocked = true; }
   h.hp -= d; h.hurt = .14;
-  fx(HX - 2, GY - 22, (blocked ? 'block ' : '') + fmt(d), e.el === 'phys' ? '#ff8070' : ELEM[e.el].col, .8, 4);
+  if (d > stats().hp * .15) shake(1.5);
+  if (S.gfx.numbers) fx(HX - 2, GY - 22, (blocked ? 'block ' : '') + fmt(d), e.el === 'phys' ? '#ff8070' : ELEM[e.el].col, .8, 4);
   if (h.hp <= 0) heroDie(e);
 }
 function heroDie(killer) {
@@ -1021,7 +1079,7 @@ function nextWave() {
       S.stage++;
       if (S.stage > S.maxStage) { S.maxStage = S.stage; log(`New record: reached Stage ${S.stage}.`); dirtyStats = true; if (S.maxStage === 2 && !S.shopNoted) log('The Shop is open: lantern colors, outfits and a supporter pack. Nothing in it is needed to play.', '#97a39d'); }
       const z1 = zoneOf(S.stage);
-      if (z1 !== z0) { banner(`New road: ${ZONES[z1].name}`, '#f3b44a'); log(`Entered ${ZONES[z1].name}.`, '#f3b44a'); }
+      if (z1 !== z0) { banner(`New road: ${ZONES[z1].name}`, '#f3b44a'); log(`Entered ${ZONES[z1].name}.`, '#f3b44a'); toast('New zone', ZONES[z1].name); tip('map'); }
       else banner(`Stage ${S.stage}`);
       if (S.tab === 'map') dirtyPanel = true;
     }
@@ -1090,11 +1148,21 @@ function update(dt) {
   if (!G.enemies.some(e => !e.dead) && h.dead <= 0) nextWave();
 }
 
+/* ---------- Juice ---------- */
+function burst(x, y, cols, n, speed) {
+  if (!S.gfx.weather || reduced || !G) return;
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = speed * rnd(.4, 1);
+    G.parts.push({ k: 'bit', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - speed * .4, t: 0, life: rnd(.5, .9), c: cols[i % cols.length] });
+  }
+}
+function shake(n) { if (S.gfx.shake && !reduced && G) G.shake = Math.max(G.shake || 0, n); }
+
 /* ---------- Particles ---------- */
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 function updateParts(dt) {
   const z = ZONES[zoneOf(S.stage)];
-  if (!reduced && G.parts.length < 40 && Math.random() < dt * 6) {
+  if (!reduced && S.gfx.weather && G.parts.length < 40 && Math.random() < dt * 6) {
     const p = { k: z.part, t: 0, life: rnd(2, 5) };
     if (z.part === 'firefly') Object.assign(p, { x: rnd(0, W), y: rnd(30, GY - 4), vx: rnd(-4, 4), vy: rnd(-3, 3), c: '#d8f07a' });
     if (z.part === 'mist') Object.assign(p, { x: rnd(0, W), y: rnd(GY - 14, GY), vx: rnd(-6, -2), vy: 0, c: 'rgba(200,230,230,.18)', w: rnd(10, 24) });
@@ -1105,7 +1173,7 @@ function updateParts(dt) {
     if (z.part === 'firefly' && z.top === '#6a3a6a') p.c = '#ff9ad8';
     G.parts.push(p);
   }
-  if (!reduced && variantOf(S.stage) === 2 && G.parts.length < 90 && Math.random() < dt * 30) {
+  if (!reduced && S.gfx.weather && variantOf(S.stage) === 2 && G.parts.length < 90 && Math.random() < dt * 30) {
     const w = z.weather, q = { t: 0, life: 4 };
     if (w === 'rain') Object.assign(q, { k: 'rain', x: rnd(0, W + 60), y: -3, vx: -35, vy: 170, c: 'rgba(170,200,230,.6)', life: .7 });
     else if (w === 'snow') Object.assign(q, { k: 'snow', x: rnd(0, W + 60), y: -2, vx: rnd(-40, -20), vy: rnd(20, 34), c: '#ffffff' });
@@ -1118,6 +1186,7 @@ function updateParts(dt) {
   for (const p of G.parts) {
     p.t += dt;
     if (p.k === 'loot') { p.x += p.vx * dt; p.vy += 240 * dt; p.y += p.vy * dt; if (p.y > GY - 6) p.y = GY - 6; continue; }
+    if (p.k === 'bit') { p.x += p.vx * dt; p.vy += 260 * dt; p.y += p.vy * dt; if (p.y > GY) { p.y = GY; p.vy *= -.3; p.vx *= .6; } continue; }
     p.x += (p.vx - (G.moving ? 16 : 0)) * dt; p.y += p.vy * dt;
   }
   G.parts = G.parts.filter(p => p.t < p.life && p.x > -30 && p.y < H + 2);
@@ -1975,6 +2044,7 @@ function draw() {
   drawBackdrop(z, sc);
   for (const p of G.parts) {
     if (p.k === 'loot') { px(p.x - 1, p.y - 1, 3, 3, p.c); continue; }
+    if (p.k === 'bit') { L.globalAlpha = clamp(1 - p.t / p.life, 0, 1); L.fillStyle = p.c; L.fillRect(Math.round(p.x * 2) / 2, Math.round(p.y * 2) / 2, 1, 1); L.globalAlpha = 1; continue; }
     L.globalAlpha = Math.sin(Math.PI * clamp(p.t / p.life, 0, 1));
     if (p.k === 'mist') px(p.x, p.y, p.w, 2, p.c); else if (p.k === 'sand') px(p.x, p.y, 4, 1, p.c); else if (p.k === 'rain') { px(p.x, p.y, 1, 3, p.c); } else { if (p.k === 'firefly' || p.k === 'ember') { const a = L.globalAlpha; L.globalAlpha = a * .3; px(p.x - 1, p.y, 3, 1, p.c); px(p.x, p.y - 1, 1, 3, p.c); L.globalAlpha = a; } px(p.x, p.y, 1, 1, p.c); }
   }
@@ -2006,7 +2076,10 @@ function draw() {
   if (boss) { px(70, 14, 100, 3, '#2a0f0f'); px(70, 14, 100 * boss.hp / boss.max, 3, '#ff6050'); }
 
   D.imageSmoothingEnabled = false;
-  D.drawImage(low, 0, 0, cv.width, cv.height);
+  let sx = 0, sy = 0;
+  if (G.shake > 0) { sx = Math.round(rnd(-1, 1) * G.shake) * (cv.width / W); sy = Math.round(rnd(-1, 1) * G.shake) * (cv.width / W); G.shake = Math.max(0, G.shake - .25); }
+  D.fillStyle = '#000'; if (sx || sy) D.fillRect(0, 0, cv.width, cv.height);
+  D.drawImage(low, sx, sy, cv.width, cv.height);
   const k = cv.width / W;
   D.textAlign = 'center'; D.lineJoin = 'round';
   for (const f of G.fx) {
@@ -2118,7 +2191,12 @@ function renderHero() {
     ['Fire resist', st.res.fire.toFixed(1) + '%'], ['Frost resist', st.res.frost.toFixed(1) + '%'], ['Shadow resist', st.res.shadow.toFixed(1) + '%'],
     ['Lifesteal', st.ls.toFixed(1) + '%'], ['Gold find', '+' + Math.round(st.gold) + '%'], ['XP gain', '+' + Math.round(st.xp) + '%'], ['Drop chance', '+' + Math.round(st.drop) + '%'], ['Company power', '+' + Math.round((st.cp - 1) * 100) + '%']]
     .map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
-  const attrs = ATTRS.map(a => `<div class="attr"><div><b>${a.n}</b><small>${a.d} per point</small></div><span class="val">${S.attrs[a.k]}</span>
+  const nextPt = k => {
+    S.attrs[k]++; const n = heroStats(); S.attrs[k]--;
+    const show = { mig: [['Damage', st.dmg, n.dmg, fmt]], vit: [['Max HP', st.hp, n.hp, fmt], ['Defense', st.def, n.def, fmt]], agi: [['Attacks/sec', st.aspd, n.aspd, v => v.toFixed(2)], ['Dodge', st.dodge, n.dodge, v => v.toFixed(1) + '%']], for: [['Crit', st.crit, n.crit, v => v.toFixed(1) + '%'], ['Gold find', st.gold, n.gold, v => '+' + Math.round(v) + '%']] }[k];
+    return show.map(([l, a, b, f]) => `${l} ${f(a)} → <span class="next">${f(b)}</span>`).join(' · ');
+  };
+  const attrs = ATTRS.map(a => `<div class="attr"><div><b>${a.n}</b><small>${nextPt(a.k)}</small></div><span class="val">${S.attrs[a.k]}</span>
     <button class="plus" data-act="attr" data-k="${a.k}" ${S.points ? '' : 'disabled'} aria-label="Add a point to ${a.n}">+</button></div>`).join('');
   panel.innerHTML = `<div class="card"><div class="row between"><h2>Path</h2><span class="sub">Switch any time. Each path's first visit gives you a weapon for it.</span></div><div class="paths">${paths}</div></div>
   <div class="split">
@@ -2202,12 +2280,15 @@ function renderMap() {
   const cards = ZONES.map((z, i) => {
     const first = i * 5 + 1, last = i === ZONES.length - 1 ? '∞' : first + 4, open = S.maxStage >= first;
     const status = i === cur ? '<span class="status cur">You are here</span>' : open ? (S.maxStage > first + 4 && i < ZONES.length - 1 ? '<span class="status">Cleared</span>' : '<span class="status">Open</span>') : `<span class="status">Locked · reach Stage ${first}</span>`;
-    const foes = [...z.foes, z.boss].map(f => `<span class="foe"><img alt="" src="${foeURL(f.n)}"><span>${f.n}${f === z.boss ? ' (guardian)' : ''}: hits with ${elemTag(f.el)}, ${resTxt(f)}.${(SPECIALS[f.n] || []).map(sp => ` <b style="color:#d8a8ff">${sp.n}</b>: ${SP_DESC[sp.k]}.`).join('')}</span></span>`).join('');
+    const foes = [...z.foes, z.boss].map(f => S.seen[f.n]
+      ? `<span class="foe"><img alt="" src="${foeURL(f.n)}"><span>${f.n}${f === z.boss ? ' (guardian)' : ''}: hits with ${elemTag(f.el)}, ${resTxt(f)}.${(SPECIALS[f.n] || []).map(sp => ` <b style="color:#d8a8ff">${sp.n}</b>: ${SP_DESC[sp.k]}.`).join('')}</span></span>`
+      : `<span class="foe unknown"><img alt="" src="${foeURL(f.n)}"><span>???${f === z.boss ? ' (guardian)' : ''}: defeat one to learn its weaknesses.</span></span>`).join('');
     return `<article class="zone ${open ? '' : 'locked'}"><div class="sky" style="background:linear-gradient(${z.sky[0]},${z.sky[1]} 70%,${z.top} 70%,${z.ground})"><span>${z.name}</span></div>
       <div class="body">${status}<span>Stages ${first}–${last}</span><div class="sub" style="display:flex;flex-direction:column;gap:2px">${foes}</div>
       ${open && i !== cur ? `<div class="row"><button class="btn small" data-act="travel" data-s="${first}">Travel to Stage ${first}</button></div>` : ''}</div></article>`;
   }).join('');
-  panel.innerHTML = `<div class="card"><div class="row between"><div><h2>The road so far</h2><p class="sub">Furthest: Stage ${S.maxStage}. The hero moves forward on its own. If a stage is too hard, it drops back one stage, grows stronger there, and tries again. Match your weapon element to what foes are weak to.</p></div>
+  const known = ZONES.reduce((a, z) => a + [...z.foes, z.boss].filter(f => S.seen[f.n]).length, 0), total = ZONES.length * 3;
+  panel.innerHTML = `<div class="card"><div class="row between"><div><h2>The road so far · ${known}/${total} foes met</h2><p class="sub">Furthest: Stage ${S.maxStage}. The hero moves forward on its own. If a stage is too hard, it drops back one stage, grows stronger there, and tries again. Match your weapon element to what foes are weak to.</p></div>
     ${S.stage < S.maxStage ? `<div class="row"><button class="btn small" data-act="travel" data-s="${S.maxStage}">Jump to Stage ${S.maxStage}</button></div>` : ''}</div></div>
     <div class="zones">${cards}</div>`;
 }
@@ -2243,6 +2324,12 @@ function renderJournal() {
         <dt>Enemies defeated</dt><dd>${fmt(S.kills)}</dd><dt>Times fallen</dt><dd>${fmt(S.deaths)}</dd>
         <dt>Furthest stage</dt><dd>${S.maxStage}</dd><dt>Travellers recruited</dt><dd>${S.recruited}</dd><dt>Time on the road</dt><dd>${dur(S.played)}</dd>
         <dt>Best find</dt><dd ${S.best ? `style="color:${RAR[S.best.r].col}"` : ''}>${S.best ? esc(S.best.name) + ' · GS ' + S.best.gs : '–'}</dd></dl>
+      <h2>Graphics</h2>
+      <label class="chk"><input type="checkbox" id="gfx-numbers" ${S.gfx.numbers ? 'checked' : ''}> Damage numbers</label>
+      <label class="chk"><input type="checkbox" id="gfx-weather" ${S.gfx.weather ? 'checked' : ''}> Weather, fireflies and bursts</label>
+      <label class="chk"><input type="checkbox" id="gfx-shake" ${S.gfx.shake ? 'checked' : ''}> Screen shake on big hits</label>
+      <label class="chk"><input type="checkbox" id="gfx-fps30" ${S.gfx.fps30 ? 'checked' : ''}> Battery saver: draw 30 frames per second</label>
+      <label class="chk"><input type="checkbox" id="gfx-big" ${S.gfx.big ? 'checked' : ''}> Larger text</label>
       <h2>Developer</h2>
       <label class="chk"><input type="checkbox" id="testShop" ${S.testShop ? 'checked' : ''}> Shop test mode: purchases are free and fake, for trying the shop before the Android app exists</label>
       <p class="sub">Progress is saved in this browser only.</p>
@@ -2310,9 +2397,11 @@ function renderPanel() {
 document.querySelector('.tabs').addEventListener('click', e => {
   const b = e.target.closest('.tab'); if (!b) return;
   S.tab = b.dataset.tab; confirmReset = false; confirmDismiss = null; renderPanel();
+  if (tipQueue[0] && TIPS[tipQueue[0]].tab === S.tab) doneTip(tipQueue[0]);
 });
 panel.addEventListener('change', e => {
   if (e.target.id === 'autoSell') S.autoSell = +e.target.value;
+  if (e.target.id.startsWith('gfx-')) { S.gfx[e.target.id.slice(4)] = e.target.checked; document.documentElement.classList.toggle('big', !!S.gfx.big); }
   if (e.target.id === 'testShop') { S.testShop = e.target.checked; log(S.testShop ? 'Shop test mode on: purchases are fake.' : 'Shop test mode off.'); }
   if (['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim'].includes(e.target.id)) { S[e.target.id] = e.target.checked; autoPlay(); updateHud(); }
   save();
@@ -2352,6 +2441,7 @@ panel.addEventListener('click', e => {
   if (a === 'reset2') { S = newGame(); confirmReset = false; selBag = selEq = selTal = null; dirtyStats = true; resetRuntime(); }
   save(); updateHud(); renderPanel();
 });
+$('#coachOk').addEventListener('click', () => { if (tipQueue[0]) doneTip(tipQueue[0]); });
 $('#ptsBtn').addEventListener('click', () => { S.tab = 'hero'; renderPanel(); });
 
 /* Strip mode: only the road, for a pinned tab or a narrow side window */
@@ -2369,6 +2459,7 @@ $('#exitStrip').addEventListener('click', () => setStrip(false));
 const STONE_ORDER = ['whet', 'quick', 'skin', 'stone', 'keen', 'purse', 'kindred', 'banner', 'mentor', 'exec', 'flurry', 'runner', 'wind', 'bulwark', 'magpie', 'scholar', 'thirst', 'focus', 'edge', 'deadeye', 'sense', 'tempest', 'phantom', 'giant', 'rampart', 'hoard', 'gleaner', 'emberward', 'frostward', 'duskward', 'bloodrite', 'starsight'];
 function autoPlay(quiet) {
   let changed = false;
+  for (const f of FEATS) if (!S.featSeen[f.id] && featDone(f)) { S.featSeen[f.id] = true; if (!quiet) { toast('Feat complete', f.n); tip('feats'); } }
   if (S.autoSpend && S.points) { autoSpend(); changed = true; }
   if (S.autoEquip) {
     const n = autoEquip();
@@ -2391,7 +2482,7 @@ function autoPlay(quiet) {
       const id = STONE_ORDER.find(i => TAL[i] && !S.talents[i] && talAvail(TAL[i])) || (TALENTS.filter(t => t.minor && !S.talents[t.id] && talAvail(t)).sort((a, b) => MINOR_PRIO.indexOf(a.k) - MINOR_PRIO.indexOf(b.k))[0] || {}).id;
       const c = talCost();
       if (!id || S.gold < c) break;
-      S.gold -= c; S.talents[id] = true; dirtyStats = true; changed = true;
+      S.gold -= c; S.talents[id] = true; dirtyStats = true; changed = true; tip('talents');
       if (!quiet) log(`Unlocked the ${TAL[id].n} waystone.`, '#f3b44a');
     }
   }
@@ -2466,7 +2557,9 @@ window.addEventListener('resize', sizeCanvas);
 /* ---------- Loop ---------- */
 function frame(now) {
   const dt = Math.min(.1, (now - last) / 1000); last = now;
-  update(dt); draw();
+  update(dt);
+  G.drawT = (G.drawT || 0) + dt;
+  if (!S.gfx.fps30 || G.drawT >= 1 / 31) { G.drawT = 0; draw(); }
   G.hudT += dt; if (G.hudT > .2) { G.hudT = 0; updateHud(); if (dirtyPanel && $('#overlay').hidden) renderPanel(); }
   G.autoT = (G.autoT || 0) + dt; if (G.autoT > 2) { G.autoT = 0; autoPlay(); }
   G.saveT += dt; if (G.saveT > 5) { G.saveT = 0; save(); }
@@ -2485,6 +2578,7 @@ function start(data) {
   resetRuntime();
   sizeCanvas();
   if (!data || !data.S) catchUp();
+  document.documentElement.classList.toggle('big', !!S.gfx.big);
   updateHud(); renderPanel();
   requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
 }
