@@ -507,7 +507,7 @@ function fresh() {
 let S = fresh();
 let G, ST;
 let dirtyStats = true, dirtyPanel = true;
-let selBag = null, selEq = null, selTal = null, confirmReset = false, confirmDismiss = null;
+let selBag = null, selEq = null, selTal = null, confirmReset = false, confirmDismiss = null, confirmSellAll = false;
 
 function save() {
   S.lastSeen = Date.now();
@@ -2066,7 +2066,9 @@ function renderBag() {
       <div class="row"><button class="btn primary small" data-act="autoequip">Equip best</button>
       <button class="btn small" data-act="sellbelow" data-r="2">Sell Worn &amp; Common</button>
       <button class="btn small" data-act="sellbelow" data-r="3">Sell Fine &amp; below</button>
-      <button class="btn small" data-act="sellbelow" data-r="4">Sell Rare &amp; below</button></div></div>
+      <button class="btn small" data-act="sellbelow" data-r="4">Sell Rare &amp; below</button>
+      ${confirmSellAll ? `<button class="btn small primary" data-act="sellall2">Sell ${S.bag.filter(it => !isUpgrade(it)).length} items for ${fmt(S.bag.filter(it => !isUpgrade(it)).reduce((a, it) => a + value(it), 0))} gold</button><button class="btn small" data-act="sellall0">Keep them</button>`
+        : '<button class="btn small" data-act="sellall1">Sell all non-upgrades</button>'}</div></div>
     <p class="sub">▲ marks an upgrade for your current build. Bulk sell skips upgrades.</p>
     <div class="bag">${cells.join('')}</div></div>
     ${sel ? itemCard(sel, 'bag') : '<p class="hint">Tap an item to compare it with what you are wearing. Green numbers beat your current gear, red ones are worse.</p>'}`;
@@ -2157,7 +2159,7 @@ function renderJournal() {
       <label for="autoSell">Auto-sell drops (upgrades are always kept)</label><select id="autoSell">${opts}</select>
       <h2>Automatic play</h2><p class="sub">The hero always moves forward by itself. These handle the upgrades too; switch any off to do it by hand.</p>
       <label class="chk"><input type="checkbox" id="autoSpend" ${S.autoSpend ? 'checked' : ''}> Spend attribute points</label>
-      <label class="chk"><input type="checkbox" id="autoEquip" ${S.autoEquip ? 'checked' : ''}> Equip better gear, and when the bag fills sell everything below Mythic that isn't an upgrade</label>
+      <label class="chk"><input type="checkbox" id="autoEquip" ${S.autoEquip ? 'checked' : ''}> Equip better gear, and when the bag fills sell what you don't need (keeps upgrades and one best Mythic-or-better spare per slot)</label>
       <label class="chk"><input type="checkbox" id="autoStones" ${S.autoStones ? 'checked' : ''}> Unlock waystones</label>
       <label class="chk"><input type="checkbox" id="autoCompany" ${S.autoCompany ? 'checked' : ''}> Pick the strongest company and train them</label>
       <label class="chk"><input type="checkbox" id="autoClaim" ${S.autoClaim ? 'checked' : ''}> Claim feats</label>
@@ -2243,6 +2245,9 @@ panel.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act, id = b.dataset.id;
   if (a !== 'dismiss2' && a !== 'dismiss1') confirmDismiss = null;
+  if (a !== 'sellall1') confirmSellAll = false;
+  if (a === 'sellall1') confirmSellAll = true;
+  if (a === 'sellall2') { let g = 0, n = 0; S.bag = S.bag.filter(it => { if (!isUpgrade(it)) { g += value(it); n++; return false; } return true; }); S.gold += g; if (n) log(`Sold ${n} item${n > 1 ? 's' : ''} for ${fmt(g)} gold. Upgrades were kept.`); selBag = null; }
   if (a === 'selbag') { selBag = selBag === id ? null : id; const it = S.bag.find(x => x.id === id); if (it) it.isNew = false; }
   if (a === 'equip') { const it = S.bag.find(x => x.id === id); if (it) { equip(it); selBag = null; } }
   if (a === 'sell') { const it = S.bag.find(x => x.id === id); if (it) { sell(it); selBag = null; } }
@@ -2294,8 +2299,10 @@ function autoPlay(quiet) {
     if (n) { changed = true; if (!quiet) log(`Equipped ${n} better item${n > 1 ? 's' : ''} automatically.`); }
     if (S.bag.length >= bagMax() - 3) {
       let g = 0, k = 0;
-      S.bag = S.bag.filter(it => { if (it.r < 5 && !isUpgrade(it)) { g += value(it); k++; return false; } return true; });
-      if (k) { S.gold += g; changed = true; if (!quiet) log(`Bag nearly full: sold ${k} items you don't need for ${fmt(g)} gold. Mythic and better are kept.`); }
+      const spare = {};
+      for (const it of S.bag) if (it.r >= 5 && !isUpgrade(it) && (!spare[it.slot] || it.gs > spare[it.slot].gs)) spare[it.slot] = it;
+      S.bag = S.bag.filter(it => { if (!isUpgrade(it) && spare[it.slot] !== it) { g += value(it); k++; return false; } return true; });
+      if (k) { S.gold += g; changed = true; if (!quiet) log(`Bag nearly full: sold ${k} items you don't need for ${fmt(g)} gold. Kept upgrades and the best Mythic-or-better spare for each slot.`); }
     }
   }
   if (S.autoClaim) for (const f of FEATS) if (!S.feats[f.id] && featDone(f)) {
