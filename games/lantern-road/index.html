@@ -193,6 +193,21 @@ h2{font:700 1.1rem/1.2 var(--display);margin:0;letter-spacing:.03em;text-wrap:ba
 .foe.unknown img{filter:brightness(0) opacity(.7)}
 html.big{font-size:112.5%}
 @media (prefers-reduced-motion:reduce){.toast{animation:none}.coach .hand,.tab.pulse{animation:none}}
+.mats{display:flex;gap:14px;flex-wrap:wrap;font-weight:700;font-variant-numeric:tabular-nums}
+.mat{display:inline-flex;align-items:center;gap:6px}
+.mat i{display:inline-block;width:10px;height:10px;transform:rotate(45deg);border-radius:1px}
+.mat.shard i{background:#f3b44a;box-shadow:inset -2px -2px 0 #a8701e}
+.mat.glass i{background:#7ff0ff;box-shadow:inset -2px -2px 0 #3a9ab0}
+.forge-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.forge-row:first-of-type{border-top:0}
+.forge-row img{width:32px;height:32px;image-rendering:pixelated}
+.forge-row b{font-family:var(--display);font-weight:500;color:var(--rc)}
+.forge-row small{display:block;color:var(--muted);font-size:.82rem}
+.up-pips{display:inline-flex;gap:2px;vertical-align:middle;margin-left:6px}
+.up-pips i{width:5px;height:5px;background:#2b3a42}
+.up-pips i.on{background:var(--lamp)}
+.slotpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px}
+.slotpick button[aria-pressed="true"]{border-color:var(--lamp);color:var(--lamp)}
 .log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:320px;overflow:auto;font-size:.9rem}
 .log li{display:flex;gap:8px;border-bottom:1px solid #1e2a30;padding:4px 0}
 .log time{color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
@@ -244,6 +259,7 @@ body.strip .exitstrip{display:block}
   <nav class="tabs" role="tablist" aria-label="Menus">
     <button class="tab" role="tab" data-tab="hero" id="tab-hero">Hero</button>
     <button class="tab" role="tab" data-tab="bag" id="tab-bag">Bag</button>
+    <button class="tab" role="tab" data-tab="forge" id="tab-forge">Forge</button>
     <button class="tab" role="tab" data-tab="company" id="tab-company">Company</button>
     <button class="tab" role="tab" data-tab="talents" id="tab-talents">Waystones</button>
     <button class="tab" role="tab" data-tab="map" id="tab-map">Map</button>
@@ -475,6 +491,9 @@ const FEATS = [
   { id: 'w50', n: 'Stonewise', d: 'Own 50 waystones', goal: 50, cur: () => ownedCount() },
   { id: 'w81', n: 'Every Stone Lit', d: 'Own all 81 waystones', goal: 81, cur: () => ownedCount() },
   { id: 'e25', n: 'Elite Hunter', d: 'Defeat 25 elite foes', goal: 25, cur: () => S.elites || 0 },
+  { id: 'forge1', n: 'Spark and Anvil', d: 'Temper an item', goal: 1, cur: () => S.tempered || 0 },
+  { id: 'forge10', n: 'Masterwork', d: 'Temper an item to +10', goal: 10, cur: () => Math.max(0, ...SLOTS.map(s => (S.equip[s] && S.equip[s].up) || 0)) },
+  { id: 'craft1', n: 'Smith\u2019s Hand', d: 'Craft an item in the Forge', goal: 1, cur: () => S.crafted || 0 },
   { id: 'e250', n: 'Bane of Champions', d: 'Defeat 250 elite foes', goal: 250, cur: () => S.elites || 0 },
   { id: 'l10', n: 'Seasoned', d: 'Reach level 10', goal: 10, cur: () => S.level },
   { id: 'l25', n: 'Veteran', d: 'Reach level 25', goal: 25, cur: () => S.level },
@@ -518,7 +537,7 @@ function fresh() {
   return { v: 3, level: 1, xp: 0, gold: 0, points: 0, attrs: { mig: 0, vit: 0, agi: 0, for: 0 },
     equip: emptyEquip(), bag: [], talents: { hearth: true }, path: 'blade', starters: { blade: true },
     roster: [], party: [], recruited: 0, feats: {}, bestR: 0,
-    stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true, kills: 0, deaths: 0, best: null,
+    stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true, autoForge: true, shards: 0, glass: 0, tempered: 0, crafted: 0, kills: 0, deaths: 0, best: null,
     played: 0, lastSeen: Date.now(), log: [], tab: 'hero', created: Date.now(),
     owned: {}, passUntil: 0, charmUntil: 0, look: { lantern: 'amber', outfit: 'wanderer', company: 'plain' }, testShop: false, shopNoted: false,
     seen: {}, tips: {}, featSeen: {}, stash: [], bagView: 'bag', gfx: { numbers: true, weather: true, shake: true, fps30: false, big: false } };
@@ -541,6 +560,7 @@ function migrate(d) {
   if (d.v < 3) Object.assign(s, { autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true });
   s.farm = false; s.v = 3;
   s.gfx = Object.assign({ numbers: true, weather: true, shake: true, fps30: false, big: false }, s.gfx || {});
+  if (s.autoForge === undefined) s.autoForge = true; s.shards = s.shards || 0; s.glass = s.glass || 0; s.tempered = s.tempered || 0; s.crafted = s.crafted || 0;
   s.tips = s.tips || {}; s.featSeen = s.featSeen || {}; s.stash = s.stash || []; s.bagView = s.bagView || 'bag';
   if (!s.seen) { // older saves: everything already passed counts as met
     s.seen = {}; const zc = Math.min(9, Math.floor((s.maxStage - 1) / 5));
@@ -683,6 +703,53 @@ function showTip() {
 }
 function doneTip(id) { S.tips[id] = true; tipQueue = tipQueue.filter(x => x !== id); showTip(); }
 
+/* ---------- Forge ----------
+   Salvaging gives Lantern Shards (every item) and Starglass (Epic and better).
+   Tempering adds 8% to all of an item's stats per level, up to +10. Salvaging a tempered item returns half
+   of the materials spent on it. Reforging rerolls an item's extra stats; crafting makes a new Rare-or-better item. */
+const MAX_UP = 10;
+const itemStats = it => { if (!it.up) return it.stats; const m = 1 + .08 * it.up; return Object.fromEntries(Object.entries(it.stats).map(([k, v]) => [k, roundStat(k, v * m)])); };
+const gsOf = it => Math.round(it.gs * (1 + .05 * (it.up || 0)));
+const itemName = it => it.name + (it.up ? ` +${it.up}` : '');
+const lvlMult = il => 1 + il / 8;
+function salvageYield(it) {
+  return { shards: Math.round((2 + it.r * 2) * lvlMult(it.il)) + Math.floor((it.spentS || 0) / 2), glass: (it.r >= 4 ? it.r - 3 : 0) + Math.floor((it.spentG || 0) / 2) };
+}
+function temperCost(it) { const u = it.up || 0; return { shards: Math.round(8 * Math.pow(1.35, u) * lvlMult(it.il)), glass: u >= 4 ? u - 3 : 0 }; }
+const reforgeCost = it => ({ shards: Math.round(12 * lvlMult(it.il)), glass: 1 });
+const craftCost = () => ({ shards: Math.round(30 * lvlMult(S.stage)), glass: 2 });
+const canPay = c => S.shards >= c.shards && S.glass >= c.glass;
+function pay(c) { S.shards -= c.shards; S.glass -= c.glass; }
+function salvage(it) {
+  const y = salvageYield(it);
+  S.bag = S.bag.filter(b => b !== it); if (S.stash) S.stash = S.stash.filter(b => b !== it);
+  S.shards += y.shards; S.glass += y.glass; dirtyPanel = true;
+  return y;
+}
+function temper(it) {
+  const c = temperCost(it); if ((it.up || 0) >= MAX_UP || !canPay(c)) return false;
+  pay(c); it.up = (it.up || 0) + 1; it.spentS = (it.spentS || 0) + c.shards; it.spentG = (it.spentG || 0) + c.glass;
+  S.tempered++; dirtyStats = true; dirtyPanel = true;
+  if (G) { fx(HX, GY - 30, `+${it.up}`, '#f3b44a', 1.2, 6); burst(HX + 8, GY - 10, ['#f3b44a', '#fff2c0', '#ff8a3d'], 10, 50); }
+  return true;
+}
+function reforge(it) {
+  const c = reforgeCost(it); if (!canPay(c)) return false;
+  pay(c);
+  const fresh = makeItem(it.il, it.r, it.slot, it.path);
+  it.stats = fresh.stats; it.name = fresh.name; it.elem = fresh.elem; it.gs = fresh.gs;
+  dirtyStats = true; dirtyPanel = true; return true;
+}
+function craft(slot) {
+  const c = craftCost(); if (!canPay(c) || S.bag.length >= bagMax()) return null;
+  pay(c);
+  const it = makeItem(S.stage, Math.max(3, rollRarity(stats().luck + 1)), slot, slot === 'weapon' ? S.path : undefined);
+  S.bag.push(it); S.crafted++; dirtyPanel = true;
+  log(`Forged ${RAR[it.r].n}: ${it.name} (GS ${it.gs}).`, RAR[it.r].col);
+  return it;
+}
+const matsTxt = c => [c.shards ? `${fmt(c.shards)} shards` : '', c.glass ? `${c.glass} starglass` : ''].filter(Boolean).join(' + ');
+
 /* ---------- Stats ---------- */
 function talentBonus() {
   const t = { hp: 0, dmg: 0, critd: 0, crit: 0, ls: 0, def: 0, block: 0, regen: 0, aspd: 0, dodge: 0, gold: 0, xp: 0, drop: 0, luck: 0, rFire: 0, rFrost: 0, rShadow: 0, rAll: 0, comp: 0, elem: 0, slots: 0 };
@@ -703,8 +770,9 @@ function heroStats(eq) {
   const a = S.attrs, t = talentBonus(), g = {}, P = PATHS[S.path];
   for (const s of SLOTS) {
     const it = eq[s]; if (!it) continue;
-    for (const k in it.stats) {
-      let v = it.stats[k];
+    const ist = itemStats(it);
+    for (const k in ist) {
+      let v = ist[k];
       if (s === 'weapon' && k === 'dmg' && it.path !== S.path) v *= .5;
       g[k] = (g[k] || 0) + v;
     }
@@ -2155,10 +2223,11 @@ const elemTag = el => `<span class="el" style="color:${ELEM[el].col}">${ELEM[el]
 
 function itemCard(it, mode) {
   const eq = S.equip[it.slot], st = stats();
-  const keys = [...new Set([...Object.keys(it.stats), ...(eq && eq !== it ? Object.keys(eq.stats) : [])])];
+  const its = itemStats(it), eqs = eq && eq !== it ? itemStats(eq) : null;
+  const keys = [...new Set([...Object.keys(its), ...(eqs ? Object.keys(eqs) : [])])];
   let rows = '';
   for (const k of keys) {
-    const v = it.stats[k] || 0, ov = eq && eq !== it ? (eq.stats[k] || 0) : null;
+    const v = its[k] || 0, ov = eqs ? (eqs[k] || 0) : null;
     let d = '';
     if (ov !== null) { const diff = Math.round((v - ov) * 10) / 10; d = diff === 0 ? '<span class="sub">=</span>' : `<span class="${diff > 0 ? 'good' : 'bad'}">${diff > 0 ? '+' : ''}${statText(k, diff)}</span>`; }
     rows += `<span class="k">${STAT[k].l}</span><span class="v">${v ? statText(k, v) : '–'}</span><span class="d">${d}</span>`;
@@ -2175,13 +2244,13 @@ function itemCard(it, mode) {
   }
   const canStore = stashMax() > 0 && S.stash.length < stashMax();
   const btns = mode === 'bag'
-    ? `<div class="row"><button class="btn primary" data-act="equip" data-id="${it.id}">Equip</button>${canStore ? `<button class="btn" data-act="store" data-id="${it.id}">Move to stash</button>` : ''}<button class="btn" data-act="sell" data-id="${it.id}">Sell for ${fmt(value(it))} gold</button></div>`
+    ? `<div class="row"><button class="btn primary" data-act="equip" data-id="${it.id}">Equip</button>${canStore ? `<button class="btn" data-act="store" data-id="${it.id}">Move to stash</button>` : ''}<button class="btn" data-act="sell" data-id="${it.id}">Sell for ${fmt(value(it))} gold</button><button class="btn" data-act="salvage" data-id="${it.id}">Salvage for ${matsTxt(salvageYield(it))}</button></div>`
     : mode === 'stash'
-    ? `<div class="row"><button class="btn primary" data-act="equip" data-id="${it.id}">Equip</button><button class="btn" data-act="take" data-id="${it.id}" ${S.bag.length < bagMax() ? '' : 'disabled'}>Move to bag</button><button class="btn" data-act="sell" data-id="${it.id}">Sell for ${fmt(value(it))} gold</button></div>${S.bag.length < bagMax() ? '' : '<p class="sub">Your bag is full.</p>'}`
-    : `<div class="row"><button class="btn" data-act="unequip" data-slot="${it.slot}">Move to bag</button></div>`;
+    ? `<div class="row"><button class="btn primary" data-act="equip" data-id="${it.id}">Equip</button><button class="btn" data-act="take" data-id="${it.id}" ${S.bag.length < bagMax() ? '' : 'disabled'}>Move to bag</button><button class="btn" data-act="sell" data-id="${it.id}">Sell for ${fmt(value(it))} gold</button><button class="btn" data-act="salvage" data-id="${it.id}">Salvage for ${matsTxt(salvageYield(it))}</button></div>${S.bag.length < bagMax() ? '' : '<p class="sub">Your bag is full.</p>'}`
+    : `<div class="row"><button class="btn primary" data-act="temper" data-id="${it.id}" ${(it.up || 0) < MAX_UP && canPay(temperCost(it)) ? '' : 'disabled'}>${(it.up || 0) >= MAX_UP ? 'Fully tempered' : `Temper to +${(it.up || 0) + 1} · ${matsTxt(temperCost(it))}`}</button><button class="btn" data-act="unequip" data-slot="${it.slot}">Move to bag</button></div>`;
   return `<article class="item" style="--rc:${RAR[it.r].col}">
-    <header><img class="icon" alt="" src="${itemIcon(it)}"><div><h3>${esc(it.name)}</h3>
-    <div class="meta">${RAR[it.r].n} ${SLOT_LABEL[it.slot]} · Item level ${it.il} · Gearscore ${it.gs}</div></div></header>
+    <header><img class="icon" alt="" src="${itemIcon(it)}"><div><h3>${esc(itemName(it))}</h3>
+    <div class="meta">${RAR[it.r].n} ${SLOT_LABEL[it.slot]} · Item level ${it.il} · Gearscore ${gsOf(it)}${it.up ? ` · Tempered +${it.up}` : ''}</div></div></header>
     ${extra}
     <div class="cmp"><span class="k"></span><span class="v sub">This</span><span class="d sub">${mode !== 'eq' && eq ? 'vs worn' : ''}</span>${rows}</div>
     ${verdict}${btns}</article>`;
@@ -2192,10 +2261,10 @@ function renderHero() {
   const paths = Object.entries(PATHS).map(([k, p]) => `<button class="path" data-act="path" data-p="${k}" aria-pressed="${S.path === k}"><b>${p.n}</b><small>${p.d}</small></button>`).join('');
   const slots = SLOTS.map(s => {
     const it = S.equip[s];
-    return it ? `<button class="slot ${selEq === s ? 'sel' : ''}" style="--rc:${RAR[it.r].col}" data-act="seleq" data-slot="${s}" aria-label="${SLOT_LABEL[s]}: ${esc(it.name)}"><img alt="" src="${itemIcon(it)}"><span class="lab">${SLOT_LABEL[s]}</span><span class="gs">GS ${it.gs}</span></button>`
+    return it ? `<button class="slot ${selEq === s ? 'sel' : ''}" style="--rc:${RAR[it.r].col}" data-act="seleq" data-slot="${s}" aria-label="${SLOT_LABEL[s]}: ${esc(it.name)}"><img alt="" src="${itemIcon(it)}"><span class="lab">${SLOT_LABEL[s]}</span><span class="gs">GS ${gsOf(it)}${it.up ? ` · +${it.up}` : ''}</span></button>`
       : `<button class="slot empty" data-act="tobag" aria-label="${SLOT_LABEL[s]}: empty"><img alt="" src="${icon(s === 'weapon' ? S.path : s, 0)}" style="opacity:.25"><span class="lab">${SLOT_LABEL[s]}</span><span class="gs">empty</span></button>`;
   }).join('');
-  const gsTotal = SLOTS.reduce((a, s) => a + (S.equip[s] ? S.equip[s].gs : 0), 0);
+  const gsTotal = SLOTS.reduce((a, s) => a + (S.equip[s] ? gsOf(S.equip[s]) : 0), 0);
   const rows = [['Path', PATHS[S.path].n], ['Damage type', elemTag(st.elem)], ['Max HP', fmt(st.hp)], ['Damage', fmt(st.dmg)], ['Attacks / sec', st.aspd.toFixed(2)], ['Crit chance', st.crit.toFixed(1) + '%'], ['Crit damage', Math.round(st.critd) + '%'],
     ['Defense', fmt(st.def) + ` (−${Math.round(100 * st.def / (armorK(S.stage) + st.def))}% physical here)`], ['Dodge', st.dodge.toFixed(1) + '%'], ['Block', st.block.toFixed(1) + '%'], ['Regen', fmt(st.regen) + ' / sec'],
     ['Fire resist', st.res.fire.toFixed(1) + '%'], ['Frost resist', st.res.frost.toFixed(1) + '%'], ['Shadow resist', st.res.shadow.toFixed(1) + '%'],
@@ -2263,7 +2332,8 @@ function renderBag() {
       <button class="btn small" data-act="sellbelow" data-r="3">Sell Fine &amp; below</button>
       <button class="btn small" data-act="sellbelow" data-r="4">Sell Rare &amp; below</button>
       ${confirmSellAll ? `<button class="btn small primary" data-act="sellall2">Sell ${S.bag.filter(it => !isUpgrade(it)).length} items for ${fmt(S.bag.filter(it => !isUpgrade(it)).reduce((a, it) => a + value(it), 0))} gold</button><button class="btn small" data-act="sellall0">Cancel</button>`
-        : '<button class="btn small" data-act="sellall1" title="Sells every item that is not marked ▲. Upgrades stay.">Sell all except upgrades</button>'}</div></div>
+        : '<button class="btn small" data-act="sellall1" title="Sells every item that is not marked ▲. Upgrades stay.">Sell all except upgrades</button>'}
+      <button class="btn small" data-act="salvageall" title="Breaks down every item that is not marked ▲ into Forge materials.">Salvage all except upgrades</button></div></div>
     <p class="sub">▲ marks an upgrade for your current build. Bulk sell skips upgrades.</p>
     <div class="bag">${cells.join('')}</div></div>
     ${sel ? itemCard(sel, 'bag') : '<p class="hint">Tap an item to compare it with what you are wearing. Green numbers beat your current gear, red ones are worse.</p>'}`;
@@ -2360,6 +2430,7 @@ function renderJournal() {
       <label class="chk"><input type="checkbox" id="autoEquip" ${S.autoEquip ? 'checked' : ''}> Equip better gear, and when the bag fills sell what you don't need (keeps upgrades and one best Mythic-or-better spare per slot)</label>
       <label class="chk"><input type="checkbox" id="autoStones" ${S.autoStones ? 'checked' : ''}> Unlock waystones</label>
       <label class="chk"><input type="checkbox" id="autoCompany" ${S.autoCompany ? 'checked' : ''}> Pick the strongest company and train them</label>
+      <label class="chk"><input type="checkbox" id="autoForge" ${S.autoForge ? 'checked' : ''}> Use the Forge: salvage Epic and better junk into materials, and temper worn gear</label>
       <label class="chk"><input type="checkbox" id="autoClaim" ${S.autoClaim ? 'checked' : ''}> Claim feats</label>
       <h2>Records</h2><dl class="stats">
         <dt>Enemies defeated</dt><dd>${fmt(S.kills)}</dd><dt>Times fallen</dt><dd>${fmt(S.deaths)}</dd>
@@ -2431,10 +2502,34 @@ function renderShop() {
   panel.querySelectorAll('[data-prev]').forEach(d => { const [k, key] = d.dataset.prev.split(':'); d.appendChild(previewCanvas(k, key)); });
   S.shopNoted = true;
 }
+let forgeSlot = 'weapon', forgeSel = null;
+function renderForge() {
+  const mats = `<div class="mats"><span class="mat shard"><i></i>${fmt(S.shards)} Lantern Shards</span><span class="mat glass"><i></i>${fmt(S.glass)} Starglass</span></div>`;
+  const pips = n => `<span class="up-pips">${Array.from({ length: MAX_UP }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
+  const worn = SLOTS.filter(s => S.equip[s]).map(s => {
+    const it = S.equip[s], c = temperCost(it), full = (it.up || 0) >= MAX_UP;
+    return `<div class="forge-row" style="--rc:${RAR[it.r].col}"><img alt="" src="${itemIcon(it)}"><div><b>${esc(itemName(it))}</b>${pips(it.up || 0)}<small>${SLOT_LABEL[s]} · GS ${gsOf(it)}${full ? ' · fully tempered' : ` · next: ${matsTxt(c)}`}</small></div>
+      <button class="btn small ${canPay(c) && !full ? 'primary' : ''}" data-act="temper" data-id="${it.id}" ${canPay(c) && !full ? '' : 'disabled'}>${full ? 'Max' : 'Temper'}</button></div>`;
+  }).join('') || '<p class="sub">Wear some gear first.</p>';
+  const pool = [...SLOTS.map(s => S.equip[s]).filter(Boolean), ...S.bag];
+  const sel = pool.find(x => x.id === forgeSel);
+  const rc = sel && reforgeCost(sel), cc = craftCost();
+  panel.innerHTML = `<div class="card"><div class="row between"><h2>Forge</h2>${mats}</div>
+      <p class="sub">Salvage items you don't need from the Bag to get materials. Every item gives shards; Epic and better also give starglass.</p></div>
+    <div class="card"><h2>Temper worn gear</h2><p class="sub">Each level adds 8% to all of the item's stats, up to +10. From +5, tempering also needs starglass. Salvaging a tempered item returns half of what you spent.</p>${worn}</div>
+    <div class="split">
+      <div class="card"><h2>Reforge</h2><p class="sub">Reroll an item's stats and name. Rarity, item level and tempering stay.</p>
+        <label for="reforgePick">Item</label><select id="reforgePick"><option value="">Choose an item</option>${pool.map(x => `<option value="${x.id}" ${x.id === forgeSel ? 'selected' : ''}>${esc(itemName(x))} (${RAR[x.r].n} ${SLOT_LABEL[x.slot]})</option>`).join('')}</select>
+        ${sel ? `<div class="row"><button class="btn primary small" data-act="reforge" data-id="${sel.id}" ${canPay(rc) ? '' : 'disabled'}>Reforge · ${matsTxt(rc)}</button></div>` : ''}</div>
+      <div class="card"><h2>Craft</h2><p class="sub">Forge a new item for your current stage. It is always Rare or better.</p>
+        <div class="slotpick">${SLOTS.map(s => `<button class="btn small" data-act="forgeslot" data-slot="${s}" aria-pressed="${forgeSlot === s}">${SLOT_LABEL[s]}</button>`).join('')}</div>
+        <div class="row"><button class="btn primary small" data-act="craft" ${canPay(cc) && S.bag.length < bagMax() ? '' : 'disabled'}>Craft ${SLOT_LABEL[forgeSlot].toLowerCase()} · ${matsTxt(cc)}</button>${S.bag.length >= bagMax() ? '<span class="sub">Your bag is full.</span>' : ''}</div></div>
+    </div>`;
+}
 function renderPanel() {
   dirtyPanel = false;
   document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === S.tab)));
-  ({ hero: renderHero, bag: renderBag, company: renderCompany, talents: renderTalents, map: renderMap, feats: renderFeats, journal: renderJournal, shop: renderShop }[S.tab] || renderHero)();
+  ({ hero: renderHero, bag: renderBag, forge: renderForge, company: renderCompany, talents: renderTalents, map: renderMap, feats: renderFeats, journal: renderJournal, shop: renderShop }[S.tab] || renderHero)();
   markTabs();
 }
 
@@ -2445,9 +2540,10 @@ document.querySelector('.tabs').addEventListener('click', e => {
 });
 panel.addEventListener('change', e => {
   if (e.target.id === 'autoSell') S.autoSell = +e.target.value;
+  if (e.target.id === 'reforgePick') { forgeSel = e.target.value || null; renderPanel(); return; }
   if (e.target.id.startsWith('gfx-')) { S.gfx[e.target.id.slice(4)] = e.target.checked; document.documentElement.classList.toggle('big', !!S.gfx.big); }
   if (e.target.id === 'testShop') { S.testShop = e.target.checked; log(S.testShop ? 'Shop test mode on: purchases are fake.' : 'Shop test mode off.'); }
-  if (['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim'].includes(e.target.id)) { S[e.target.id] = e.target.checked; autoPlay(); updateHud(); }
+  if (['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge'].includes(e.target.id)) { S[e.target.id] = e.target.checked; autoPlay(); updateHud(); }
   save();
 });
 panel.addEventListener('click', e => {
@@ -2456,6 +2552,12 @@ panel.addEventListener('click', e => {
   if (a !== 'dismiss2' && a !== 'dismiss1') confirmDismiss = null;
   if (a !== 'sellall1') confirmSellAll = false;
   if (a === 'sellall1') confirmSellAll = true;
+  if (a === 'salvage') { const it = S.bag.find(x => x.id === id) || S.stash.find(x => x.id === id); if (it) { const y = salvage(it); log(`Salvaged ${itemName(it)}: +${matsTxt(y)}.`); selBag = null; } }
+  if (a === 'salvageall') { let n = 0, sh = 0, gl = 0; for (const it of S.bag.filter(x => !isUpgrade(x))) { const y = salvage(it); sh += y.shards; gl += y.glass; n++; } if (n) log(`Salvaged ${n} item${n > 1 ? 's' : ''}: +${fmt(sh)} shards${gl ? `, +${gl} starglass` : ''}.`); selBag = null; }
+  if (a === 'temper') { const it = SLOTS.map(s => S.equip[s]).find(x => x && x.id === id); if (it && temper(it)) log(`Tempered ${itemName(it)}.`, '#f3b44a'); }
+  if (a === 'reforge') { const it = [...SLOTS.map(s => S.equip[s]), ...S.bag].find(x => x && x.id === id); if (it && reforge(it)) log(`Reforged into ${itemName(it)}.`, RAR[it.r].col); }
+  if (a === 'forgeslot') forgeSlot = b.dataset.slot;
+  if (a === 'craft') { const it = craft(forgeSlot); if (it) toast('Forged', it.name); }
   if (a === 'sellall2') { let g = 0, n = 0; S.bag = S.bag.filter(it => { if (!isUpgrade(it)) { g += value(it); n++; return false; } return true; }); S.gold += g; if (n) log(`Sold ${n} item${n > 1 ? 's' : ''} for ${fmt(g)} gold. Upgrades were kept.`); selBag = null; }
   if (a === 'selbag') { selBag = selBag === id ? null : id; const it = S.bag.find(x => x.id === id) || S.stash.find(x => x.id === id); if (it) it.isNew = false; }
   if (a === 'view') { S.bagView = b.dataset.v; selBag = null; }
@@ -2515,13 +2617,22 @@ function autoPlay(quiet) {
       let g = 0, k = 0;
       const spare = {};
       for (const it of S.bag) if (it.r >= 5 && !isUpgrade(it) && (!spare[it.slot] || it.gs > spare[it.slot].gs)) spare[it.slot] = it;
-      S.bag = S.bag.filter(it => { if (!isUpgrade(it) && spare[it.slot] !== it) { g += value(it); k++; return false; } return true; });
-      if (k) { S.gold += g; changed = true; if (!quiet) log(`Bag nearly full: sold ${k} items you don't need for ${fmt(g)} gold. Kept upgrades and the best Mythic-or-better spare for each slot.`); }
+      let sh = 0, gl = 0;
+      S.bag = S.bag.filter(it => { if (!isUpgrade(it) && spare[it.slot] !== it) { if (S.autoForge && it.r >= 4) { const y = salvageYield(it); sh += y.shards; gl += y.glass; } else g += value(it); k++; return false; } return true; });
+      S.shards += sh; S.glass += gl; if (sh) changed = true;
+      if (k) { S.gold += g; changed = true; if (!quiet) log(`Bag nearly full: cleared ${k} items you don't need (+${fmt(g)} gold${sh ? `, +${fmt(sh)} shards${gl ? `, +${gl} starglass` : ''}` : ''}). Kept upgrades and the best Mythic-or-better spare for each slot.`); }
     }
   }
   if (S.autoClaim) for (const f of FEATS) if (!S.feats[f.id] && featDone(f)) {
     const g = Math.round(goldPer(S.maxStage) * 25); S.feats[f.id] = true; S.gold += g; dirtyStats = true; changed = true;
     if (!quiet) log(`Feat claimed: ${f.n}. +1 renown, +${fmt(g)} gold.`, '#f3b44a');
+  }
+  if (S.autoForge) {
+    for (let guard = 0; guard < 30; guard++) {
+      const it = SLOTS.map(s => S.equip[s]).filter(x => x && (x.up || 0) < MAX_UP).sort((a, b) => temperCost(a).shards - temperCost(b).shards)[0];
+      if (!it || !canPay(temperCost(it))) break;
+      temper(it); changed = true; if (!quiet) log(`Tempered ${itemName(it)}.`, '#f3b44a');
+    }
   }
   if (S.autoStones) {
     for (let guard = 0; guard < 40; guard++) {
