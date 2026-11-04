@@ -1120,8 +1120,9 @@ function updateParts(dt) {
 
 /* ---------- Drawing ---------- */
 const cv = $('#cv'), D = cv.getContext('2d');
-const low = document.createElement('canvas'); low.width = W; low.height = H;
+const low = document.createElement('canvas'); low.width = W * 2; low.height = H * 2;
 let L = low.getContext('2d');
+L.setTransform(2, 0, 0, 2, 0, 0); L.imageSmoothingEnabled = false;
 const dark = document.createElement('canvas'); dark.width = W; dark.height = H;
 const K = dark.getContext('2d');
 function px(x, y, w, h, c) { L.fillStyle = c; L.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h))); }
@@ -1619,17 +1620,49 @@ function tierPal(pk, tier) {
   if (!PAL[key]) PAL[key] = Object.fromEntries(Object.entries(PAL[pk]).map(([k, v]) => [k, shade(v, -.11 * Math.min(tier, 3))]));
   return key;
 }
-function buildSprite(rows, pal, outline) {
+/* 16-bit look. Sprites are drawn as letter grids, then:
+   1. smoothed with Scale2x (the classic pixel-art upscaler): diagonals and corners get rounded instead of just doubled,
+   2. shaded with a light ramp at the finer size (light from the upper left),
+   3. given a 1-pixel selective outline: each outline pixel is a dark version of the colour it borders, and only the
+      bottom edge stays near-black so figures sit on the ground.
+   The canvas is twice the size; lw and lh hold the size in game pixels.
+   outline: 'sel' for the 16-bit outline, a colour string for a flat one (hit flashes, elite rims), or null. */
+function buildSprite(rows, pal, outline, shadeIt) {
   const h = rows.length, w = Math.max(...rows.map(r => r.length));
-  const c = document.createElement('canvas'); c.width = w + 2; c.height = h + 2;
-  const x = c.getContext('2d');
-  const solid = (i, j) => j >= 0 && j < h && i >= 0 && i < rows[j].length && rows[j][i] !== '.' && !!pal[rows[j][i]];
-  if (outline) {
-    x.fillStyle = outline;
-    for (let j = -1; j <= h; j++) for (let i = -1; i <= w; i++)
-      if (!solid(i, j) && (solid(i - 1, j) || solid(i + 1, j) || solid(i, j - 1) || solid(i, j + 1))) x.fillRect(i + 1, j + 1, 1, 1);
+  const base = (i, j) => (j >= 0 && j < h && i >= 0 && i < rows[j].length && rows[j][i] !== '.' && pal[rows[j][i]]) || null;
+  const W2 = w * 2, H2 = h * 2, g = new Array(W2 * H2).fill(null);
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const P = base(i, j), A = base(i, j - 1), B = base(i + 1, j), C = base(i - 1, j), D = base(i, j + 1);
+    let e1 = P, e2 = P, e3 = P, e4 = P;
+    if (C === A && C !== D && A !== B) e1 = A;
+    if (A === B && A !== C && B !== D) e2 = B;
+    if (D === C && D !== B && C !== A) e3 = C;
+    if (B === D && B !== A && D !== C) e4 = D;
+    const o = 2 * j * W2 + 2 * i;
+    g[o] = e1; g[o + 1] = e2; g[o + W2] = e3; g[o + W2 + 1] = e4;
   }
-  for (let j = 0; j < h; j++) for (let i = 0; i < rows[j].length; i++) if (solid(i, j)) { x.fillStyle = pal[rows[j][i]]; x.fillRect(i + 1, j + 1, 1, 1); }
+  const at = (x, y) => (x >= 0 && y >= 0 && x < W2 && y < H2) ? g[y * W2 + x] : null;
+  const c = document.createElement('canvas'); c.width = W2 + 4; c.height = H2 + 4; c.lw = w + 2; c.lh = h + 2;
+  const x = c.getContext('2d');
+  if (outline) {
+    for (let y = -1; y <= H2; y++) for (let i = -1; i <= W2; i++) {
+      if (at(i, y)) continue;
+      const below = at(i, y - 1) && !at(i, y + 1) && !at(i - 1, y) && !at(i + 1, y);
+      const n = at(i, y + 1) || at(i + 1, y) || at(i - 1, y) || at(i, y - 1);
+      if (!n) continue;
+      x.fillStyle = outline !== 'sel' ? outline : (below || y === H2) ? OUTLINE : shade(n, -.62);
+      x.fillRect(i + 2, y + 2, 1, 1);
+    }
+  }
+  for (let y = 0; y < H2; y++) for (let i = 0; i < W2; i++) {
+    let col = at(i, y); if (!col) continue;
+    if (shadeIt && col[0] === '#') {
+      const lit = !at(i, y - 1) || !at(i - 1, y), dim = !at(i, y + 1) || !at(i + 1, y);
+      const lit2 = !at(i, y - 2) || !at(i - 2, y);
+      if (lit && !dim) col = shade(col, .2); else if (dim && !lit) col = shade(col, -.18); else if (lit2 && !dim) col = shade(col, .07);
+    }
+    x.fillStyle = col; x.fillRect(i + 2, y + 2, 1, 1);
+  }
   return c;
 }
 const sprCache = {};
@@ -1642,10 +1675,10 @@ function getSpr(name, frame, palKey, pal, flash, noOutline) {
   let p = pal || PAL[palKey];
   const fc = flash === true ? '#ffffff' : flash;
   if (flash) p = Object.fromEntries(Object.keys(p).map(k => [k, fc]));
-  return (sprCache[key] = buildSprite(rows, p, noOutline ? null : flash ? fc : OUTLINE));
+  return (sprCache[key] = buildSprite(rows, p, noOutline ? null : flash ? fc : 'sel', !flash));
 }
 function sprCacheReset() { for (const k in sprCache) if (/^(hero|fol|lantern|staff)\|/.test(k)) delete sprCache[k]; }
-function blit(c, x, y) { L.drawImage(c, Math.round(x), Math.round(y)); }
+function blit(c, x, y) { L.drawImage(c, Math.round(x * 2) / 2, Math.round(y * 2) / 2, c.lw || c.width, c.lh || c.height); }
 const urlCache = {};
 function foeURL(name) {
   if (urlCache[name]) return urlCache[name];
@@ -1663,9 +1696,9 @@ function drawProp(kind, x, i, z) {
   const r = hash(i);
   const c = getSpr(kind, 0, 'prop:' + z.name, propPal(z), false, true);
   const cut = kind === 'pillar' ? Math.floor(r * 12) : kind === 'tree' ? Math.floor(r * 3) : 0;
-  const h = c.height - cut, y = GY - h + 1 - (kind === 'island' ? 24 + Math.round(r * 10) : 0);
-  if (r > .5) { L.save(); L.scale(-1, 1); L.drawImage(c, 0, cut, c.width, h, -Math.round(x) - c.width, y, c.width, h); L.restore(); }
-  else L.drawImage(c, 0, cut, c.width, h, Math.round(x), y, c.width, h);
+  const h = c.lh - cut, y = GY - h + 1 - (kind === 'island' ? 24 + Math.round(r * 10) : 0);
+  if (r > .5) { L.save(); L.scale(-1, 1); L.drawImage(c, 0, cut * 2, c.width, h * 2, -Math.round(x) - c.lw, y, c.lw, h); L.restore(); }
+  else L.drawImage(c, 0, cut * 2, c.width, h * 2, Math.round(x), y, c.lw, h);
 }
 
 function drawFoe(e) {
@@ -1674,24 +1707,30 @@ function drawFoe(e) {
   const def = SPR[sn], t = G.t + e.ph;
   const frame = Math.floor(t * (def.fly ? 7 : 5)) % 2;
   const c = getSpr(sn, frame, pk, null, false);
-  let y = GY - c.height + 1;
+  let y = GY - c.lh + 1;
   if (def.fly) y -= 5 + Math.round(Math.sin(t * 3) * 2);
   else if (e.boss) y += frame;
   const fade = e.dead ? clamp(1 - e.die / .5, 0, 1) : 1;
   if (e.dead) y += e.die * 8;
   L.globalAlpha = fade * (alpha || 1);
   if (e.elite && !e.dead) { // a thin gold rim that follows the sprite
-    const gold = getSpr(sn, frame, pk, null, '#f3b44a'), gx = e.x - c.width / 2;
+    const gold = getSpr(sn, frame, pk, null, '#f3b44a'), gx = e.x - c.lw / 2;
     L.globalAlpha = fade * (.55 + .25 * Math.sin(G.t * 5));
     for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) blit(gold, gx + dx, y + dy);
     L.globalAlpha = fade * (alpha || 1);
   }
-  blit(c, e.x - c.width / 2, y);
-  if (e.flash > 0 && !e.dead) { const a = L.globalAlpha; L.globalAlpha = a * .5; blit(getSpr(sn, frame, pk, null, true), e.x - c.width / 2, y); L.globalAlpha = a; }
+  if (!e.dead) { // contact shadow; flyers cast a smaller, fainter one
+    const rw = Math.max(4, Math.round(c.lw * (def.fly ? .25 : .38)));
+    L.globalAlpha = fade * (def.fly ? .18 : .32); L.fillStyle = '#000';
+    L.fillRect(Math.round(e.x - rw), GY, rw * 2, 1); L.fillRect(Math.round(e.x - rw + 2), GY + 1, rw * 2 - 4, 1);
+    L.globalAlpha = fade * (alpha || 1);
+  }
+  blit(c, e.x - c.lw / 2, y);
+  if (e.flash > 0 && !e.dead) { const a = L.globalAlpha; L.globalAlpha = a * .5; blit(getSpr(sn, frame, pk, null, true), e.x - c.lw / 2, y); L.globalAlpha = a; }
   if (!e.dead && (e.shell > 0 || e.evade > 0 || e.reflect > 0 || e.haste > 0)) {
     const col = e.shell > 0 ? '#8fd8ff' : e.evade > 0 ? '#c8c8c8' : e.reflect > 0 ? '#ff8a3d' : '#ff5a3a';
     L.globalAlpha = .4 + .2 * Math.sin(G.t * 10); L.strokeStyle = col; L.lineWidth = 1;
-    L.strokeRect(Math.round(e.x - c.width / 2) + .5, Math.round(y) + .5, c.width - 1, c.height - 1);
+    L.lineWidth = .5; L.strokeRect(Math.round(e.x - c.lw / 2) + 1.25, Math.round(y) + 1.25, c.lw - 2.5, c.lh - 2.5);
   }
   L.globalAlpha = 1;
   if (!e.dead) {
@@ -1706,8 +1745,9 @@ function drawFoe(e) {
 function drawFollower(f, x, walking, phase) {
   const frame = walking ? Math.floor((G ? G.t : 0) * 8 + phase) % 2 : 0;
   const body = getSpr('fol', frame, 'fol:' + f.kind + ':' + currentLook('company'), folPal(f.kind));
-  if (currentLook('company') === 'banners') { const tr = getSpr('trim', 0, 'trim'); blit(tr, Math.round(x - 6) + 2, GY - body.height + 6); }
-  const ox = Math.round(x - 6), oy = GY - body.height + 1;
+  if (currentLook('company') === 'banners') { const tr = getSpr('trim', 0, 'trim'); blit(tr, Math.round(x - 6) + 2, GY - body.lh + 6); }
+  const ox = Math.round(x - 6), oy = GY - body.lh + 1 - (walking && frame ? 1 : 0);
+  L.globalAlpha = .3; L.fillStyle = '#000'; L.fillRect(ox + 2, GY, 8, 1); L.fillRect(ox + 3, GY + 1, 6, 1); L.globalAlpha = 1;
   blit(body, ox, oy);
   const K = KINDS[f.kind];
   if (f.kind === 'archer') blit(getSpr('fbow', 0, 'fbow'), ox + 9, oy + 4);
@@ -1726,7 +1766,8 @@ function drawHero() {
   const look = currentLook('outfit'), O = OUTFITS[look];
   const body = getSpr('hero', frame, 'hero:' + look, Object.assign({}, PAL.hero, { c: O.c, C: shade(O.c, .22), d: shade(O.c, -.28), h: O.h, H: shade(O.h, .2) }));
   const lan = LANTERNS[currentLook('lantern')], lanPal = { b: '#6b4a2a', y: lan.y, Y: lan.Y };
-  const ox = x - 8, oy = GY - body.height + 1, sway = walking ? frame : 0;
+  const ox = x - 8, oy = GY - body.lh + 1 - (walking && frame ? 1 : 0), sway = walking ? frame : 0;
+  L.globalAlpha = .34; L.fillStyle = '#000'; L.fillRect(ox + 3, GY, 10, 1); L.fillRect(ox + 4, GY + 1, 8, 1); L.globalAlpha = 1;
   if (S.path !== 'lamp') blit(getSpr('lantern', 0, 'lantern:' + currentLook('lantern'), lanPal), ox - 4, oy + 9 + sway);
   blit(body, ox, oy);
   if (S.path === 'blade') {
@@ -1761,7 +1802,8 @@ function skyCanvas(z, v) {
   return cached(`sky|${z.name}|${v}`, W, GY, (x, w, h) => {
     const top = v === 4 ? mix(z.sky[0], '#1a0408', .4) : z.sky[0];
     const bot = v === 3 ? mix(z.sky[1], '#d0703a', .45) : v === 4 ? mix(z.sky[1], '#7a1a2a', .55) : v === 1 ? mix(z.sky[1], '#8a9aa8', .25) : z.sky[1];
-    const bands = 7, cols = Array.from({ length: bands + 1 }, (_, i) => mix(top, bot, i / bands));
+    const glowTo = mix(bot, '#ffffff', v === 4 ? .08 : .14), bands = 14;
+    const cols = Array.from({ length: bands + 1 }, (_, i) => { const t = i / bands; return t > .82 ? mix(bot, glowTo, (t - .82) / .18) : mix(top, bot, t / .82); });
     for (let y = 0; y < h; y++) for (let i = 0; i < w; i++) {
       const b = Math.min(bands, Math.floor((y / (h - 1)) * bands + BAYER[(y & 3) * 4 + (i & 3)] / 16));
       x.fillStyle = cols[b]; x.fillRect(i, y, 1, 1);
@@ -1835,6 +1877,7 @@ function drawBackdrop(z, sc) {
   if (v !== 3) for (const [sx, sy, k] of STARS) { L.globalAlpha = (.3 + .3 * Math.sin(G.t * 2 + sx)) * (z.dark > .3 ? 1 : .5); px((sx - sc * .02 + W) % W, sy, 1, 1, k ? '#cfd8e8' : '#fff4c8'); }
   L.globalAlpha = 1;
   const moon = v === 4 ? '#ff6050' : v === 3 ? '#ffd090' : 'rgba(236,228,200,.85)';
+  { const halo = L.createRadialGradient(196, 16, 4, 196, 16, 22); halo.addColorStop(0, v === 4 ? 'rgba(255,90,70,.28)' : 'rgba(255,240,200,.16)'); halo.addColorStop(1, 'rgba(255,240,200,0)'); L.fillStyle = halo; L.fillRect(170, 0, 52, 40); }
   L.fillStyle = moon; L.beginPath(); L.arc(196, 16, v === 4 ? 8 : 6, 0, Math.PI * 2); L.fill();
   if (v !== 4) { L.fillStyle = z.sky[0]; L.beginPath(); L.arc(199, 14, 5, 0, Math.PI * 2); L.fill(); }
   // clouds drift slowly, faster than the hills
@@ -1843,10 +1886,12 @@ function drawBackdrop(z, sc) {
   for (let k = 0; k < 5; k++) {
     const spr = getSpr(k % 2 ? 'cloudA' : 'cloudB', 0, 'cloud:' + z.name + v, cp, false, true);
     const xx = ((hash(k + 70) * SKY_W - sc * .08 - G.t * (2 + k)) % SKY_W + SKY_W) % SKY_W - 30;
-    L.globalAlpha = .55; L.drawImage(spr, Math.round(xx), Math.round(6 + hash(k + 80) * 22)); L.globalAlpha = 1;
+    L.globalAlpha = .55; blit(spr, Math.round(xx), Math.round(6 + hash(k + 80) * 22)); L.globalAlpha = 1;
   }
+  if (z.shape !== 'islands') { const rg = rangesCanvas(z), ro = Math.round(sc * .06) % SKY_W; L.drawImage(rg, -ro, 0); L.drawImage(rg, SKY_W - ro, 0); }
   const far = skylineCanvas(z), fo = Math.round(sc * .15) % SKY_W;
   L.drawImage(far, -fo, 0); L.drawImage(far, SKY_W - fo, 0);
+  if (z.shape !== 'islands') { const cn = canopyCanvas(z), co = Math.round(sc * .3) % SKY_W; L.drawImage(cn, -co, 0); L.drawImage(cn, SKY_W - co, 0); }
   const sp = 34, off = (sc * .5) % sp, base = Math.floor(sc * .5 / sp);
   for (let k = -1; k < W / sp + 2; k++) drawProp(z.prop, k * sp - off + hash(base + k) * 10, base + k, z);
   const gr = groundCanvas(z), go = Math.round(sc) % 64;
@@ -1866,6 +1911,32 @@ function drawFront(z, sc) {
   }
 }
 
+/* Two extra parallax layers for depth: hazy distant ranges and a rolling canopy between the skyline and the props. */
+function rangesCanvas(z) {
+  return cached(`ranges|${z.name}`, SKY_W, GY, (x, w, h) => {
+    const col = mix(z.far, z.sky[1], .72), edge = mix(col, '#ffffff', .12);
+    for (let i = 0; i < w; i++) {
+      const t = i / w * Math.PI * 2;
+      const y = Math.round(34 + Math.abs(Math.sin(t * 3)) * -10 + Math.sin(t * 7) * 3 + Math.abs(Math.sin(t * 13)) * 2);
+      x.fillStyle = col; x.fillRect(i, y, 1, h - y); x.fillStyle = edge; x.fillRect(i, y, 1, 1);
+    }
+  });
+}
+function canopyCanvas(z) {
+  return cached(`canopy|${z.name}`, SKY_W, GY, (x, w, h) => {
+    const col = mix(shade(z.mid, -.25), z.sky[1], .28), lit = mix(col, '#ffffff', .1), dark = shade(col, -.25);
+    for (let i = 0; i < w; i++) {
+      const t = i / w * Math.PI * 2;
+      const bump = z.shape === 'castle' ? ((i >> 3) % 2 ? 3 : 0) : z.shape === 'dunes' ? Math.sin(t * 4) * 3 : Math.abs(Math.sin(i * .21)) * 4 + Math.sin(t * 6) * 2;
+      const y = Math.round(GY - 12 - bump);
+      for (let yy = y; yy < h; yy++) {
+        const b = BAYER[(yy & 3) * 4 + (i & 3)] / 16;
+        x.fillStyle = yy === y ? lit : (yy - y) / (h - y) + b * .3 > .7 ? dark : col; x.fillRect(i, yy, 1, 1);
+      }
+    }
+  });
+}
+
 /* The full sprite sheet, for anyone who wants the art outside the game. */
 function artSheet(scale) {
   scale = scale || 4;
@@ -1877,8 +1948,8 @@ function artSheet(scale) {
     ['Scenery', ZONES.map(z => [z.prop, 0, 'prop:' + z.name, propPal(z), false, true])],
   ];
   const pad = 6, rowsOut = groups.map(([title, list]) => [title, list.map(a => getSpr(...a))]);
-  const width = Math.max(...rowsOut.map(([, s]) => s.reduce((a, c) => a + c.width + pad, pad)));
-  const height = rowsOut.reduce((a, [, s]) => a + 12 + Math.max(...s.map(c => c.height)) + pad, pad);
+  const width = Math.max(...rowsOut.map(([, s]) => s.reduce((a, c) => a + c.lw + pad, pad)));
+  const height = rowsOut.reduce((a, [, s]) => a + 12 + Math.max(...s.map(c => c.lh)) + pad, pad);
   const out = document.createElement('canvas'); out.width = width * scale; out.height = height * scale;
   const o = out.getContext('2d'); o.imageSmoothingEnabled = false;
   o.fillStyle = '#141c21'; o.fillRect(0, 0, out.width, out.height);
@@ -1886,8 +1957,8 @@ function artSheet(scale) {
   for (const [title, list] of rowsOut) {
     o.fillStyle = '#f3b44a'; o.font = `700 ${7 * scale}px "Pixelify Sans", monospace`; o.fillText(title, pad * scale, (y + 8) * scale);
     y += 12;
-    let x = pad; const rh = Math.max(...list.map(c => c.height));
-    for (const c of list) { o.drawImage(c, x * scale, (y + rh - c.height) * scale, c.width * scale, c.height * scale); x += c.width + pad; }
+    let x = pad; const rh = Math.max(...list.map(c => c.lh));
+    for (const c of list) { o.drawImage(c, x * scale, (y + rh - c.lh) * scale, c.lw * scale, c.lh * scale); x += c.lw + pad; }
     y += rh + pad;
   }
   return out.toDataURL('image/png');
@@ -1900,7 +1971,7 @@ function draw() {
   for (const p of G.parts) {
     if (p.k === 'loot') { px(p.x - 1, p.y - 1, 3, 3, p.c); continue; }
     L.globalAlpha = Math.sin(Math.PI * clamp(p.t / p.life, 0, 1));
-    if (p.k === 'mist') px(p.x, p.y, p.w, 2, p.c); else if (p.k === 'sand') px(p.x, p.y, 4, 1, p.c); else if (p.k === 'rain') { px(p.x, p.y, 1, 3, p.c); } else px(p.x, p.y, 1, 1, p.c);
+    if (p.k === 'mist') px(p.x, p.y, p.w, 2, p.c); else if (p.k === 'sand') px(p.x, p.y, 4, 1, p.c); else if (p.k === 'rain') { px(p.x, p.y, 1, 3, p.c); } else { if (p.k === 'firefly' || p.k === 'ember') { const a = L.globalAlpha; L.globalAlpha = a * .3; px(p.x - 1, p.y, 3, 1, p.c); px(p.x, p.y - 1, 1, 3, p.c); L.globalAlpha = a; } px(p.x, p.y, 1, 1, p.c); }
   }
   L.globalAlpha = 1;
   for (const e of G.enemies) drawFoe(e);
@@ -1956,7 +2027,7 @@ function sizeCanvas() {
 /* Portrait of a follower for the Company tab, drawn with the same routine. */
 function portrait(canvas, f) {
   const prev = L, c = canvas.getContext('2d');
-  L = c; c.clearRect(0, 0, 20, 20);
+  L = c; c.setTransform(2, 0, 0, 2, 0, 0); c.imageSmoothingEnabled = false; c.clearRect(0, 0, 20, 20);
   c.save(); c.translate(4, 19 - GY);
   drawFollower(f, 6, false, 0);
   c.restore(); L = prev;
@@ -2082,7 +2153,7 @@ function renderCompany() {
   const cards = S.roster.map(f => {
     const inParty = S.party.includes(f.id), cost = trainCost(f), K = KINDS[f.kind];
     return `<article class="fol" style="--rc:${RAR[f.r].col}">
-      <header><canvas width="20" height="20" data-por="${f.id}"></canvas><div><h3>${esc(f.name)}</h3><div class="meta">${RAR[f.r].n} ${K.n} · Lv ${f.lvl}</div></div>${inParty ? '<span class="tagpill" style="margin-left:auto">Walking</span>' : ''}</header>
+      <header><canvas width="40" height="40" data-por="${f.id}"></canvas><div><h3>${esc(f.name)}</h3><div class="meta">${RAR[f.r].n} ${K.n} · Lv ${f.lvl}</div></div>${inParty ? '<span class="tagpill" style="margin-left:auto">Walking</span>' : ''}</header>
       <p>${K.role}. ${folSummary(f, st.cp)}.</p>
       <div class="row">
         ${inParty ? `<button class="btn small" data-act="rest" data-id="${f.id}">Rest</button>` : `<button class="btn small ${members.length < slots ? 'primary' : ''}" data-act="walk" data-id="${f.id}" ${members.length < slots ? '' : 'disabled'}>Walk with me</button>`}
@@ -2176,8 +2247,8 @@ function renderJournal() {
 }
 function previewCanvas(kind, key) {
   // Small preview of a look, drawn with the game's own sprites
-  const c = document.createElement('canvas'); c.width = 34; c.height = 24;
-  const prev = L, x = c.getContext('2d'); L = x;
+  const c = document.createElement('canvas'); c.width = 68; c.height = 48;
+  const prev = L, x = c.getContext('2d'); L = x; x.setTransform(2, 0, 0, 2, 0, 0); x.imageSmoothingEnabled = false;
   x.fillStyle = '#0a0f12'; x.fillRect(0, 0, 34, 24);
   if (kind === 'lantern') {
     const lan = LANTERNS[key], g = x.createRadialGradient(17, 12, 0, 17, 12, 14); g.addColorStop(0, `rgba(${lan.glow},.55)`); g.addColorStop(1, `rgba(${lan.glow},0)`);
