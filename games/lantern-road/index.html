@@ -2067,8 +2067,8 @@ function renderBag() {
       <button class="btn small" data-act="sellbelow" data-r="2">Sell Worn &amp; Common</button>
       <button class="btn small" data-act="sellbelow" data-r="3">Sell Fine &amp; below</button>
       <button class="btn small" data-act="sellbelow" data-r="4">Sell Rare &amp; below</button>
-      ${confirmSellAll ? `<button class="btn small primary" data-act="sellall2">Sell ${S.bag.filter(it => !isUpgrade(it)).length} items for ${fmt(S.bag.filter(it => !isUpgrade(it)).reduce((a, it) => a + value(it), 0))} gold</button><button class="btn small" data-act="sellall0">Keep them</button>`
-        : '<button class="btn small" data-act="sellall1">Sell all non-upgrades</button>'}</div></div>
+      ${confirmSellAll ? `<button class="btn small primary" data-act="sellall2">Sell ${S.bag.filter(it => !isUpgrade(it)).length} items for ${fmt(S.bag.filter(it => !isUpgrade(it)).reduce((a, it) => a + value(it), 0))} gold</button><button class="btn small" data-act="sellall0">Cancel</button>`
+        : '<button class="btn small" data-act="sellall1" title="Sells every item that is not marked ▲. Upgrades stay.">Sell all except upgrades</button>'}</div></div>
     <p class="sub">▲ marks an upgrade for your current build. Bulk sell skips upgrades.</p>
     <div class="bag">${cells.join('')}</div></div>
     ${sel ? itemCard(sel, 'bag') : '<p class="hint">Tap an item to compare it with what you are wearing. Green numbers beat your current gear, red ones are worse.</p>'}`;
