@@ -521,7 +521,7 @@ function fresh() {
     stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true, kills: 0, deaths: 0, best: null,
     played: 0, lastSeen: Date.now(), log: [], tab: 'hero', created: Date.now(),
     owned: {}, passUntil: 0, charmUntil: 0, look: { lantern: 'amber', outfit: 'wanderer', company: 'plain' }, testShop: false, shopNoted: false,
-    seen: {}, tips: {}, featSeen: {}, gfx: { numbers: true, weather: true, shake: true, fps30: false, big: false } };
+    seen: {}, tips: {}, featSeen: {}, stash: [], bagView: 'bag', gfx: { numbers: true, weather: true, shake: true, fps30: false, big: false } };
 }
 let S = fresh();
 let G, ST;
@@ -541,7 +541,7 @@ function migrate(d) {
   if (d.v < 3) Object.assign(s, { autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true });
   s.farm = false; s.v = 3;
   s.gfx = Object.assign({ numbers: true, weather: true, shake: true, fps30: false, big: false }, s.gfx || {});
-  s.tips = s.tips || {}; s.featSeen = s.featSeen || {};
+  s.tips = s.tips || {}; s.featSeen = s.featSeen || {}; s.stash = s.stash || []; s.bagView = s.bagView || 'bag';
   if (!s.seen) { // older saves: everything already passed counts as met
     s.seen = {}; const zc = Math.min(9, Math.floor((s.maxStage - 1) / 5));
     ZONES.forEach((z, i) => { if (i <= zc) z.foes.forEach(f => { s.seen[f.n] = true; }); if (i < zc) s.seen[z.boss.n] = true; });
@@ -593,6 +593,9 @@ const PRODUCTS = [
   { id: 'company_slot_1', kind: 'once', slot: 1, price: '€1.99', n: 'Company slot I', d: 'A second follower walks and fights beside you.' },
   { id: 'company_slot_2', kind: 'once', slot: 2, price: '€1.99', n: 'Company slot II', d: 'A third follower walks with you.' },
   { id: 'company_slot_3', kind: 'once', slot: 3, price: '€1.99', n: 'Company slot III', d: 'A fourth follower walks with you.' },
+  { id: 'stash_page_1', kind: 'once', price: '€0.99', page: 1, n: 'Stash', d: 'Unlocks the stash: 30 safe slots. Items there are never sold, by hand in bulk or automatically.' },
+  { id: 'stash_page_2', kind: 'once', price: '€0.99', page: 2, n: 'Stash page 2', d: '30 more stash slots.' },
+  { id: 'stash_page_3', kind: 'once', price: '€0.99', page: 3, n: 'Stash page 3', d: '30 more stash slots.' },
   { id: 'company_banners', kind: 'once', price: '€2.99', look: ['company', 'banners'], n: 'Company Banners', d: 'Every follower gets bright cloaks with gold trim.' },
 ];
 const PROD = Object.fromEntries(PRODUCTS.map(x => [x.id, x]));
@@ -601,6 +604,9 @@ const hasSupporter = () => !!S.owned.supporter_pack;
 const passActive = () => S.passUntil > now();
 const charmActive = () => S.charmUntil > now();
 const bagMax = () => BAG_MAX + (hasSupporter() ? 10 : 0);
+const STASH_IDS = ['stash_page_1', 'stash_page_2', 'stash_page_3'];
+const stashMax = () => STASH_IDS.filter(id => S.owned[id]).length * 30;
+const nextStashPage = () => STASH_IDS.find(id => !S.owned[id]);
 function lookOwned(slot, key) {
   if (slot === 'lantern') return key === 'amber' || (key === 'gold' ? hasSupporter() : !!S.owned['lantern_' + key]);
   if (slot === 'outfit') return key === 'wanderer' || (key === 'pathfinder' ? passActive() : !!S.owned['outfit_' + key]);
@@ -798,11 +804,12 @@ function gainItem(it, quiet) {
   return 'kept';
 }
 function equip(it) {
-  const old = S.equip[it.slot];
+  const old = S.equip[it.slot], fromStash = S.stash.includes(it);
   S.bag = S.bag.filter(b => b.id !== it.id);
+  S.stash = S.stash.filter(b => b.id !== it.id);
   it.isNew = false;
   S.equip[it.slot] = it;
-  if (old) S.bag.push(old);
+  if (old) { if (fromStash && S.bag.length >= bagMax()) S.stash.push(old); else S.bag.push(old); }
   dirtyStats = true; dirtyPanel = true;
   G.hero.hp = Math.min(G.hero.hp, stats().hp);
 }
@@ -2162,18 +2169,21 @@ function itemCard(it, mode) {
     if (it.path !== S.path) extra += `<p class="bad verdict">You walk the ${PATHS[S.path].n} path: this weapon gives only half its damage.</p>`;
   }
   let verdict = '';
-  if (mode === 'bag') {
+  if (mode === 'bag' || mode === 'stash') {
     const now = rating(st), then = ratingWith(it), pct = (then / now - 1) * 100;
     verdict = `<p class="verdict ${pct > .05 ? 'good' : pct < -.05 ? 'bad' : 'sub'}">${Math.abs(pct) < .05 ? 'About the same power as ' + (eq ? 'your current ' + SLOT_LABEL[it.slot].toLowerCase() : 'nothing') : (pct > 0 ? 'Upgrade: +' : 'Downgrade: ') + pct.toFixed(1) + '% overall power'}</p>`;
   }
+  const canStore = stashMax() > 0 && S.stash.length < stashMax();
   const btns = mode === 'bag'
-    ? `<div class="row"><button class="btn primary" data-act="equip" data-id="${it.id}">Equip</button><button class="btn" data-act="sell" data-id="${it.id}">Sell for ${fmt(value(it))} gold</button></div>`
+    ? `<div class="row"><button class="btn primary" data-act="equip" data-id="${it.id}">Equip</button>${canStore ? `<button class="btn" data-act="store" data-id="${it.id}">Move to stash</button>` : ''}<button class="btn" data-act="sell" data-id="${it.id}">Sell for ${fmt(value(it))} gold</button></div>`
+    : mode === 'stash'
+    ? `<div class="row"><button class="btn primary" data-act="equip" data-id="${it.id}">Equip</button><button class="btn" data-act="take" data-id="${it.id}" ${S.bag.length < bagMax() ? '' : 'disabled'}>Move to bag</button><button class="btn" data-act="sell" data-id="${it.id}">Sell for ${fmt(value(it))} gold</button></div>${S.bag.length < bagMax() ? '' : '<p class="sub">Your bag is full.</p>'}`
     : `<div class="row"><button class="btn" data-act="unequip" data-slot="${it.slot}">Move to bag</button></div>`;
   return `<article class="item" style="--rc:${RAR[it.r].col}">
     <header><img class="icon" alt="" src="${itemIcon(it)}"><div><h3>${esc(it.name)}</h3>
     <div class="meta">${RAR[it.r].n} ${SLOT_LABEL[it.slot]} · Item level ${it.il} · Gearscore ${it.gs}</div></div></header>
     ${extra}
-    <div class="cmp"><span class="k"></span><span class="v sub">This</span><span class="d sub">${mode === 'bag' && eq ? 'vs worn' : ''}</span>${rows}</div>
+    <div class="cmp"><span class="k"></span><span class="v sub">This</span><span class="d sub">${mode !== 'eq' && eq ? 'vs worn' : ''}</span>${rows}</div>
     ${verdict}${btns}</article>`;
 }
 
@@ -2206,7 +2216,38 @@ function renderHero() {
   </div>
   <div class="card"><div class="row between"><h2>Attributes</h2><span class="pill ${S.points ? 'pts' : ''}">${S.points} unspent</span></div>${attrs}</div>`;
 }
+function itemCells(list, max) {
+  const cells = [];
+  for (let i = 0; i < max; i++) {
+    const it = list[i];
+    if (!it) { cells.push('<div class="cell empty" aria-hidden="true"></div>'); continue; }
+    cells.push(`<button class="cell ${selBag === it.id ? 'sel' : ''}" style="--rc:${RAR[it.r].col}" data-act="selbag" data-id="${it.id}" aria-label="${RAR[it.r].n} ${esc(it.name)}">
+      <img alt="" src="${itemIcon(it)}">${isUpgrade(it) ? '<span class="up" title="Upgrade">▲</span>' : ''}${it.isNew ? '<span class="new"></span>' : ''}</button>`);
+  }
+  return cells.join('');
+}
+function bagSwitch() {
+  return `<div class="row" role="tablist" aria-label="Storage"><button class="btn small ${S.bagView === 'bag' ? 'primary' : ''}" data-act="view" data-v="bag">Bag · ${S.bag.length}/${bagMax()}</button>
+    <button class="btn small ${S.bagView === 'stash' ? 'primary' : ''}" data-act="view" data-v="stash">${stashMax() ? `Stash · ${S.stash.length}/${stashMax()}` : '\u{1F512} Stash'}</button></div>`;
+}
+function renderStash() {
+  const nx = nextStashPage(), st = store(), x = nx && PROD[nx];
+  const buyBtn = x ? (st ? `<button class="btn small primary" data-act="buy" data-id="${x.id}" ${buying ? 'disabled' : ''}>${buying === x.id ? 'Waiting for store…' : (st.test ? 'Test buy · ' : 'Buy · ') + priceOf(x)}</button>` : '<button class="btn small" disabled>Coming soon</button>') : '';
+  if (!stashMax()) {
+    panel.innerHTML = `<div class="card">${bagSwitch()}<h2>Stash</h2>
+      <p>A safe place for gear you want to keep: favorite items, spares for another path, rare finds. Items in the stash are never sold, not by the sell buttons and not by automatic play.</p>
+      <p class="sub">30 slots per page, up to 3 pages. Each page costs ${x ? priceOf(x) : '€0.99'}.</p><div class="row">${buyBtn}</div></div>`;
+    return;
+  }
+  const sel = S.stash.find(b => b.id === selBag) || S.bag.find(b => b.id === selBag);
+  panel.innerHTML = `<div class="card">${bagSwitch()}
+    <div class="row between"><h2>Stash · ${S.stash.length}/${stashMax()}</h2>${x ? `<div class="row"><span class="sub">Page ${x.page}: 30 more slots</span>${buyBtn}</div>` : ''}</div>
+    <p class="sub">Never sold automatically or by the bulk sell buttons. Move items here from the Bag.</p>
+    <div class="bag">${itemCells(S.stash, stashMax())}</div></div>
+    ${sel ? itemCard(sel, S.stash.includes(sel) ? 'stash' : 'bag') : '<p class="hint">Tap an item to see it, equip it, or move it back to the bag.</p>'}`;
+}
 function renderBag() {
+  if (S.bagView === 'stash') return renderStash();
   const cells = [];
   for (let i = 0; i < bagMax(); i++) {
     const it = S.bag[i];
@@ -2215,7 +2256,7 @@ function renderBag() {
       <img alt="" src="${itemIcon(it)}">${isUpgrade(it) ? '<span class="up" title="Upgrade">▲</span>' : ''}${it.isNew ? '<span class="new"></span>' : ''}</button>`);
   }
   const sel = S.bag.find(b => b.id === selBag);
-  panel.innerHTML = `<div class="card">
+  panel.innerHTML = `<div class="card">${bagSwitch()}
     <div class="row between"><h2>Bag · ${S.bag.length}/${bagMax()}</h2>
       <div class="row"><button class="btn primary small" data-act="autoequip">Equip best</button>
       <button class="btn small" data-act="sellbelow" data-r="2">Sell Worn &amp; Common</button>
@@ -2382,6 +2423,9 @@ function renderShop() {
     <div class="card"><h2>Company slots</h2><p class="sub">Your first follower walks with you for free. Each slot lets one more follower fight beside you. The Supporter Pack also adds one. Up to ${1 + 4} can walk together.</p>
       <div class="shop">${['company_slot_1', 'company_slot_2', 'company_slot_3'].map((id, i, all) => { const x = PROD[id], locked = i > 0 && !S.owned[all[i - 1]];
         return `<article class="ware ${S.owned[id] ? 'owned' : ''}"><h3>${x.n}</h3><p>${x.d}</p><div class="row">${locked ? '<span class="sub">Unlocks after the slot before it.</span>' : btn(x)}</div></article>`; }).join('')}</div></div>
+    <div class="card"><h2>Stash</h2><p class="sub">Safe storage that is never sold. 30 slots per page, bought in order.</p>
+      <div class="shop">${STASH_IDS.map((id, i) => { const x = PROD[id], locked = i > 0 && !S.owned[STASH_IDS[i - 1]];
+        return `<article class="ware ${S.owned[id] ? 'owned' : ''}"><h3>${x.n}</h3><p>${x.d}</p><div class="row">${locked ? '<span class="sub">Unlocks after the page before it.</span>' : btn(x)}</div></article>`; }).join('')}</div></div>
     <div class="card"><h2>Company looks</h2><div class="shop">${wares('company', COMPANY_LOOKS)}</div></div>
     ${live ? '<div class="row"><button class="btn small" data-act="restore">Restore purchases</button></div>' : ''}`;
   panel.querySelectorAll('[data-prev]').forEach(d => { const [k, key] = d.dataset.prev.split(':'); d.appendChild(previewCanvas(k, key)); });
@@ -2413,9 +2457,12 @@ panel.addEventListener('click', e => {
   if (a !== 'sellall1') confirmSellAll = false;
   if (a === 'sellall1') confirmSellAll = true;
   if (a === 'sellall2') { let g = 0, n = 0; S.bag = S.bag.filter(it => { if (!isUpgrade(it)) { g += value(it); n++; return false; } return true; }); S.gold += g; if (n) log(`Sold ${n} item${n > 1 ? 's' : ''} for ${fmt(g)} gold. Upgrades were kept.`); selBag = null; }
-  if (a === 'selbag') { selBag = selBag === id ? null : id; const it = S.bag.find(x => x.id === id); if (it) it.isNew = false; }
-  if (a === 'equip') { const it = S.bag.find(x => x.id === id); if (it) { equip(it); selBag = null; } }
-  if (a === 'sell') { const it = S.bag.find(x => x.id === id); if (it) { sell(it); selBag = null; } }
+  if (a === 'selbag') { selBag = selBag === id ? null : id; const it = S.bag.find(x => x.id === id) || S.stash.find(x => x.id === id); if (it) it.isNew = false; }
+  if (a === 'view') { S.bagView = b.dataset.v; selBag = null; }
+  if (a === 'store') { const it = S.bag.find(x => x.id === id); if (it && S.stash.length < stashMax()) { S.bag = S.bag.filter(x => x !== it); S.stash.push(it); it.isNew = false; selBag = null; } }
+  if (a === 'take') { const it = S.stash.find(x => x.id === id); if (it && S.bag.length < bagMax()) { S.stash = S.stash.filter(x => x !== it); S.bag.push(it); selBag = null; } }
+  if (a === 'equip') { const it = S.bag.find(x => x.id === id) || S.stash.find(x => x.id === id); if (it) { equip(it); selBag = null; } }
+  if (a === 'sell') { const it = S.bag.find(x => x.id === id) || S.stash.find(x => x.id === id); if (it) { S.stash = S.stash.filter(x => x !== it); sell(it); selBag = null; } }
   if (a === 'sellbelow') { const r = +b.dataset.r; let g = 0, n = 0; S.bag = S.bag.filter(it => { if (it.r < r && !isUpgrade(it)) { g += value(it); n++; return false; } return true; }); S.gold += g; if (n) log(`Sold ${n} item${n > 1 ? 's' : ''} for ${fmt(g)} gold.`); selBag = null; }
   if (a === 'autoequip') { const n = autoEquip(); log(n ? `Equipped ${n} upgrade${n > 1 ? 's' : ''}.` : 'Nothing in the bag beats your current gear.'); S.bag.forEach(i => { i.isNew = false; }); }
   if (a === 'seleq') selEq = selEq === b.dataset.slot ? null : b.dataset.slot;
