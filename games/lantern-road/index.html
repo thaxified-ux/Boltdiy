@@ -722,15 +722,18 @@ function enemyHit(e) {
   if (Math.random() * 100 < st.block) { d *= .5; blocked = true; }
   h.hp -= d; h.hurt = .14;
   fx(HX - 2, GY - 22, (blocked ? 'block ' : '') + fmt(d), e.el === 'phys' ? '#ff8070' : ELEM[e.el].col, .8, 4);
-  if (h.hp <= 0) heroDie();
+  if (h.hp <= 0) heroDie(e);
 }
-function heroDie() {
+function heroDie(killer) {
   const h = G.hero; h.hp = 0; h.dead = 2; S.deaths++; G.proj = [];
   const from = S.stage;
   if (S.stage > 1) S.stage--;
   S.wave = 1;
-  log(`Fell on Stage ${from}. Regrouping at Stage ${S.stage}.`, '#ff8070');
-  banner('Fallen. Regrouping…', '#ff8070');
+  const who = killer ? killer.n : 'The road';
+  log(from > 1 ? `${who} beat you on Stage ${from}. Regrouping at Stage ${S.stage}, wave 1.` : `${who} beat you. Starting Stage 1 again from wave 1.`, '#ff8070');
+  if (S.points || S.bag.some(isUpgrade)) log(`Tip: ${S.points ? `spend your ${S.points} attribute points (Hero tab)` : ''}${S.points && S.bag.some(isUpgrade) ? ' and ' : ''}${S.bag.some(isUpgrade) ? 'equip the ▲ upgrades in your Bag' : ''} before the next try.`, '#f3b44a');
+  banner(`${who} beat you`, '#ff8070');
+  G.fallBanner = `Back to Stage ${S.stage} · Wave 1`;
 }
 function nextWave() {
   const wasBoss = S.wave === WAVES;
@@ -746,7 +749,10 @@ function nextWave() {
       if (z1 !== z0) { banner(`New road: ${ZONES[z1].name}`, '#f3b44a'); log(`Entered ${ZONES[z1].name}.`, '#f3b44a'); }
       else banner(`Stage ${S.stage}`);
       if (S.tab === 'map') dirtyPanel = true;
-    } else banner(`Stage ${S.stage} again (farming)`);
+    } else {
+      banner(`Farming is on: replaying Stage ${S.stage}`, '#f3b44a');
+      if (!G.farmNoted) { G.farmNoted = true; log(`Stage ${S.stage} cleared. Farming is on, so you replay it. Tap "Farming: on" under the road to move forward.`, '#f3b44a'); }
+    }
     markTabs();
   }
   G.phase = 'walk'; G.walkT = 1.3; G.proj = [];
@@ -763,7 +769,7 @@ function update(dt) {
   if (h.dead > 0) {
     h.dead -= dt;
     for (const e of G.enemies) e.x += 40 * dt;
-    if (h.dead <= 0) { G.enemies = []; h.hp = st.hp; G.phase = 'walk'; G.walkT = 1.5; banner(`Stage ${S.stage} · ${ZONES[zoneOf(S.stage)].name}`); }
+    if (h.dead <= 0) { G.enemies = []; h.hp = st.hp; G.phase = 'walk'; G.walkT = 1.5; banner(G.fallBanner || `Stage ${S.stage} · ${ZONES[zoneOf(S.stage)].name}`, '#ff8070'); G.fallBanner = null; }
     return;
   }
   h.hp = Math.min(st.hp, h.hp + (st.regen + (G.phase === 'walk' ? st.hp * .15 : 0)) * dt);
@@ -1351,7 +1357,7 @@ function updateHud() {
   hud.gold.textContent = fmt(Math.floor(S.gold));
   hud.hp.style.width = (100 * clamp(G.hero.hp / st.hp, 0, 1)).toFixed(1) + '%';
   hud.hpt.textContent = `${fmt(Math.max(0, G.hero.hp))}/${fmt(st.hp)}`;
-  hud.farm.textContent = S.farm ? 'Farming: on' : 'Farming: off';
+  hud.farm.textContent = S.farm ? 'Farming: on · tap to move forward' : 'Farming: off';
   hud.farm.classList.toggle('on', S.farm);
   hud.pts.hidden = !S.points;
   hud.pts.textContent = `${S.points} point${S.points === 1 ? '' : 's'} to spend`;
