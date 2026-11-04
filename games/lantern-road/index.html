@@ -1946,7 +1946,8 @@ function renderBag() {
     <div class="row between"><h2>Bag · ${S.bag.length}/${BAG_MAX}</h2>
       <div class="row"><button class="btn primary small" data-act="autoequip">Equip best</button>
       <button class="btn small" data-act="sellbelow" data-r="2">Sell Worn &amp; Common</button>
-      <button class="btn small" data-act="sellbelow" data-r="3">Sell Fine &amp; below</button></div></div>
+      <button class="btn small" data-act="sellbelow" data-r="3">Sell Fine &amp; below</button>
+      <button class="btn small" data-act="sellbelow" data-r="4">Sell Rare &amp; below</button></div></div>
     <p class="sub">▲ marks an upgrade for your current build. Bulk sell skips upgrades.</p>
     <div class="bag">${cells.join('')}</div></div>
     ${sel ? itemCard(sel, 'bag') : '<p class="hint">Tap an item to compare it with what you are wearing. Green numbers beat your current gear, red ones are worse.</p>'}`;
