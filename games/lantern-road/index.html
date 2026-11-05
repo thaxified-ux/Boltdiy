@@ -606,7 +606,7 @@ function fresh() {
   return { v: 3, level: 1, xp: 0, gold: 0, points: 0, attrs: { mig: 0, vit: 0, agi: 0, for: 0 },
     equip: emptyEquip(), bag: [], talents: { hearth: true }, path: 'blade', starters: { blade: true },
     roster: [], party: [], recruited: 0, feats: {}, bestR: 0,
-    stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true, autoForge: true, shards: 0, glass: 0, tempered: 0, crafted: 0, kills: 0, deaths: 0, best: null,
+    stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: false, autoEquip: false, autoStones: false, autoCompany: false, autoClaim: false, autoForge: false, manualV1: true, shards: 0, glass: 0, tempered: 0, crafted: 0, kills: 0, deaths: 0, best: null,
     played: 0, lastSeen: Date.now(), log: [], tab: 'hero', created: Date.now(),
     owned: {}, passUntil: 0, charmUntil: 0, look: { lantern: 'amber', outfit: 'wanderer', company: 'plain' }, testShop: false, shopNoted: false,
     seen: {}, tips: {}, featSeen: {}, stash: [], bagView: 'bag', nudges: {}, soldFull: 0, trial: null, daily: { last: '', streak: 0 }, gfx: { numbers: true, weather: true, shake: true, fps30: false, big: false } };
@@ -651,7 +651,8 @@ function migrate(d) {
   if (d.v < 3) Object.assign(s, { autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true });
   s.farm = false; s.v = 3;
   s.gfx = Object.assign({ numbers: true, weather: true, shake: true, fps30: false, big: false }, s.gfx || {});
-  if (s.autoForge === undefined) s.autoForge = true; s.shards = s.shards || 0; s.glass = s.glass || 0; s.tempered = s.tempered || 0; s.crafted = s.crafted || 0;
+  if (!d.manualV1) { for (const k of ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge']) s[k] = false; s.manualV1 = true; }
+  if (s.autoForge === undefined) s.autoForge = false; s.shards = s.shards || 0; s.glass = s.glass || 0; s.tempered = s.tempered || 0; s.crafted = s.crafted || 0;
   s.nudges = s.nudges || {}; s.soldFull = s.soldFull || 0; s.daily = s.daily || { last: '', streak: 0 };
   s.tips = s.tips || {}; s.featSeen = s.featSeen || {}; s.stash = s.stash || []; s.bagView = s.bagView || 'bag';
   if (!s.seen) { // older saves: everything already passed counts as met
@@ -2566,7 +2567,9 @@ function renderJournal() {
     <div class="card"><h2>Journal</h2><ul class="log">${logs}</ul></div>
     <div class="card"><h2>Settings</h2>
       <label for="autoSell">Auto-sell drops (upgrades are always kept)</label><select id="autoSell">${opts}</select>
-      <h2>Automatic play</h2><p class="sub">The hero always moves forward by itself. These handle the upgrades too; switch any off to do it by hand.</p>
+      <h2>Idle mode</h2><p class="sub">The hero always walks and fights by himself. Everything else is yours to do: spend points, unlock waystones, equip gear, pick your company, claim feats and use the Forge. Turn on Idle mode to let the game do all of it for you.</p>
+      <label class="chk"><input type="checkbox" id="idleAll" ${['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge'].every(k => S[k]) ? 'checked' : ''}> <b>Idle mode: do everything automatically</b></label>
+      <p class="sub">Or choose just some of them:</p>
       <label class="chk"><input type="checkbox" id="autoSpend" ${S.autoSpend ? 'checked' : ''}> Spend attribute points</label>
       <label class="chk"><input type="checkbox" id="autoEquip" ${S.autoEquip ? 'checked' : ''}> Equip better gear, and when the bag fills sell what you don't need (keeps upgrades and one best Mythic-or-better spare per slot)</label>
       <label class="chk"><input type="checkbox" id="autoStones" ${S.autoStones ? 'checked' : ''}> Unlock waystones</label>
@@ -2742,7 +2745,8 @@ panel.addEventListener('change', e => {
   if (e.target.id === 'reforgePick') { forgeSel = e.target.value || null; renderPanel(); return; }
   if (e.target.id.startsWith('gfx-')) { S.gfx[e.target.id.slice(4)] = e.target.checked; document.documentElement.classList.toggle('big', !!S.gfx.big); }
   if (e.target.id === 'testShop') { S.testShop = e.target.checked; log(S.testShop ? 'Shop test mode on: purchases are fake.' : 'Shop test mode off.'); }
-  if (['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge'].includes(e.target.id)) { S[e.target.id] = e.target.checked; autoPlay(); updateHud(); }
+  if (e.target.id === 'idleAll') { for (const k of ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge']) S[k] = e.target.checked; log(e.target.checked ? 'Idle mode on: the game spends, equips and upgrades for you.' : 'Idle mode off: you choose every upgrade.'); autoPlay(); updateHud(); renderPanel(); }
+  if (['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge'].includes(e.target.id)) { S[e.target.id] = e.target.checked; autoPlay(); updateHud(); renderPanel(); }
   save();
 });
 panel.addEventListener('click', e => {
