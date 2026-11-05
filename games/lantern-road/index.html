@@ -299,27 +299,13 @@ select,textarea{background:var(--wood-deep)!important;border:2px solid #000!impo
 .pop .item{background:#120d0a;box-shadow:0 0 0 2px #000,0 8px 24px rgba(0,0,0,.6)}
 .pop .closepop{align-self:flex-end}
 body.strip .console{display:none}
-/* skills sit on the ground in the scene */
-.skills{position:absolute;right:6px;bottom:6px;display:flex;gap:6px;z-index:3}
-.sk{position:relative;width:46px;height:46px;padding:0;display:grid;place-items:center;border:2px solid #000;background:#3a2a1d;box-shadow:inset 2px 2px 0 #5a4230,inset -2px -2px 0 #22180f;cursor:pointer;touch-action:manipulation}
-.sk img{width:30px;height:30px;image-rendering:pixelated;position:relative;z-index:0}
-.sk::after{content:"";position:absolute;inset:0;background:conic-gradient(rgba(0,0,0,.68) var(--p,0%),transparent 0);pointer-events:none}
-.sk .cdt{position:absolute;inset:0;display:grid;place-items:center;font:700 1rem/1 var(--display);color:#fff;text-shadow:0 2px 0 #000;z-index:2}
-.sk .lock{display:none}
-.sk.locked img{opacity:.25}
-.sk.locked .lock{display:grid;place-items:center;position:absolute;inset:0;font:500 .5rem/1 var(--display);color:#cbbd9f;text-align:center;z-index:2}
-.sk.ready{border-color:#f3d27a;animation:skready 1.4s ease-in-out infinite}
-.sk.no{transform:translateX(2px)}
-.skills.auto .sk{opacity:.8}
-@keyframes skready{50%{box-shadow:inset 2px 2px 0 #5a4230,inset -2px -2px 0 #22180f,0 0 8px 1px rgba(243,180,74,.7)}}
-@media (prefers-reduced-motion:reduce){.sk.ready{animation:none}}
 .road canvas{touch-action:manipulation;cursor:pointer}
 .seg{gap:4px}
 .seg .btn{flex:1}
 .logbtn{width:30px;height:30px;padding:0;display:grid;place-items:center;border:2px solid #000;background:#4a3524;box-shadow:inset 2px 2px 0 #6e5036,inset -2px -2px 0 #2a1d13;cursor:pointer}
 .logbtn img{width:20px;height:20px;image-rendering:pixelated}
 .logbtn.on{background:#d89a2e}
-body.strip .skills{display:none}
+
 </style>
 
 <div class="wrap">
@@ -334,7 +320,6 @@ body.strip .skills{display:none}
     <div class="roadhud"><span id="hudStage">Stage 1 · Wave 1/10</span><span class="zone" id="hudZone">Mossbarrow Lane</span></div>
     <button class="btn primary revive" id="reviveBtn" type="button" hidden></button>
     <button class="btn small exitstrip" id="exitStrip" type="button">Show menus</button>
-    <div class="skills" id="skills" aria-label="Skills"></div>
   </section>
 
   <section class="hud" aria-label="Hero status">
@@ -432,34 +417,34 @@ const SUFFIX = { dodge: 'of the Fox', dmg: 'of Embers', hp: 'of the Oak', aspd: 
 
 const ZONES = [
   { name: 'Mossbarrow Lane', sky: ['#14212d', '#3b5a50'], far: '#21363a', mid: '#2c4838', ground: '#33291f', top: '#4f7a3f', dark: .38, prop: 'tree', part: 'firefly',
-    foes: [{ n: 'Moss Slime', s: 'blob', c: '#7fbf5a', el: 'phys', res: { fire: -50 } }, { n: 'Burrow Rat', s: 'quad', c: '#8a7b6a', el: 'phys', res: {} }],
+    foes: [{ n: 'Moss Slime', s: 'blob', c: '#7fbf5a', el: 'phys', res: { fire: -50 } }, { n: 'Burrow Rat', s: 'quad', c: '#8a7b6a', el: 'phys', res: {} }, { n: 'Thornback Boar', el: 'phys', res: { phys: 15, fire: -30 } }],
     boss: { n: 'Old Stump', s: 'tall', c: '#6b5236', el: 'phys', res: { fire: -50, shadow: 25 } } },
   { name: 'Saltmarsh Causeway', sky: ['#121f28', '#46656c'], far: '#20343b', mid: '#2e4c4a', ground: '#28363a', top: '#5c7d6a', dark: .44, prop: 'reed', part: 'mist',
-    foes: [{ n: 'Reed Crab', s: 'quad', c: '#c0674a', el: 'frost', res: { frost: 50, phys: 20 } }, { n: 'Bog Lantern', s: 'wisp', c: '#9fe0c8', el: 'frost', res: { radiant: -40, phys: 30 } }],
+    foes: [{ n: 'Reed Crab', s: 'quad', c: '#c0674a', el: 'frost', res: { frost: 50, phys: 20 } }, { n: 'Bog Lantern', s: 'wisp', c: '#9fe0c8', el: 'frost', res: { radiant: -40, phys: 30 } }, { n: 'Mire Leech', el: 'phys', res: { frost: 30, fire: -40 } }],
     boss: { n: 'Brine Matron', s: 'tall', c: '#4f8a8a', el: 'frost', res: { frost: 60, fire: -25 } } },
   { name: 'Cinder Steppe', sky: ['#1a1216', '#6e3424'], far: '#3a1f1f', mid: '#4a2922', ground: '#2a1f1c', top: '#6b3a2a', dark: .32, prop: 'rock', part: 'ember',
-    foes: [{ n: 'Ember Wisp', s: 'wisp', c: '#ff9a4a', el: 'fire', res: { fire: 70, frost: -50 } }, { n: 'Ash Hound', s: 'quad', c: '#6a5c58', el: 'fire', res: { fire: 40, frost: -25 } }],
+    foes: [{ n: 'Ember Wisp', s: 'wisp', c: '#ff9a4a', el: 'fire', res: { fire: 70, frost: -50 } }, { n: 'Ash Hound', s: 'quad', c: '#6a5c58', el: 'fire', res: { fire: 40, frost: -25 } }, { n: 'Cinder Tick', el: 'fire', res: { fire: 60, frost: -50 } }],
     boss: { n: 'Kiln Golem', s: 'tall', c: '#a0523a', el: 'fire', res: { fire: 70, phys: 30, frost: -40 } } },
   { name: 'Glasswind Dunes', sky: ['#191b30', '#8c6c5a'], far: '#55464a', mid: '#7a6450', ground: '#86704f', top: '#c4a678', dark: .24, prop: 'shard', part: 'sand',
-    foes: [{ n: 'Glass Scarab', s: 'quad', c: '#8fd8e8', el: 'phys', res: { phys: 25, shadow: -30 } }, { n: 'Mirage', s: 'blob', c: '#e8c8f0', el: 'shadow', res: { phys: 50, radiant: -50 } }],
+    foes: [{ n: 'Glass Scarab', s: 'quad', c: '#8fd8e8', el: 'phys', res: { phys: 25, shadow: -30 } }, { n: 'Mirage', s: 'blob', c: '#e8c8f0', el: 'shadow', res: { phys: 50, radiant: -50 } }, { n: 'Dune Stinger', el: 'phys', res: { phys: 30, frost: -30 } }],
     boss: { n: 'Prism Wyrm', s: 'tall', c: '#b6e0ff', el: 'frost', res: { radiant: 60, phys: 30, shadow: -30 } } },
   { name: 'Starfall Ruins', sky: ['#080918', '#2a2350'], far: '#1b1934', mid: '#2a2645', ground: '#222036', top: '#4a4570', dark: .56, prop: 'pillar', part: 'star',
-    foes: [{ n: 'Star Moth', s: 'wisp', c: '#f0e6a0', el: 'shadow', res: { radiant: 50, shadow: -30 } }, { n: 'Lost Sentinel', s: 'tall', c: '#8a88b0', el: 'shadow', res: { phys: 30, radiant: -50 } }],
+    foes: [{ n: 'Star Moth', s: 'wisp', c: '#f0e6a0', el: 'shadow', res: { radiant: 50, shadow: -30 } }, { n: 'Lost Sentinel', s: 'tall', c: '#8a88b0', el: 'shadow', res: { phys: 30, radiant: -50 } }, { n: 'Comet Acolyte', el: 'shadow', res: { shadow: 40, radiant: -40 } }],
     boss: { n: 'The Unlit King', s: 'tall', c: '#4a3a66', el: 'shadow', res: { shadow: 70, radiant: -60 } } },
   { name: 'Frostfang Pass', sky: ['#0c1726', '#5a7a9a'], far: '#3a5068', mid: '#24443a', ground: '#b8c6d4', top: '#eef4ff', dark: .3, prop: 'pine', part: 'snow', shape: 'peaks', weather: 'snow',
-    foes: [{ n: 'Snow Wolf', el: 'frost', res: { frost: 60, fire: -40 } }, { n: 'Frost Wraith', el: 'frost', res: { frost: 70, phys: 30, fire: -50 } }],
+    foes: [{ n: 'Snow Wolf', el: 'frost', res: { frost: 60, fire: -40 } }, { n: 'Frost Wraith', el: 'frost', res: { frost: 70, phys: 30, fire: -50 } }, { n: 'Ice Howler', el: 'frost', res: { frost: 60, fire: -40 } }],
     boss: { n: 'Glacier Troll', el: 'frost', res: { frost: 60, phys: 30, fire: -50 } } },
   { name: 'Sunken Archive', sky: ['#081216', '#2a4a50'], far: '#16282e', mid: '#4a3424', ground: '#22302e', top: '#3a6a6a', dark: .5, prop: 'shelf', part: 'mist', shape: 'shelves', weather: 'rain',
-    foes: [{ n: 'Ink Slime', el: 'shadow', res: { shadow: 50, radiant: -40 } }, { n: 'Page Swarm', el: 'phys', res: { phys: 20, fire: -60 } }],
+    foes: [{ n: 'Ink Slime', el: 'shadow', res: { shadow: 50, radiant: -40 } }, { n: 'Page Swarm', el: 'phys', res: { phys: 20, fire: -60 } }, { n: 'Candle Ghost', el: 'fire', res: { fire: 50, phys: 40, frost: -40 } }],
     boss: { n: 'The Drowned Librarian', el: 'frost', res: { frost: 50, shadow: 30, fire: -40 } } },
   { name: 'Thornveil Woods', sky: ['#120a1a', '#4a2a50'], far: '#2a1a30', mid: '#5a2a5a', ground: '#2a1e24', top: '#6a3a6a', dark: .45, prop: 'thorn', part: 'firefly', shape: 'thorns', weather: 'spores',
-    foes: [{ n: 'Spore Toad', el: 'phys', res: { fire: -40, frost: 20 } }, { n: 'Thorn Stalker', el: 'phys', res: { phys: 30, fire: -50 } }],
+    foes: [{ n: 'Spore Toad', el: 'phys', res: { fire: -40, frost: 20 } }, { n: 'Thorn Stalker', el: 'phys', res: { phys: 30, fire: -50 } }, { n: 'Mantis Reaper', el: 'phys', res: { phys: 20, fire: -50 } }],
     boss: { n: 'Briar Mother', el: 'shadow', res: { phys: 40, shadow: 30, fire: -60 } } },
   { name: 'Ashen Citadel', sky: ['#140a08', '#5a2a1a'], far: '#2a1a18', mid: '#4a3a36', ground: '#2a2222', top: '#4a3a3a', dark: .4, prop: 'wall', part: 'ember', shape: 'castle', weather: 'ash',
-    foes: [{ n: 'Cinder Knight', el: 'fire', res: { fire: 50, phys: 40, frost: -40 } }, { n: 'Ash Bat', el: 'fire', res: { fire: 40, radiant: -40 } }],
+    foes: [{ n: 'Cinder Knight', el: 'fire', res: { fire: 50, phys: 40, frost: -40 } }, { n: 'Ash Bat', el: 'fire', res: { fire: 40, radiant: -40 } }, { n: 'Ash Priest', el: 'fire', res: { fire: 60, radiant: -40 } }],
     boss: { n: 'The Warden of Ash', el: 'fire', res: { fire: 70, phys: 30, frost: -50 } } },
   { name: 'The Hollow Sky', sky: ['#05040e', '#2a1a4a'], far: '#1a1430', mid: '#3a3060', ground: '#2a2440', top: '#8a7ad0', dark: .5, prop: 'island', part: 'star', shape: 'islands', weather: 'stars',
-    foes: [{ n: 'Void Eye', el: 'shadow', res: { shadow: 60, radiant: -50 } }, { n: 'Sky Serpent', el: 'frost', res: { frost: 40, shadow: -40 } }],
+    foes: [{ n: 'Void Eye', el: 'shadow', res: { shadow: 60, radiant: -50 } }, { n: 'Sky Serpent', el: 'frost', res: { frost: 40, shadow: -40 } }, { n: 'Rift Spawn', el: 'shadow', res: { shadow: 60, radiant: -50 }, split: true }],
     boss: { n: 'The Light-Eater', el: 'shadow', res: { shadow: 80, phys: 20, radiant: -70 } } },
 ];
 // The first five zones predate per-zone skylines and weather.
@@ -653,7 +638,7 @@ function fresh() {
   return { v: 3, level: 1, xp: 0, gold: 0, points: 0, attrs: { mig: 0, vit: 0, agi: 0, for: 0 },
     equip: emptyEquip(), bag: [], talents: { hearth: true }, path: 'blade', starters: { blade: true },
     roster: [], party: [], recruited: 0, feats: {}, bestR: 0,
-    stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: false, autoEquip: false, autoStones: false, autoCompany: false, autoClaim: false, autoForge: false, autoSkills: false, manualV1: true, shards: 0, glass: 0, tempered: 0, crafted: 0, kills: 0, deaths: 0, best: null,
+    stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: false, autoEquip: false, autoStones: false, autoCompany: false, autoClaim: false, autoForge: false, manualV1: true, shards: 0, glass: 0, tempered: 0, crafted: 0, kills: 0, deaths: 0, best: null,
     played: 0, lastSeen: Date.now(), log: [], tab: 'hero', created: Date.now(),
     owned: {}, passUntil: 0, charmUntil: 0, look: { lantern: 'amber', outfit: 'wanderer', company: 'plain' }, testShop: false, shopNoted: false,
     seen: {}, tips: {}, featSeen: {}, stash: [], bagView: 'bag', nudges: {}, soldFull: 0, embers: 1, hourglass: 0, trial: null, daily: { last: '', streak: 0 }, gfx: { numbers: true, weather: true, shake: true, fps30: false, big: false } };
@@ -698,8 +683,8 @@ function migrate(d) {
   if (d.v < 3) Object.assign(s, { autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true });
   s.farm = false; s.v = 3;
   s.gfx = Object.assign({ numbers: true, weather: true, shake: true, fps30: false, big: false }, s.gfx || {});
-  if (!d.manualV1) { for (const k of ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge', 'autoSkills']) s[k] = false; s.manualV1 = true; }
-  if (s.autoForge === undefined) s.autoForge = false; if (s.autoSkills === undefined) s.autoSkills = !!s.autoSpend; s.parries = s.parries || 0; s.moths = s.moths || 0; s.bestCombo = s.bestCombo || 0; s.shards = s.shards || 0; s.glass = s.glass || 0; s.tempered = s.tempered || 0; s.crafted = s.crafted || 0;
+  if (!d.manualV1) { for (const k of ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge']) s[k] = false; s.manualV1 = true; }
+  if (s.autoForge === undefined) s.autoForge = false; delete s.autoSkills; s.parries = s.parries || 0; s.moths = s.moths || 0; s.bestCombo = s.bestCombo || 0; s.shards = s.shards || 0; s.glass = s.glass || 0; s.tempered = s.tempered || 0; s.crafted = s.crafted || 0;
   if (s.embers === undefined) s.embers = 1; if (s.hourglass === undefined) s.hourglass = 0;
   s.nudges = s.nudges || {}; s.soldFull = s.soldFull || 0; s.daily = s.daily || { last: '', streak: 0 };
   s.tips = s.tips || {}; s.featSeen = s.featSeen || {}; s.stash = s.stash || []; s.bagView = s.bagView || 'bag';
@@ -1127,6 +1112,16 @@ function enemyBase(stage, wave, boss) {
 }
 /* Every foe has a special attack, shown above it when used and listed on the Map. */
 const SPECIALS = {
+  'Thornback Boar': [{ k: 'charge', n: 'Gore Charge', cd: 7 }],
+  'Mire Leech': [{ k: 'leech', n: 'Latch On', cd: 9 }],
+  'Cinder Tick': [{ k: 'fuse', n: 'Volatile', cd: 6 }],
+  'Dune Stinger': [{ k: 'sting', n: 'Paralytic Sting', cd: 8 }],
+  'Comet Acolyte': [{ k: 'heal', n: 'Starlight Mend', cd: 8 }],
+  'Ice Howler': [{ k: 'howl', n: 'War Howl', cd: 10 }],
+  'Candle Ghost': [{ k: 'curse', n: 'Wax Curse', cd: 8 }],
+  'Mantis Reaper': [{ k: 'execute', n: 'Reap', cd: 7 }],
+  'Ash Priest': [{ k: 'corrode', n: 'Melt Armor', cd: 8 }, { k: 'heal', n: 'Ash Rite', cd: 12 }],
+  'Rift Spawn': [{ k: 'drain', n: 'Rift Hunger', cd: 8 }],
   'Moss Slime': [{ k: 'poison', n: 'Spore Burst', cd: 7 }],
   'Burrow Rat': [{ k: 'frenzy', n: 'Frenzy', cd: 8 }],
   'Old Stump': [{ k: 'snare', n: 'Root Snare', cd: 7 }],
@@ -1144,22 +1139,22 @@ const SPECIALS = {
   'The Unlit King': [{ k: 'summon', n: 'Call the Lost', cd: 12 }, { k: 'slam', n: 'Eclipse', cd: 7 }],
   'Snow Wolf': [{ k: 'pounce', n: 'Pack Leap', cd: 6 }],
   'Frost Wraith': [{ k: 'chill', n: 'Grave Chill', cd: 7 }],
-  'Glacier Troll': [{ k: 'snare', n: 'Frozen Grip', cd: 8 }, { k: 'slam', n: 'Avalanche', cd: 7 }],
+  'Glacier Troll': [{ k: 'snare', n: 'Frozen Grip', cd: 8 }, { k: 'slam', n: 'Avalanche', cd: 7 }, { k: 'howl', n: 'Mountain Roar', cd: 13 }],
   'Ink Slime': [{ k: 'blind', n: 'Ink Splash', cd: 7 }],
   'Page Swarm': [{ k: 'poison', n: 'Paper Cuts', cd: 6 }],
   'The Drowned Librarian': [{ k: 'chill', n: 'Cold Silence', cd: 9 }, { k: 'summon', n: 'Loose Pages', cd: 12, foe: 'Page Swarm' }],
   'Spore Toad': [{ k: 'poison', n: 'Toxic Croak', cd: 6 }],
   'Thorn Stalker': [{ k: 'reflect', n: 'Bramble Hide', cd: 8 }],
-  'Briar Mother': [{ k: 'snare', n: 'Strangling Vines', cd: 8 }, { k: 'summon', n: 'Brood', cd: 12, foe: 'Thorn Stalker' }],
+  'Briar Mother': [{ k: 'snare', n: 'Strangling Vines', cd: 8 }, { k: 'summon', n: 'Brood', cd: 12, foe: 'Thorn Stalker' }, { k: 'execute', n: 'Thorn Embrace', cd: 9 }],
   'Cinder Knight': [{ k: 'guard', n: 'Iron Ranks', cd: 9 }],
   'Ash Bat': [{ k: 'burn', n: 'Cinder Bite', cd: 6 }],
-  'The Warden of Ash': [{ k: 'reflect', n: 'Furnace Plate', cd: 10 }, { k: 'slam', n: 'Judgement', cd: 7 }],
+  'The Warden of Ash': [{ k: 'reflect', n: 'Furnace Plate', cd: 10 }, { k: 'slam', n: 'Judgement', cd: 7 }, { k: 'corrode', n: 'Slag Breath', cd: 9 }],
   'Void Eye': [{ k: 'drain', n: 'Hollow Gaze', cd: 7 }],
   'Sky Serpent': [{ k: 'evade', n: 'Cloud Dive', cd: 7 }],
   'The Light-Eater': [{ k: 'blind', n: 'Swallow the Light', cd: 7, hit: 1.4 }, { k: 'chill', n: 'Endless Cold', cd: 10 }, { k: 'summon', n: 'Call the Void', cd: 13, foe: 'Void Eye' }],
 };
 function foeByName(n) { for (const z of ZONES) for (const f of [...z.foes, z.boss]) if (f.n === n) return f; return ZONES[4].foes[1]; }
-const SP_DESC = { poison: 'poisons you', frenzy: 'attacks twice as fast for a while', snare: 'roots you so you cannot attack, and heals itself', shell: 'takes 70% less damage for a while', drain: 'drains your HP to heal itself', slam: 'a heavy hit', burn: 'sets you on fire', pounce: 'leaps in for a heavy hit', reflect: 'reflects 30% of the damage it takes', evade: 'dodges most hits for a while', blind: 'blinds you so half your attacks miss', guard: 'shields every foe in the wave', summon: 'calls two minions to its side', chill: 'chills you so you attack 40% slower' };
+const SP_DESC = { poison: 'poisons you', frenzy: 'attacks twice as fast for a while', snare: 'roots you so you cannot attack, and heals itself', shell: 'takes 70% less damage for a while', drain: 'drains your HP to heal itself', slam: 'a heavy hit', burn: 'sets you on fire', pounce: 'leaps in for a heavy hit', reflect: 'reflects 30% of the damage it takes', evade: 'dodges most hits for a while', blind: 'blinds you so half your attacks miss', guard: 'shields every foe in the wave', summon: 'calls two minions to its side', chill: 'chills you so you attack 40% slower', charge: 'charges in for a heavy hit you cannot dodge or block', leech: 'latches on and drains your HP for 4 seconds', fuse: 'lights a fuse and explodes for a huge hit unless you kill it or parry first', sting: 'poisons you and stuns you for a moment', heal: 'heals every foe in the wave', howl: 'makes every foe hit 40% harder and faster for a while', curse: 'curses you so you deal 40% less damage for a while', execute: 'a massive hit when your HP is below 40%', corrode: 'melts your armor to half for a while' };
 const goldPer = (s, boss) => 2 * Math.pow(1.13, s - 1) * (boss ? 6 : 1);
 const xpPer = (s, boss) => 6 * Math.pow(1.12, s - 1) * (boss ? 5 : 1);
 const boostGold = () => (passActive() ? 1.25 : 1) * (charmActive() ? 1.5 : 1);
@@ -1168,40 +1163,7 @@ const resMult = (foe, el) => 1 - ((foe.res && foe.res[el]) || 0) / 100;
 
 /* ---------- Runtime ---------- */
 /* ---------- Action: skills, parries, combos and moths ---------- */
-const SKILLS = [
-  { id: 'burst', n: 'Lantern Burst', d: 'Hits every foe for 300% damage and knocks them back.', cd: 12, at: 1, col: '#f3b44a' },
-  { id: 'wind', n: 'Second Wind', d: 'Heals 35% of your HP and clears poison, burns, snares, blindness and chill.', cd: 24, at: 3, col: '#7fd38b' },
-  { id: 'rally', n: 'Rally', d: 'You and your company attack 60% faster for 6 seconds.', cd: 30, at: 6, col: '#ff8a3d' },
-];
 const WARN = 1; // seconds of warning before a special attack: the window to parry it
-function skillOpen(sk) { return S.maxStage >= sk.at; }
-function useSkill(id, auto) {
-  const sk = SKILLS.find(x => x.id === id), h = G.hero, st = stats();
-  if (!sk || !skillOpen(sk) || h.dead > 0 || (G.cd[id] || 0) > 0) return false;
-  const foes = G.enemies.filter(e => !e.dead && e.x < W - 4);
-  if (id === 'burst') {
-    if (!foes.length || G.phase !== 'fight') return false;
-    for (const e of foes) { e.kb = 6; damage(e, st.dmg * 3 * rnd(.95, 1.05), st.elem, false); }
-    burst(HX + 6, GY - 12, ['#f3b44a', '#fff2c0', '#ff8a3d'], 26, 110); shake(2); G.flare = .25;
-    fx(HX + 6, GY - 34, 'LANTERN BURST', '#f3b44a', 1, 5);
-  } else if (id === 'wind') {
-    if (h.hp >= st.hp * .995 && !h.dots.length && !(h.stun > 0) && !(h.blind > 0) && !(h.chill > 0)) return false;
-    h.hp = Math.min(st.hp, h.hp + st.hp * .35); h.dots = []; h.stun = h.blind = h.chill = 0;
-    burst(HX, GY - 10, ['#7fd38b', '#c8f0b0'], 16, 50); fx(HX, GY - 30, '+' + fmt(st.hp * .35), '#7fd38b', 1, 5);
-  } else if (id === 'rally') {
-    if (G.phase !== 'fight') return false;
-    G.rally = 6; burst(HX - 10, GY - 14, ['#ff8a3d', '#ffd080'], 14, 60); fx(HX, GY - 34, 'RALLY!', '#ff8a3d', 1, 5);
-  }
-  G.cd[id] = sk.cd;
-  return true;
-}
-function autoSkills() {
-  if (!S.autoSkills || G.phase !== 'fight' || G.hero.dead > 0) return;
-  const st = stats(), foes = G.enemies.filter(e => !e.dead && e.x < HX + 80);
-  if (foes.length >= 2 || foes.some(e => e.boss || e.elite)) useSkill('burst', true);
-  if (G.hero.hp < st.hp * .45 || G.hero.stun > 0) useSkill('wind', true);
-  if (foes.some(e => e.boss || e.elite) || foes.length >= 3) useSkill('rally', true);
-}
 /* A tap on the road: catch a moth if it is under the finger, otherwise try to parry. */
 function roadTap(x, y) {
   const h = G.hero;
@@ -1209,10 +1171,12 @@ function roadTap(x, y) {
   if (h.dead > 0 || G.phase !== 'fight') return;
   if ((G.parryLock || 0) > 0) return;
   let best = null;
-  for (const e of G.enemies) if (!e.dead && e.engaged) e.sp.forEach((sp, j) => { if (e.spT[j] < WARN && (!best || e.spT[j] < best.e.spT[best.j])) best = { e, j }; });
+  for (const e of G.enemies) if (!e.dead && (e.fuse > 0 || e.leech > 0)) { best = { e, j: -1 }; break; }
+  if (!best) for (const e of G.enemies) if (!e.dead && e.engaged) e.sp.forEach((sp, j) => { if (e.spT[j] < WARN && (!best || e.spT[j] < best.e.spT[best.j])) best = { e, j }; });
   if (!best) { G.parryLock = .7; fx(HX + 6, GY - 30, 'too early', '#97a39d', .6, 4); return; }
   const { e, j } = best, st = stats();
-  e.spT[j] = e.sp[j].cd * rnd(.8, 1.2); e.stun = 1.6; e.t = Math.max(e.t, .6);
+  if (j >= 0) e.spT[j] = e.sp[j].cd * rnd(.8, 1.2);
+  e.fuse = 0; e.leech = 0; e.stun = 1.6; e.t = Math.max(e.t, .6);
   damage(e, st.dmg * 1.5, st.elem, true);
   h.hp = Math.min(st.hp, h.hp + st.hp * .05);
   fx(e.x, GY - (e.boss ? 58 : 42), 'PARRY!', '#8fd8ff', 1.1, 7); shake(1.5); G.stop = Math.max(G.stop || 0, .09);
@@ -1232,8 +1196,6 @@ function catchMoth() {
   if (S.tab === 'forge') dirtyPanel = true;
 }
 function updateAction(dt) {
-  for (const k in G.cd) G.cd[k] = Math.max(0, G.cd[k] - dt);
-  G.rally = Math.max(0, (G.rally || 0) - dt); G.flare = Math.max(0, (G.flare || 0) - dt);
   G.parryLock = Math.max(0, (G.parryLock || 0) - dt);
   G.comboT = Math.max(0, (G.comboT || 0) - dt); if (G.comboT <= 0 && G.combo) G.combo = 0;
   if (S.maxStage >= 2 && G.hero.dead <= 0) {
@@ -1245,7 +1207,6 @@ function updateAction(dt) {
     if (Math.random() < dt * 12) G.parts.push({ k: 'mote', x: m.x + 3, y: m.y, vx: 6, vy: 8, t: 0, life: .8, c: '#ffe680' });
     if (m.x < -10) G.moth = null;
   }
-  autoSkills();
 }
 const MOTH = [
   ['OO.......OO', 'OYO.....OYO', '.OYO.b.OYO.', '..OOObOOO..', '...OObOO...', '....ObO....', '.....b.....'],
@@ -1260,7 +1221,7 @@ function drawMoth() {
 }
 
 function resetRuntime() {
-  G = { phase: 'walk', walkT: 1.2, enemies: [], hero: { hp: stats().hp, swing: 0, hurt: 0, atkT: 0, dead: 0, stun: 0, blind: 0, dots: [] }, folT: {}, proj: [], scroll: 0, fx: [], parts: [], banner: null, t: 0, saveT: 0, hudT: 0, cd: {}, combo: 0, comboT: 0, moth: null };
+  G = { phase: 'walk', walkT: 1.2, enemies: [], hero: { hp: stats().hp, swing: 0, hurt: 0, atkT: 0, dead: 0, stun: 0, blind: 0, dots: [] }, folT: {}, proj: [], scroll: 0, fx: [], parts: [], banner: null, t: 0, saveT: 0, hudT: 0, combo: 0, comboT: 0, moth: null };
   banner(`Stage ${S.stage} · ${ZONES[zoneOf(S.stage)].name}`);
 }
 function banner(text, col) { if (G) G.banner = { text, col: col || '#ece4d0', t: 0 }; }
@@ -1269,7 +1230,7 @@ function fx(x, y, txt, col, life, size) { if (G.fx.length < 50) G.fx.push({ x, y
 function makeFoe(f, b, boss, x, elite) {
   const m = elite ? 2.5 : 1, tier = boss ? 0 : variantOf(S.stage);
   return { tier, title: (elite ? 'Elite ' : '') + TIER_TITLE[tier] + f.n, n: f.n, s: f.s, c: f.c, el: f.el, res: f.res, hp: b.hp * m, max: b.hp * m, dmg: b.dmg * (elite ? 1.4 : 1), aspd: boss ? .7 : .8, boss, elite, x, t: rnd(.2, .7),
-    flash: 0, dead: false, die: 0, ph: Math.random() * 6, sp: SPECIALS[f.n] || [], spT: (SPECIALS[f.n] || []).map(sp => sp.cd * rnd(.4, .9)), shell: 0, shellM: 1, haste: 0, evade: 0, reflect: 0 };
+    split: f.split, flash: 0, dead: false, die: 0, ph: Math.random() * 6, sp: SPECIALS[f.n] || [], spT: (SPECIALS[f.n] || []).map(sp => sp.cd * rnd(.4, .9)), shell: 0, shellM: 1, haste: 0, evade: 0, reflect: 0 };
 }
 function spawnWave() {
   const boss = S.wave === WAVES, z = ZONES[zoneOf(S.stage)];
@@ -1300,7 +1261,7 @@ function damage(e, raw, el, crit, small) {
 function heroAttack(front) {
   if (G.hero.blind > 0 && Math.random() < .5) { fx(HX + 10, GY - 22, 'miss', '#c58bff', .6, 4); return; }
   const st = stats(), crit = Math.random() * 100 < st.crit;
-  const raw = st.dmg * rnd(.9, 1.1) * (crit ? st.critd / 100 : 1);
+  const raw = st.dmg * rnd(.9, 1.1) * (crit ? st.critd / 100 : 1) * (G.hero.weak > 0 ? .6 : 1);
   if (S.path === 'blade') {
     G.parts.push({ k: 'slash', x: HX + 8, y: GY - 12, t: 0, life: .14, big: crit, c: st.elem === 'phys' ? '#ffffff' : ELEM[st.elem].col });
     const d = damage(front, raw, st.elem, crit);
@@ -1329,6 +1290,12 @@ function updateProj(dt) {
 }
 function kill(e) {
   e.dead = true; e.hp = 0;
+  if (e.split && !e.minion) for (let q = 0; q < 2; q++) {
+    const m = makeFoe(foeByName(e.n), { hp: e.max * .35, dmg: e.dmg * .6 }, false, e.x + 6 + q * 14, false);
+    m.minion = true; m.split = false; m.tier = e.tier; G.enemies.push(m);
+  }
+  if (e.split && !e.minion) fx(e.x, GY - 34, 'splits!', '#ff60c0', .9, 5);
+  if (e.boom) return;
   if (!S.seen[e.n]) { S.seen[e.n] = true; toast('New foe', e.n); log(`Discovered: ${e.n}. The Map now shows its weaknesses.`); if (S.tab === 'map') dirtyPanel = true; }
   { const [, pk] = FOE_ART[e.n] || [, 'moss']; const cols = Object.values(PAL[pk] || {}).slice(0, 3); burst(e.x, GY - (e.boss ? 14 : 7), cols.length ? cols : ['#ffffff'], e.boss ? 26 : 12, e.boss ? 80 : 55); }
   if (e.boss) shake(2.5);
@@ -1366,6 +1333,15 @@ function useSpecial(e, sp) {
     case 'evade': e.evade = 2; break;
     case 'blind': h.blind = 3; if (sp.hit) enemyHit(e, sp.hit); break;
     case 'chill': h.chill = 3.5; break;
+    case 'charge': e.kb = -8; enemyHit(e, e.boss ? 2.6 : 2.3, true); shake(1.5); break;
+    case 'leech': e.leech = 4; fx(HX, GY - 30, 'latched!', '#ff6060', .9, 4); break;
+    case 'fuse': e.fuse = 3; break;
+    case 'sting': h.dots.push({ dps: e.dmg * .35, t: 4, col: '#9fe05a' }); h.stun = Math.max(h.stun || 0, 1.1); enemyHit(e, 1); break;
+    case 'heal': for (const o of G.enemies) if (!o.dead) { const add = o.max * .2; o.hp = Math.min(o.max, o.hp + add); fx(o.x, GY - (o.boss ? 40 : 26), '+' + fmt(add), '#7fd38b', .8, 4); } burst(e.x, GY - 16, ['#7fd38b', '#c8f0b0'], 10, 40); break;
+    case 'howl': for (const o of G.enemies) if (!o.dead) o.howl = 5; shake(1); break;
+    case 'curse': h.weak = 5; fx(HX, GY - 30, 'weakened', '#c58bff', 1, 4); break;
+    case 'execute': enemyHit(e, h.hp < st.hp * .4 ? 3.5 : 1.2); break;
+    case 'corrode': h.corrode = 6; enemyHit(e, .8); fx(HX, GY - 32, 'armor melted', '#ff8a3d', 1, 4); break;
     case 'summon': {
       const alive = G.enemies.filter(o => !o.dead).length, foe = foeByName(sp.foe || 'Lost Sentinel');
       for (let k = 0; k < 2 && alive + k < 5; k++) {
@@ -1376,21 +1352,22 @@ function useSpecial(e, sp) {
     }
   }
 }
-function enemyHit(e, mult) {
+function enemyHit(e, mult, sure) {
   e.atk = .25;
   const st = stats(), h = G.hero;
-  if (Math.random() * 100 < st.dodge) { fx(HX, GY - 22, 'dodge', '#97a39d', .7, 4); return; }
-  let d = e.dmg * rnd(.9, 1.1) * (mult || 1), blocked = false;
+  if (!sure && Math.random() * 100 < st.dodge) { fx(HX, GY - 22, 'dodge', '#97a39d', .7, 4); return; }
+  let d = e.dmg * rnd(.9, 1.1) * (mult || 1) * (e.howl > 0 ? 1.4 : 1), blocked = false;
+  const def = st.def * (h.corrode > 0 ? .5 : 1);
   const k = armorK(S.stage);
-  d *= e.el === 'phys' ? k / (k + st.def) : (1 - st.res[e.el] / 100) * k / (k + st.def * .3);
-  if (Math.random() * 100 < st.block) { d *= .5; blocked = true; }
+  d *= e.el === 'phys' ? k / (k + def) : (1 - st.res[e.el] / 100) * k / (k + def * .3);
+  if (!sure && Math.random() * 100 < st.block) { d *= .5; blocked = true; }
   h.hp -= d; h.hurt = .14; h.kb = Math.min(3, (h.kb || 0) + 1.5);
   if (d > stats().hp * .15) shake(1.5);
   if (S.gfx.numbers) fx(HX - 2, GY - 22, (blocked ? 'block ' : '') + fmt(d), e.el === 'phys' ? '#ff8070' : ELEM[e.el].col, .8, 4);
   if (h.hp <= 0) heroDie(e);
 }
 function heroDie(killer) {
-  const h = G.hero; h.hp = 0; h.dead = 2; h.deadT = 0; S.deaths++; G.proj = []; G.combo = 0; G.comboT = 0; G.rally = 0;
+  const h = G.hero; h.hp = 0; h.dead = 2; h.deadT = 0; S.deaths++; G.proj = []; G.combo = 0; G.comboT = 0;
   // Falling to a guardian: offer to rise again on the spot for a few seconds instead of losing the stage.
   G.revive = S.wave === WAVES ? { stage: S.stage, foes: G.enemies.filter(e => !e.dead).map(e => Object.assign({}, e)), until: G.t + 6 } : null;
   if (G.revive) h.dead = 6;
@@ -1448,6 +1425,7 @@ function update(dt) {
   }
   h.hp = Math.min(st.hp, h.hp + (st.regen + (G.phase === 'walk' ? st.hp * .15 : 0)) * dt);
   h.stun = Math.max(0, (h.stun || 0) - dt); h.blind = Math.max(0, (h.blind || 0) - dt); h.chill = Math.max(0, (h.chill || 0) - dt);
+  h.weak = Math.max(0, (h.weak || 0) - dt); h.corrode = Math.max(0, (h.corrode || 0) - dt);
   h.dots = (h.dots || []).filter(d => (d.t -= dt) > 0);
   for (const d of h.dots) h.hp -= d.dps * dt;
   if (h.hp <= 0) { heroDie(G.enemies.find(e => !e.dead)); return; }
@@ -1472,23 +1450,25 @@ function update(dt) {
     const target = HX + 20 + i * 25 + (e.boss ? 10 : 0);
     if (e.x > target) e.x = Math.max(target, e.x - (62 + (G.moving ? 32 : 0)) * dt);
     e.flash = Math.max(0, e.flash - dt);
-    for (const k of ['shell', 'haste', 'evade', 'reflect']) e[k] = Math.max(0, e[k] - dt);
+    for (const k of ['shell', 'haste', 'evade', 'reflect', 'howl']) e[k] = Math.max(0, (e[k] || 0) - dt);
+    if (e.fuse > 0 && !e.dead) { e.fuse -= dt; if (e.fuse <= 0) { e.fuse = 0; fx(e.x, GY - 36, 'BOOM', '#ff6030', 1, 7); burst(e.x, GY - 8, ['#ff8a3d', '#ffd060', '#5a3428'], 24, 90); shake(2.5); enemyHit(e, 3.2, true); e.boom = true; kill(e); return; } }
+    if (e.leech > 0 && !e.dead && !(e.stun > 0)) { e.leech -= dt; const dr = st.hp * .035 * dt; h.hp -= dr; e.hp = Math.min(e.max, e.hp + e.max * .03 * dt); }
     if (e.boss && !e.dead) { e.age = (e.age || 0) + dt; if (e.age > 18 && !e.enraged) { e.enraged = true; e.dmg *= 1.5; e.aspd *= 1.3; banner(`${e.title || e.n} is enraged!`, '#ff6050'); shake(2); } }
     e.engaged = e.x <= target + .5 && i < 3;
     if (e.stun > 0) { e.stun -= dt; return; }
     if (e.x <= target + .5 && i < 3) {
-      if (i < 2) { e.t -= dt * (e.haste > 0 ? 2 : 1); if (e.t <= 0) { e.t = 1 / e.aspd; enemyHit(e); } }
+      if (i < 2) { e.t -= dt * (e.haste > 0 ? 2 : 1) * (e.howl > 0 ? 1.3 : 1); if (e.t <= 0) { e.t = 1 / e.aspd; enemyHit(e); } }
       e.sp.forEach((sp, j) => { e.spT[j] -= dt; if (e.spT[j] <= 0 && h.dead <= 0) { e.spT[j] = sp.cd * rnd(.8, 1.2); useSpecial(e, sp); } });
     }
   });
   if (h.dead > 0) return;
   const front = alive.find(e => !e.dead);
-  if (!(h.stun > 0)) h.atkT -= dt * (h.chill > 0 ? .6 : 1) * (G.rally > 0 ? 1.6 : 1);
+  if (!(h.stun > 0)) h.atkT -= dt * (h.chill > 0 ? .6 : 1);
   if (front && !(h.stun > 0) && front.x <= HX + st.range + (front.boss ? 10 : 0) && h.atkT <= 0 && h.dead <= 0) { h.atkT = 1 / st.aspd; h.swing = .16; heroAttack(front); }
   // company
   partyMembers().forEach((f, i) => {
     const K = KINDS[f.kind]; if (!K.atk) return;
-    G.folT[f.id] = (G.folT[f.id] ?? rnd(.2, 1)) - dt * (G.rally > 0 ? 1.6 : 1);
+    G.folT[f.id] = (G.folT[f.id] ?? rnd(.2, 1)) - dt;
     const tgt = G.enemies.find(e => !e.dead);
     if (G.folT[f.id] <= 0 && tgt && tgt.x <= HX + 120) {
       G.folT[f.id] = K.atk; (G.folKick = G.folKick || {})[f.id] = .15;
@@ -1851,6 +1831,24 @@ const SPR = {
     '...rRRRRRRRRr.....',
     '...rRRRrrRRRr.....',
     '..rrrrr..rrrrr....'],
+  boar: { rows: ['....S.S.S.S.....', '..hhhSSSSSShhh..', '.hhHHHHHHHHHHHh.', 'hHkHHHHHHHHHHHHh', 'nnHHHHHHHHHHHHHh', 'wnhHHHHHHHHHHHh.', 'w.hh.hh...hh.hh.', '...d..d....d..d.'],
+    alt: { 6: '.hh..hh..hh..hh.', 7: '.d...d...d...d..' } },
+  leech: { rows: ['....lllllll....', '..llLbLLbLLll..', 'rrLLkLLbLLLbLl.', 'rrLLLLbLLLbLLLl', '..llLLLbLLLbll.', '....llll.lll...'],
+    alt: { 0: '...lllllll.....', 5: '...lll..llll...' } },
+  tick: { rows: ['...gggg...', '.ggGoGGgg.', 'gGGoGGoGGg', 'kGGGGoGGGg', '.ggggggggg', '.d.d.d.d..', 'd.d.d.d.d.'],
+    alt: { 1: '.ggGGoGgg.', 5: 'd.d.d.d.d.', 6: '.d.d.d.d..' } },
+  stinger: { rows: ['.......sss......', '......T...s.....', '...........s....', '...........s....', 'cc..bbbbbbbbs...', 'c.cbBBBBBBBBb...', 'cc.BkBBBBBBBBb..', '..bBBBBBBBBBb...', '..d.d.d.d.d.d...'],
+    alt: { 4: 'c...bbbbbbbbs...', 5: 'cc.bBBBBBBBBb...', 8: '...d.d.d.d.d.d..' } },
+  acolyte: { rows: ['.Y........', 'YyY..hh...', '.y..hHHh..', '.t.hHkHHh.', '.t.hHHHHh.', '.t..hHHh..', '.trrRRRr..', '.trRRRRRr.', '.rRRRRRRr.', '.tRRRRRRr.', '.tRRRRRRr.', '.rRRRRRRRr', 'rRRRRRRRRr', 'rrrrrrrrrr'],
+    alt: { 1: 'yYy..hh...', 12: '.rRRRRRRRR', 13: '.rrrrrrrrr' } },
+  yeti: { rows: ['....wwww.....', '...wWWWWw....', '..wWkWWkWw...', '..wWbbbbWw...', '..wWWbbWWw...', '.wwWWWWWWWww.', 'wWWwWWWWWwWWw', 'wWw.WWWWW.wWw', 'wW..WWWWW..Ww', 'cc..WWWWW..cc', '....WW.WW....', '...wWw.wWw...', '...ww...ww...'],
+    alt: { 7: 'wWw.WWWWW.wWw', 8: '.wW.WWWWW.Ww.', 9: '.cc.WWWWW.cc.' } },
+  candle: { fly: 1, rows: ['....f....', '...fF....', '...FY....', '...ww....', '..wWWw...', '.wWWWWw..', 'wWkWWkWw.', 'wWWWWWWw.', 'wWWooWWw.', 'wWWWWWWw.', '.wWWWWWw.', '.w.wW.w..', '.....w...'],
+    alt: { 0: '...f.....', 11: '..w.Ww.w.', 12: '...w.....' } },
+  mantis: { rows: ['.gg...........', 'gkG...........', 'gGg...........', '.gG.ss........', '..gGs.s.......', '..gG...s......', '..gGGs.s......', '...gGGs.......', '....gGGGGGgg..', '.....gGGGGGGGg', '.....gGGGGGGg.', '.....g.g..g.g.', '....g..g..g..g'],
+    alt: { 3: '.gGss.........', 4: '..gGs.........', 5: '..gG.s........', 6: '..gGGs........', 12: '.....g.g..g.g.' } },
+  rift: { rows: ['.....v......', '....vVv..v..', '..v.vVVv.Vv.', '.vVvVVVVvVv.', 'vVVVVkVVVkVv', 'vVVVVVVVVVVv', 'vVVPPPPPVVVv', '.vVVVVVVVVv.', '..vvVVVVvv..', '....vvvv....'],
+    alt: { 0: '......v.....', 1: '.v..vVv.....' } },
   toad: { rows: ['..GG....GG....', '.GyyG..GyyG...', '.GykG..GykG...', '.gggggggggggg.', 'gggsggggggsggg', 'ggggggggggggdd', 'gdkkkkkkkkkgdd', '.ggggggggggdd.', 'gg.dd....dd.gg'],
     alt: { 0: '..............', 1: '..GG....GG....', 2: '.GyyG..GyyG...', 3: '.GykGgggGykGg.', 8: 'g..dd....dd..g' } },
   stalker: { rows: [
@@ -1999,6 +1997,16 @@ const PAL = {
   trim: { y: '#ffd84a' },
   moss: { g: '#6fae4a', G: '#9fd46a', d: '#3f6e2c', w: '#ffffff', k: '#111111' },
   mirage: { g: '#c8a8e0', G: '#f0e0ff', d: '#8a6aa8', w: '#ffffff', k: '#3a2a50' },
+  boar: { h: '#5a3a26', H: '#7a5236', S: '#c8b090', k: '#111111', n: '#c08070', w: '#f0e8d0', d: '#2a1a10' },
+  leech: { l: '#3a4a2a', L: '#5a7040', b: '#46582f', k: '#e0d060', r: '#b04040' },
+  tick: { g: '#3a2420', G: '#5a3428', o: '#ff8a3d', k: '#ffd060', d: '#2a1810' },
+  stinger: { b: '#8a6a3a', B: '#c09a58', s: '#a07a44', T: '#ff5050', c: '#b08a50', k: '#111111', d: '#5a4024' },
+  acolyte: { Y: '#fff6c0', y: '#f3d27a', t: '#8a6a3a', h: '#2a2440', H: '#3a3460', k: '#9fe0ff', r: '#3a2a6a', R: '#5a4aa0' },
+  ashpriest: { Y: '#ffd090', y: '#ff8a3d', t: '#5a3a2a', h: '#1a1010', H: '#2a1a18', k: '#ff6030', r: '#3a2a2a', R: '#6a4a40' },
+  yeti: { w: '#a8b8c8', W: '#e8f0f8', k: '#3080ff', b: '#4a5a6a', c: '#506070' },
+  candle: { f: '#ff8a3d', F: '#ffd060', Y: '#fff6c0', w: '#a8c0b8', W: '#e0f0e8', k: '#202830', o: '#202830' },
+  mantis: { g: '#3a6a2a', G: '#6aa040', k: '#ff4040', s: '#d0e0a0' },
+  rift: { v: '#4a2a8a', V: '#8a5ad0', k: '#ffffff', P: '#ff60c0' },
   rat: { f: '#7a6a5a', F: '#9a8a76', d: '#4e4238', p: '#d89a9a', e: '#111111', t: '#b08a7a' },
   crab: { s: '#c0674a', S: '#e08a66', d: '#7a3a2a', c: '#d0704e', e: '#111111' },
   boglamp: { y: '#2f7a68', Y: '#6fc8a8', W: '#d8fff0', k: '#0f2a24' },
@@ -2038,6 +2046,8 @@ const FOE_ART = {
   'Ink Slime': ['slime', 'ink'], 'Page Swarm': ['pages', 'pages'], 'The Drowned Librarian': ['librarian', 'librarian'],
   'Spore Toad': ['toad', 'toad'], 'Thorn Stalker': ['stalker', 'stalker'], 'Briar Mother': ['briar', 'briar'],
   'Cinder Knight': ['sentinel', 'cinderknight'], 'Ash Bat': ['bat', 'bat'], 'The Warden of Ash': ['king', 'ashwarden'],
+  'Thornback Boar': ['boar', 'boar'], 'Mire Leech': ['leech', 'leech'], 'Cinder Tick': ['tick', 'tick'], 'Dune Stinger': ['stinger', 'stinger'], 'Comet Acolyte': ['acolyte', 'acolyte'],
+  'Ice Howler': ['yeti', 'yeti'], 'Candle Ghost': ['candle', 'candle', .9], 'Mantis Reaper': ['mantis', 'mantis'], 'Ash Priest': ['acolyte', 'ashpriest'], 'Rift Spawn': ['rift', 'rift'],
   'Void Eye': ['eye', 'eye'], 'Sky Serpent': ['serpent', 'serpent'], 'The Light-Eater': ['lighteater', 'lighteater'],
 };
 /* Darker coats for deeper tiers, built once per palette and tier. */
@@ -2147,7 +2157,7 @@ function drawFoe(e) {
   if (e.sq > 0) { sy *= .88; sx *= 1.1; }
   const fade = e.dead ? clamp(1 - e.die / .25, 0, 1) : 1;
   if (e.dead) { const k = clamp(e.die / .25, 0, 1); rot = k * 1.3; fx += k * 7; fy += k * 2; }
-  const warn = !e.dead && !(e.stun > 0) && e.engaged && e.sp && e.sp.some((sp, j) => e.spT[j] < WARN);
+  const warn = !e.dead && !(e.stun > 0) && (e.fuse > 0 || e.leech > 0 || (e.engaged && e.sp && e.sp.some((sp, j) => e.spT[j] < WARN)));
   const draw = (img, dx, dy) => { L.save(); L.translate(fx + (dx || 0), fy + (dy || 0)); if (rot) L.rotate(rot); L.scale(sx, sy); L.drawImage(img, -SW / 2, -SH, SW, SH); L.restore(); };
   if (!e.dead) { // contact shadow; flyers cast a smaller, fainter one
     const rw = Math.max(5, Math.round(SW * sx * (def.fly ? .25 : .38)));
@@ -2159,8 +2169,14 @@ function drawFoe(e) {
     L.globalAlpha = .55 + .25 * Math.sin(G.t * 5);
     for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) draw(gold, dx, dy);
   }
-  if (warn) { // about to use a special attack: a purple glow
-    const glow = getSpr(sn, frame, pk, null, '#c070ff');
+  if (e.leech > 0 && !e.dead) { // a red tether to the hero
+    L.fillStyle = '#ff4050';
+    for (let q = 0; q < 1; q += .08) { const xx = fx - 6 + (HX + 4 - fx + 6) * q, yy = GY - 6 - Math.sin(q * Math.PI) * 6 + Math.sin(G.t * 12 + q * 9) * .8; L.globalAlpha = .5 + .5 * Math.sin(G.t * 10 - q * 12); L.fillRect(Math.round(xx), Math.round(yy), 1, 1); }
+    L.globalAlpha = 1;
+  }
+  if (warn) { // about to use a special attack: a purple glow (red for a lit fuse)
+    const glow = getSpr(sn, frame, pk, null, e.fuse > 0 ? '#ff3020' : '#c070ff');
+    if (e.fuse > 0) sx *= 1 + (Math.sin(G.t * (10 + (3 - e.fuse) * 12)) > 0 ? .08 : 0), sy = sx;
     L.globalAlpha = .45 + .35 * Math.sin(G.t * 22);
     for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) draw(glow, dx * 1.5, dy * 1.5);
   }
@@ -2168,7 +2184,7 @@ function drawFoe(e) {
   draw(c);
   if (e.flash > 0 && !e.dead) { L.globalAlpha = fade * .5; draw(getSpr(sn, frame, pk, null, true)); }
   const top = fy - SH * sy;
-  if (!e.dead && (e.shell > 0 || e.evade > 0 || e.reflect > 0 || e.haste > 0)) {
+  if (!e.dead && (e.shell > 0 || e.evade > 0 || e.reflect > 0 || e.haste > 0 || e.howl > 0)) {
     const col = e.shell > 0 ? '#8fd8ff' : e.evade > 0 ? '#c8c8c8' : e.reflect > 0 ? '#ff8a3d' : '#ff5a3a';
     L.globalAlpha = .4 + .2 * Math.sin(G.t * 10); L.strokeStyle = col; L.lineWidth = .5;
     L.strokeRect(Math.round(fx - SW / 2) + 1.25, Math.round(top) + 1.25, SW - 2.5, SH * sy - 2.5);
@@ -2179,7 +2195,7 @@ function drawFoe(e) {
     px(fx - bw / 2, by, bw, 2, '#2a0f0f'); px(fx - bw / 2, by, bw * clamp(e.hp / e.max, 0, 1), 2, e.boss ? '#ff6050' : e.elite ? '#f3b44a' : '#d24a3a');
     if (e.elite) { px(fx - 2, by - 4, 1, 2, '#f3b44a'); px(fx, by - 5, 1, 3, '#f3b44a'); px(fx + 2, by - 4, 1, 2, '#f3b44a'); }
     if (e.el !== 'phys') px(fx - bw / 2 - 3, by, 2, 2, ELEM[e.el].col);
-    if (warn) { const blink = Math.sin(G.t * 22) > 0 ? '#ffe060' : '#ff8030'; px(fx + bw / 2 + 2, by - 6, 1.5, 4, blink); px(fx + bw / 2 + 2, by - 1, 1.5, 1.5, blink); if (!S.autoSkills && (S.parries || 0) < 5) G.tapHint = { x: fx, y: by - 9 }; }
+    if (warn) { const blink = Math.sin(G.t * 22) > 0 ? '#ffe060' : '#ff8030'; px(fx + bw / 2 + 2, by - 6, 1.5, 4, blink); px(fx + bw / 2 + 2, by - 1, 1.5, 1.5, blink); if ((S.parries || 0) < 5) G.tapHint = { x: fx, y: by - 9 }; }
     if (e.stun > 0) for (let q = 0; q < 3; q++) { const a = G.t * 6 + q * 2.1; px(fx + Math.cos(a) * 6, by - 4 + Math.sin(a) * 1.5, 1, 1, q ? '#ffe680' : '#ffffff'); }
   }
 }
@@ -2475,7 +2491,6 @@ function draw() {
   const wg = L.createRadialGradient(lx, ly, 0, lx, ly, 30); const gc = LANTERNS[currentLook('lantern')].glow; wg.addColorStop(0, `rgba(${gc},.24)`); wg.addColorStop(1, `rgba(${gc},0)`);
   L.fillStyle = wg; L.fillRect(0, 0, W, H); L.globalCompositeOperation = 'source-over';
   drawMoth();
-  if (G.flare > 0) { L.globalAlpha = G.flare * 1.6; L.fillStyle = '#ffe9a8'; L.fillRect(0, 0, W, H); L.globalAlpha = 1; }
   const boss = G.enemies.find(e => e.boss && !e.dead);
   if (boss) { px(W / 2 - 50, 14, 100, 3, '#2a0f0f'); px(W / 2 - 50, 14, 100 * boss.hp / boss.max, 3, '#ff6050'); }
 
@@ -2756,7 +2771,7 @@ function renderMap() {
       <div class="body">${status}<span>Stages ${first}–${last}</span><div class="sub" style="display:flex;flex-direction:column;gap:2px">${foes}</div>
       ${open && i !== cur ? `<div class="row"><button class="btn small" data-act="travel" data-s="${first}">Travel to Stage ${first}</button></div>` : ''}</div></article>`;
   }).join('');
-  const known = ZONES.reduce((a, z) => a + [...z.foes, z.boss].filter(f => S.seen[f.n]).length, 0), total = ZONES.length * 3;
+  const known = ZONES.reduce((a, z) => a + [...z.foes, z.boss].filter(f => S.seen[f.n]).length, 0), total = ZONES.reduce((a, z) => a + z.foes.length + 1, 0);
   panel.innerHTML = `<div class="card"><div class="row between"><div><h2>The road so far · ${known}/${total} foes met</h2><p class="sub">Furthest: Stage ${S.maxStage}. The hero moves forward on its own. If a stage is too hard, it drops back one stage, grows stronger there, and tries again. Match your weapon element to what foes are weak to.</p></div>
     ${S.stage < S.maxStage ? `<div class="row"><button class="btn small" data-act="travel" data-s="${S.maxStage}">Jump to Stage ${S.maxStage}</button></div>` : ''}</div></div>
     <div class="zones">${cards}</div>`;
@@ -2784,14 +2799,13 @@ function renderJournal() {
     <div class="card"><h2>Settings</h2>
       <label for="autoSell">Auto-sell drops (upgrades are always kept)</label><select id="autoSell">${opts}</select>
       <h2>Idle mode</h2><p class="sub">The hero always walks and fights by himself. Everything else is yours to do: spend points, unlock waystones, equip gear, pick your company, claim feats and use the Forge. Turn on Idle mode to let the game do all of it for you.</p>
-      <label class="chk"><input type="checkbox" id="idleAll" ${['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge', 'autoSkills'].every(k => S[k]) ? 'checked' : ''}> <b>Idle mode: do everything automatically</b></label>
+      <label class="chk"><input type="checkbox" id="idleAll" ${['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge'].every(k => S[k]) ? 'checked' : ''}> <b>Idle mode: do everything automatically</b></label>
       <p class="sub">Or choose just some of them:</p>
       <label class="chk"><input type="checkbox" id="autoSpend" ${S.autoSpend ? 'checked' : ''}> Spend attribute points</label>
       <label class="chk"><input type="checkbox" id="autoEquip" ${S.autoEquip ? 'checked' : ''}> Equip better gear, and when the bag fills sell what you don't need (keeps upgrades and one best Mythic-or-better spare per slot)</label>
       <label class="chk"><input type="checkbox" id="autoStones" ${S.autoStones ? 'checked' : ''}> Unlock waystones</label>
       <label class="chk"><input type="checkbox" id="autoCompany" ${S.autoCompany ? 'checked' : ''}> Pick the strongest company and train them</label>
       <label class="chk"><input type="checkbox" id="autoForge" ${S.autoForge ? 'checked' : ''}> Use the Forge: salvage Epic and better junk into materials, and temper worn gear</label>
-      <label class="chk"><input type="checkbox" id="autoSkills" ${S.autoSkills ? 'checked' : ''}> Use skills in fights (Idle play never parries or catches moths)</label>
       <label class="chk"><input type="checkbox" id="autoClaim" ${S.autoClaim ? 'checked' : ''}> Claim feats</label>
       <h2>Records</h2><dl class="stats">
         <dt>Enemies defeated</dt><dd>${fmt(S.kills)}</dd><dt>Times fallen</dt><dd>${fmt(S.deaths)}</dd>
@@ -2974,8 +2988,8 @@ panel.addEventListener('change', e => {
   if (e.target.id === 'reforgePick') { forgeSel = e.target.value || null; renderPanel(); return; }
   if (e.target.id.startsWith('gfx-')) { S.gfx[e.target.id.slice(4)] = e.target.checked; document.documentElement.classList.toggle('big', !!S.gfx.big); }
   if (e.target.id === 'testShop') { S.testShop = e.target.checked; log(S.testShop ? 'Shop test mode on: purchases are fake.' : 'Shop test mode off.'); }
-  if (e.target.id === 'idleAll') { for (const k of ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge', 'autoSkills']) S[k] = e.target.checked; log(e.target.checked ? 'Idle mode on: the game spends, equips and upgrades for you.' : 'Idle mode off: you choose every upgrade.'); autoPlay(); updateHud(); renderPanel(); }
-  if (['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge', 'autoSkills'].includes(e.target.id)) { S[e.target.id] = e.target.checked; autoPlay(); updateHud(); renderPanel(); }
+  if (e.target.id === 'idleAll') { for (const k of ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge']) S[k] = e.target.checked; log(e.target.checked ? 'Idle mode on: the game spends, equips and upgrades for you.' : 'Idle mode off: you choose every upgrade.'); autoPlay(); updateHud(); renderPanel(); }
+  if (['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge'].includes(e.target.id)) { S[e.target.id] = e.target.checked; autoPlay(); updateHud(); renderPanel(); }
   save();
 });
 panel.addEventListener('click', e => {
@@ -3180,7 +3194,7 @@ window.addEventListener('resize', sizeCanvas);
 function frame(now) {
   let dt = Math.min(.1, (now - last) / 1000); last = now;
   if (G.stop > 0) { G.stop -= dt; dt *= .15; }
-  update(dt); updateSkillBar();
+  update(dt);
   G.drawT = (G.drawT || 0) + dt;
   if (!S.gfx.fps30 || G.drawT >= 1 / 31) { G.drawT = 0; draw(); }
   G.hudT += dt; if (G.hudT > .2) { G.hudT = 0; updateHud(); if (dirtyPanel && $('#overlay').hidden) renderPanel(); }
@@ -3260,38 +3274,13 @@ function drawDoll(canvas) {
 }
 function popWrap(html) { return `<div class="popwrap" data-act="closepop"><div class="pop">${html}<button class="btn small closepop" data-act="closepop">Close</button></div></div>`; }
 
-const SKILL_ICONS = {
-  burst: ['.....o......', '.o...o...o..', '..o..o..o...', '...ooooo....', '...oOOOo....', 'oooOOOOOooo.', '...oOOOo....', '...ooooo....', '..o..o..o...', '.o...o...o..', '.....o......', '............'],
-  wind: ['............', '..oo...oo...', '.oOOo.oOOo..', 'oOOOOoOOOOo.', 'oOOOOOOOOOo.', 'oOOOOOOOOOo.', '.oOOOOOOOo..', '..oOOOOOo...', '...oOOOo....', '....oOo.....', '.....o......', '............'],
-  rally: ['............', '.o..........', '.oOOOOOOo...', '.oOOOOOOOo..', '.oOOOOOOo...', '.oOOOOOo....', '.ooooooo....', '.o..........', '.o..........', '.o..........', 'ooo.........', '............'],
-};
-function buildSkills() {
-  const box = $('#skills'); if (!box) return;
-  box.innerHTML = SKILLS.map(sk => {
-    const rows = SKILL_ICONS[sk.id];
-    const src = pixelCanvas(12, 12, x => rows.forEach((row, j) => [...row].forEach((ch, i) => { if (ch === '.') return; x.fillStyle = ch === 'o' ? shade(sk.col, -.55) : sk.col; x.fillRect(i, j, 1, 1); })));
-    return `<button class="sk" type="button" data-sk="${sk.id}" aria-label="${sk.n}: ${sk.d}" title="${sk.n}: ${sk.d}"><img alt="" src="${src}"><span class="cdt"></span><span class="lock">Stage ${sk.at}</span></button>`;
-  }).join('');
-  box.addEventListener('click', e => { const b = e.target.closest('.sk'); if (!b) return; e.stopPropagation(); if (!useSkill(b.dataset.sk)) b.classList.add('no'), setTimeout(() => b.classList.remove('no'), 200); });
-}
-function updateSkillBar() {
-  for (const b of document.querySelectorAll('#skills .sk')) {
-    const sk = SKILLS.find(x => x.id === b.dataset.sk), cd = G.cd[sk.id] || 0, open = skillOpen(sk);
-    b.classList.toggle('locked', !open); b.disabled = !open;
-    b.style.setProperty('--p', open ? (cd / sk.cd * 100).toFixed(1) + '%' : '100%');
-    b.classList.toggle('ready', open && cd <= 0);
-    const t = b.querySelector('.cdt'), txt = open && cd > 0 ? String(Math.ceil(cd)) : '';
-    if (t.textContent !== txt) t.textContent = txt;
-  }
-  $('#skills').classList.toggle('auto', !!S.autoSkills);
-}
 cv.addEventListener('pointerdown', e => {
   const r = cv.getBoundingClientRect();
   roadTap((e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H);
 });
 
 function start(data) {
-  buildLayout(); buildSkills();
+  buildLayout();
   const saved = (data && data.S) ? migrate(data.S) : load();
   if (saved) S = saved; else newGame();
   dirtyStats = true;
