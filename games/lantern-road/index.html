@@ -251,10 +251,10 @@ html,body{height:100%;overflow:hidden;background:#07090b}
 .console > *{flex:none}
 .console .hud{border:0;border-radius:0;background:transparent;padding:6px 8px 4px;gap:6px 10px}
 .console .coach,.console .nudge{margin:2px 6px;border-radius:0;border:2px solid var(--lamp);background:#1b140f}
-.console .tabs{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:2px;padding:4px 6px;border:0;border-top:2px solid #000;border-bottom:2px solid #000;box-shadow:inset 0 2px 0 var(--wood-hi);overflow:visible;background:rgba(0,0,0,.25)}
+.console .tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;padding:4px 6px;border:0;border-top:2px solid #000;border-bottom:2px solid #000;box-shadow:inset 0 2px 0 var(--wood-hi);overflow:visible;background:rgba(0,0,0,.25)}
 .console .panel{flex:1;min-height:0;overflow:auto;padding:8px 6px 16px;gap:8px}
 .tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0 3px;border:2px solid #000;border-radius:0;background:#3a2a1d;box-shadow:inset 2px 2px 0 #5a4230,inset -2px -2px 0 #22180f;font:500 .52rem/1 var(--display);color:#cbbd9f;min-width:0;overflow:hidden}
-.tab .ti{width:24px;height:24px;image-rendering:pixelated}
+.tab .ti{width:26px;height:26px;image-rendering:pixelated}
 .tab .tl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .tab[aria-selected="true"]{background:#d89a2e;color:#2a1c06;box-shadow:inset 2px 2px 0 #ffd27a,inset -2px -2px 0 #9a6a1a;border-color:#000}
 .tab .dot{top:2px;right:2px;width:7px;height:7px;border-radius:0;box-shadow:0 0 0 2px #000}
@@ -299,6 +299,29 @@ select,textarea{background:var(--wood-deep)!important;border:2px solid #000!impo
 .pop .item{background:#120d0a;box-shadow:0 0 0 2px #000,0 8px 24px rgba(0,0,0,.6)}
 .pop .closepop{align-self:flex-end}
 body.strip .console{display:none}
+.tab{font-size:.62rem}
+/* skills sit on the ground in the scene */
+.skills{position:absolute;right:6px;bottom:6px;display:flex;gap:6px;z-index:3}
+.sk{position:relative;width:46px;height:46px;padding:0;display:grid;place-items:center;border:2px solid #000;background:#3a2a1d;box-shadow:inset 2px 2px 0 #5a4230,inset -2px -2px 0 #22180f;cursor:pointer;touch-action:manipulation}
+.sk img{width:30px;height:30px;image-rendering:pixelated;position:relative;z-index:0}
+.sk::after{content:"";position:absolute;inset:0;background:conic-gradient(rgba(0,0,0,.68) var(--p,0%),transparent 0);pointer-events:none}
+.sk .cdt{position:absolute;inset:0;display:grid;place-items:center;font:700 1rem/1 var(--display);color:#fff;text-shadow:0 2px 0 #000;z-index:2}
+.sk .lock{display:none}
+.sk.locked img{opacity:.25}
+.sk.locked .lock{display:grid;place-items:center;position:absolute;inset:0;font:500 .5rem/1 var(--display);color:#cbbd9f;text-align:center;z-index:2}
+.sk.ready{border-color:#f3d27a;animation:skready 1.4s ease-in-out infinite}
+.sk.no{transform:translateX(2px)}
+.skills.auto .sk{opacity:.8}
+@keyframes skready{50%{box-shadow:inset 2px 2px 0 #5a4230,inset -2px -2px 0 #22180f,0 0 8px 1px rgba(243,180,74,.7)}}
+@media (prefers-reduced-motion:reduce){.sk.ready{animation:none}}
+.road canvas{touch-action:manipulation;cursor:pointer}
+.seg{gap:4px}
+.seg .btn{flex:1}
+.console .hud{grid-template-columns:auto 1fr auto auto}
+.logbtn{width:30px;height:30px;padding:0;display:grid;place-items:center;border:2px solid #000;background:#4a3524;box-shadow:inset 2px 2px 0 #6e5036,inset -2px -2px 0 #2a1d13;cursor:pointer}
+.logbtn img{width:20px;height:20px;image-rendering:pixelated}
+.logbtn.on{background:#d89a2e}
+body.strip .skills{display:none}
 </style>
 
 <div class="wrap">
@@ -313,12 +336,14 @@ body.strip .console{display:none}
     <div class="roadhud"><span id="hudStage">Stage 1 · Wave 1/10</span><span class="zone" id="hudZone">Mossbarrow Lane</span></div>
     <button class="btn primary revive" id="reviveBtn" type="button" hidden></button>
     <button class="btn small exitstrip" id="exitStrip" type="button">Show menus</button>
+    <div class="skills" id="skills" aria-label="Skills"></div>
   </section>
 
   <section class="hud" aria-label="Hero status">
     <span class="lvl" id="hudLvl">Lv 1</span>
     <div class="xpbar" title="Experience: fill the bar to reach the next level"><i id="hudXp"></i><span id="hudXpTxt"></span></div>
     <div class="purse"><span><span class="coin"></span><span id="hudGold">0</span></span></div>
+    <button class="logbtn" id="logBtn" type="button" title="Journal and settings" aria-label="Journal and settings"></button>
     <div class="hudrow2">
       <div class="hp"><span>HP</span><div class="hpbar"><i id="hudHp"></i></div><span id="hudHpTxt" style="font-variant-numeric:tabular-nums">100/100</span></div>
       <span class="pill" id="hudPower" title="Power rating: damage and toughness combined. It should keep climbing.">Power 0</span>
@@ -333,10 +358,7 @@ body.strip .console{display:none}
     <button class="tab" role="tab" data-tab="bag" id="tab-bag">Bag</button>
     <button class="tab" role="tab" data-tab="forge" id="tab-forge">Forge</button>
     <button class="tab" role="tab" data-tab="company" id="tab-company">Company</button>
-    <button class="tab" role="tab" data-tab="talents" id="tab-talents">Waystones</button>
-    <button class="tab" role="tab" data-tab="map" id="tab-map">Map</button>
-    <button class="tab" role="tab" data-tab="feats" id="tab-feats">Feats</button>
-    <button class="tab" role="tab" data-tab="journal" id="tab-journal">Journal</button>
+    <button class="tab" role="tab" data-tab="map" id="tab-map">Road</button>
     <button class="tab" role="tab" data-tab="shop" id="tab-shop">Shop</button>
   </nav>
   <section class="panel" id="panel" role="tabpanel"></section>
@@ -347,7 +369,7 @@ body.strip .console{display:none}
 (() => {
 'use strict';
 const $ = s => document.querySelector(s);
-const W = 240, H = 150, GY = 122, HX = 78, WAVES = 15, BAG_MAX = 30, ROSTER_MAX = 12;
+const W = 204, H = 176, GY = 136, HX = 66, WAVES = 15, BAG_MAX = 30, ROSTER_MAX = 12;
 const SAVE_KEY = 'lantern-road-v1';
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pick = a => a[Math.floor(Math.random() * a.length)];
@@ -631,7 +653,7 @@ function fresh() {
   return { v: 3, level: 1, xp: 0, gold: 0, points: 0, attrs: { mig: 0, vit: 0, agi: 0, for: 0 },
     equip: emptyEquip(), bag: [], talents: { hearth: true }, path: 'blade', starters: { blade: true },
     roster: [], party: [], recruited: 0, feats: {}, bestR: 0,
-    stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: false, autoEquip: false, autoStones: false, autoCompany: false, autoClaim: false, autoForge: false, manualV1: true, shards: 0, glass: 0, tempered: 0, crafted: 0, kills: 0, deaths: 0, best: null,
+    stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: false, autoEquip: false, autoStones: false, autoCompany: false, autoClaim: false, autoForge: false, autoSkills: false, manualV1: true, shards: 0, glass: 0, tempered: 0, crafted: 0, kills: 0, deaths: 0, best: null,
     played: 0, lastSeen: Date.now(), log: [], tab: 'hero', created: Date.now(),
     owned: {}, passUntil: 0, charmUntil: 0, look: { lantern: 'amber', outfit: 'wanderer', company: 'plain' }, testShop: false, shopNoted: false,
     seen: {}, tips: {}, featSeen: {}, stash: [], bagView: 'bag', nudges: {}, soldFull: 0, embers: 1, hourglass: 0, trial: null, daily: { last: '', streak: 0 }, gfx: { numbers: true, weather: true, shake: true, fps30: false, big: false } };
@@ -676,8 +698,8 @@ function migrate(d) {
   if (d.v < 3) Object.assign(s, { autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true });
   s.farm = false; s.v = 3;
   s.gfx = Object.assign({ numbers: true, weather: true, shake: true, fps30: false, big: false }, s.gfx || {});
-  if (!d.manualV1) { for (const k of ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge']) s[k] = false; s.manualV1 = true; }
-  if (s.autoForge === undefined) s.autoForge = false; s.shards = s.shards || 0; s.glass = s.glass || 0; s.tempered = s.tempered || 0; s.crafted = s.crafted || 0;
+  if (!d.manualV1) { for (const k of ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge', 'autoSkills']) s[k] = false; s.manualV1 = true; }
+  if (s.autoForge === undefined) s.autoForge = false; if (s.autoSkills === undefined) s.autoSkills = !!s.autoSpend; s.parries = s.parries || 0; s.moths = s.moths || 0; s.bestCombo = s.bestCombo || 0; s.shards = s.shards || 0; s.glass = s.glass || 0; s.tempered = s.tempered || 0; s.crafted = s.crafted || 0;
   if (s.embers === undefined) s.embers = 1; if (s.hourglass === undefined) s.hourglass = 0;
   s.nudges = s.nudges || {}; s.soldFull = s.soldFull || 0; s.daily = s.daily || { last: '', streak: 0 };
   s.tips = s.tips || {}; s.featSeen = s.featSeen || {}; s.stash = s.stash || []; s.bagView = s.bagView || 'bag';
@@ -827,7 +849,7 @@ function showTip() {
   const id = tipQueue[0];
   if (!id || S.tab === TIPS[id].tab) { if (id) doneTip(id); box.hidden = !tipQueue.length; return; }
   document.getElementById('coachText').textContent = TIPS[id].text;
-  const tb = document.getElementById('tab-' + TIPS[id].tab); if (tb) tb.classList.add('pulse');
+  const tb = document.getElementById('tab-' + ({ talents: 'map', feats: 'map' }[TIPS[id].tab] || TIPS[id].tab)); if (tb) tb.classList.add('pulse');
   box.hidden = false;
 }
 function doneTip(id) { S.tips[id] = true; tipQueue = tipQueue.filter(x => x !== id); showTip(); }
@@ -1145,8 +1167,100 @@ const boostXp = () => (passActive() ? 1.25 : 1);
 const resMult = (foe, el) => 1 - ((foe.res && foe.res[el]) || 0) / 100;
 
 /* ---------- Runtime ---------- */
+/* ---------- Action: skills, parries, combos and moths ---------- */
+const SKILLS = [
+  { id: 'burst', n: 'Lantern Burst', d: 'Hits every foe for 300% damage and knocks them back.', cd: 12, at: 1, col: '#f3b44a' },
+  { id: 'wind', n: 'Second Wind', d: 'Heals 35% of your HP and clears poison, burns, snares, blindness and chill.', cd: 24, at: 3, col: '#7fd38b' },
+  { id: 'rally', n: 'Rally', d: 'You and your company attack 60% faster for 6 seconds.', cd: 30, at: 6, col: '#ff8a3d' },
+];
+const WARN = 1; // seconds of warning before a special attack: the window to parry it
+function skillOpen(sk) { return S.maxStage >= sk.at; }
+function useSkill(id, auto) {
+  const sk = SKILLS.find(x => x.id === id), h = G.hero, st = stats();
+  if (!sk || !skillOpen(sk) || h.dead > 0 || (G.cd[id] || 0) > 0) return false;
+  const foes = G.enemies.filter(e => !e.dead && e.x < W - 4);
+  if (id === 'burst') {
+    if (!foes.length || G.phase !== 'fight') return false;
+    for (const e of foes) { e.kb = 6; damage(e, st.dmg * 3 * rnd(.95, 1.05), st.elem, false); }
+    burst(HX + 6, GY - 12, ['#f3b44a', '#fff2c0', '#ff8a3d'], 26, 110); shake(2); G.flare = .25;
+    fx(HX + 6, GY - 34, 'LANTERN BURST', '#f3b44a', 1, 5);
+  } else if (id === 'wind') {
+    if (h.hp >= st.hp * .995 && !h.dots.length && !(h.stun > 0) && !(h.blind > 0) && !(h.chill > 0)) return false;
+    h.hp = Math.min(st.hp, h.hp + st.hp * .35); h.dots = []; h.stun = h.blind = h.chill = 0;
+    burst(HX, GY - 10, ['#7fd38b', '#c8f0b0'], 16, 50); fx(HX, GY - 30, '+' + fmt(st.hp * .35), '#7fd38b', 1, 5);
+  } else if (id === 'rally') {
+    if (G.phase !== 'fight') return false;
+    G.rally = 6; burst(HX - 10, GY - 14, ['#ff8a3d', '#ffd080'], 14, 60); fx(HX, GY - 34, 'RALLY!', '#ff8a3d', 1, 5);
+  }
+  G.cd[id] = sk.cd;
+  return true;
+}
+function autoSkills() {
+  if (!S.autoSkills || G.phase !== 'fight' || G.hero.dead > 0) return;
+  const st = stats(), foes = G.enemies.filter(e => !e.dead && e.x < HX + 80);
+  if (foes.length >= 2 || foes.some(e => e.boss || e.elite)) useSkill('burst', true);
+  if (G.hero.hp < st.hp * .45 || G.hero.stun > 0) useSkill('wind', true);
+  if (foes.some(e => e.boss || e.elite) || foes.length >= 3) useSkill('rally', true);
+}
+/* A tap on the road: catch a moth if it is under the finger, otherwise try to parry. */
+function roadTap(x, y) {
+  const h = G.hero;
+  if (G.moth && Math.hypot(G.moth.x - x, G.moth.y - y) < 16) { catchMoth(); return; }
+  if (h.dead > 0 || G.phase !== 'fight') return;
+  if ((G.parryLock || 0) > 0) return;
+  let best = null;
+  for (const e of G.enemies) if (!e.dead && e.engaged) e.sp.forEach((sp, j) => { if (e.spT[j] < WARN && (!best || e.spT[j] < best.e.spT[best.j])) best = { e, j }; });
+  if (!best) { G.parryLock = .7; fx(HX + 6, GY - 30, 'too early', '#97a39d', .6, 4); return; }
+  const { e, j } = best, st = stats();
+  e.spT[j] = e.sp[j].cd * rnd(.8, 1.2); e.stun = 1.6; e.t = Math.max(e.t, .6);
+  damage(e, st.dmg * 1.5, st.elem, true);
+  h.hp = Math.min(st.hp, h.hp + st.hp * .05);
+  fx(e.x, GY - (e.boss ? 58 : 42), 'PARRY!', '#8fd8ff', 1.1, 7); shake(1.5); G.stop = Math.max(G.stop || 0, .09);
+  burst(e.x - 6, GY - 12, ['#8fd8ff', '#ffffff'], 14, 70);
+  S.parries = (S.parries || 0) + 1;
+  if (S.parries === 1) log('Parry! Tap the road while a foe glows purple to cancel its special attack and stun it.', '#8fd8ff');
+}
+function comboMult() { return 1 + Math.min(50, G.combo || 0) / 100; }
+function spawnMoth() { G.moth = { x: W + 8, y: 34 + Math.random() * 30, t: 0, base: 0 }; G.moth.base = G.moth.y; }
+function catchMoth() {
+  const m = G.moth; G.moth = null;
+  const g = goldPer(S.stage) * 20 * (1 + stats().gold / 100) * boostGold(), sh = 2 + Math.floor(S.stage / 4);
+  S.gold += g; S.shards = (S.shards || 0) + sh; S.moths = (S.moths || 0) + 1;
+  fx(m.x, m.y - 6, '+' + fmt(g) + ' gold', '#f3b44a', 1.3, 5); fx(m.x, m.y + 2, '+' + sh + ' shards', '#8fd8ff', 1.3, 4);
+  burst(m.x, m.y, ['#f3b44a', '#fff2c0', '#ffe680'], 20, 70);
+  if (S.moths === 1) log('You caught a Gilded Moth. Tap them when they flutter past for gold and Forge shards.', '#f3b44a');
+  if (S.tab === 'forge') dirtyPanel = true;
+}
+function updateAction(dt) {
+  for (const k in G.cd) G.cd[k] = Math.max(0, G.cd[k] - dt);
+  G.rally = Math.max(0, (G.rally || 0) - dt); G.flare = Math.max(0, (G.flare || 0) - dt);
+  G.parryLock = Math.max(0, (G.parryLock || 0) - dt);
+  G.comboT = Math.max(0, (G.comboT || 0) - dt); if (G.comboT <= 0 && G.combo) G.combo = 0;
+  if (S.maxStage >= 2 && G.hero.dead <= 0) {
+    G.mothT = (G.mothT ?? rnd(25, 45)) - dt;
+    if (G.mothT <= 0 && !G.moth) { spawnMoth(); G.mothT = rnd(60, 110); }
+  }
+  if (G.moth) {
+    const m = G.moth; m.t += dt; m.x -= 21 * dt; m.y = m.base + Math.sin(m.t * 2.2) * 9 + Math.sin(m.t * 7) * 2;
+    if (Math.random() < dt * 12) G.parts.push({ k: 'mote', x: m.x + 3, y: m.y, vx: 6, vy: 8, t: 0, life: .8, c: '#ffe680' });
+    if (m.x < -10) G.moth = null;
+  }
+  autoSkills();
+}
+const MOTH = [
+  ['OO.......OO', 'OYO.....OYO', '.OYO.b.OYO.', '..OOObOOO..', '...OObOO...', '....ObO....', '.....b.....'],
+  ['...........', '...........', 'OOO..b..OOO', 'OYOOObOOOYO', '.OOOObOOOO.', '..OO.b.OO..', '.....b.....'],
+];
+function drawMoth() {
+  const m = G.moth; if (!m) return;
+  const rows = MOTH[Math.sin(m.t * 18) > 0 ? 0 : 1], x0 = Math.round(m.x) - 5, y0 = Math.round(m.y) - 3;
+  L.globalAlpha = .3 + .15 * Math.sin(m.t * 6); L.fillStyle = '#ffe680'; L.beginPath(); L.arc(m.x, m.y, 9, 0, Math.PI * 2); L.fill(); L.globalAlpha = 1;
+  rows.forEach((r, j) => [...r].forEach((ch, i) => { if (ch !== '.') for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) px(x0 + i + dx, y0 + j + dy, 1, 1, '#2a1804'); }));
+  rows.forEach((r, j) => [...r].forEach((ch, i) => { if (ch !== '.') px(x0 + i, y0 + j, 1, 1, ch === 'O' ? '#f3b44a' : ch === 'Y' ? '#fff2c0' : '#5a3a10'); }));
+}
+
 function resetRuntime() {
-  G = { phase: 'walk', walkT: 1.2, enemies: [], hero: { hp: stats().hp, swing: 0, hurt: 0, atkT: 0, dead: 0, stun: 0, blind: 0, dots: [] }, folT: {}, proj: [], scroll: 0, fx: [], parts: [], banner: null, t: 0, saveT: 0, hudT: 0 };
+  G = { phase: 'walk', walkT: 1.2, enemies: [], hero: { hp: stats().hp, swing: 0, hurt: 0, atkT: 0, dead: 0, stun: 0, blind: 0, dots: [] }, folT: {}, proj: [], scroll: 0, fx: [], parts: [], banner: null, t: 0, saveT: 0, hudT: 0, cd: {}, combo: 0, comboT: 0, moth: null };
   banner(`Stage ${S.stage} · ${ZONES[zoneOf(S.stage)].name}`);
 }
 function banner(text, col) { if (G) G.banner = { text, col: col || '#ece4d0', t: 0 }; }
@@ -1220,7 +1334,8 @@ function kill(e) {
   if (e.boss) shake(2.5);
   const st = stats();
   const em = e.elite ? 3 : e.minion ? .3 : 1;
-  const g = goldPer(S.stage, e.boss) * (1 + st.gold / 100) * rnd(.85, 1.15) * em * boostGold();
+  G.combo = (G.comboT > 0 ? G.combo : 0) + 1; G.comboT = 4; if (G.combo > (S.bestCombo || 0)) S.bestCombo = G.combo;
+  const g = goldPer(S.stage, e.boss) * (1 + st.gold / 100) * rnd(.85, 1.15) * em * boostGold() * comboMult();
   S.gold += g; S.kills++; if (e.elite) S.elites = (S.elites || 0) + 1;
   addXp(xpPer(S.stage, e.boss) * (1 + st.xp / 100) * em * boostXp());
   fx(e.x, GY - 8, '+' + fmt(g), '#f3b44a', 1, 4);
@@ -1275,7 +1390,7 @@ function enemyHit(e, mult) {
   if (h.hp <= 0) heroDie(e);
 }
 function heroDie(killer) {
-  const h = G.hero; h.hp = 0; h.dead = 2; h.deadT = 0; S.deaths++; G.proj = [];
+  const h = G.hero; h.hp = 0; h.dead = 2; h.deadT = 0; S.deaths++; G.proj = []; G.combo = 0; G.comboT = 0; G.rally = 0;
   // Falling to a guardian: offer to rise again on the spot for a few seconds instead of losing the stage.
   G.revive = S.wave === WAVES ? { stage: S.stage, foes: G.enemies.filter(e => !e.dead).map(e => Object.assign({}, e)), until: G.t + 6 } : null;
   if (G.revive) h.dead = 6;
@@ -1323,6 +1438,7 @@ function update(dt) {
   for (const f of G.fx) f.t += dt;
   G.fx = G.fx.filter(f => f.t < f.life);
   updateParts(dt);
+  updateAction(dt);
   if (h.dead > 0) {
     h.dead -= dt; G.moving = false;
     if (G.revive && G.t > G.revive.until) G.revive = null;
@@ -1358,6 +1474,8 @@ function update(dt) {
     e.flash = Math.max(0, e.flash - dt);
     for (const k of ['shell', 'haste', 'evade', 'reflect']) e[k] = Math.max(0, e[k] - dt);
     if (e.boss && !e.dead) { e.age = (e.age || 0) + dt; if (e.age > 18 && !e.enraged) { e.enraged = true; e.dmg *= 1.5; e.aspd *= 1.3; banner(`${e.title || e.n} is enraged!`, '#ff6050'); shake(2); } }
+    e.engaged = e.x <= target + .5 && i < 3;
+    if (e.stun > 0) { e.stun -= dt; return; }
     if (e.x <= target + .5 && i < 3) {
       if (i < 2) { e.t -= dt * (e.haste > 0 ? 2 : 1); if (e.t <= 0) { e.t = 1 / e.aspd; enemyHit(e); } }
       e.sp.forEach((sp, j) => { e.spT[j] -= dt; if (e.spT[j] <= 0 && h.dead <= 0) { e.spT[j] = sp.cd * rnd(.8, 1.2); useSpecial(e, sp); } });
@@ -1365,12 +1483,12 @@ function update(dt) {
   });
   if (h.dead > 0) return;
   const front = alive.find(e => !e.dead);
-  if (!(h.stun > 0)) h.atkT -= dt * (h.chill > 0 ? .6 : 1);
+  if (!(h.stun > 0)) h.atkT -= dt * (h.chill > 0 ? .6 : 1) * (G.rally > 0 ? 1.6 : 1);
   if (front && !(h.stun > 0) && front.x <= HX + st.range + (front.boss ? 10 : 0) && h.atkT <= 0 && h.dead <= 0) { h.atkT = 1 / st.aspd; h.swing = .16; heroAttack(front); }
   // company
   partyMembers().forEach((f, i) => {
     const K = KINDS[f.kind]; if (!K.atk) return;
-    G.folT[f.id] = (G.folT[f.id] ?? rnd(.2, 1)) - dt;
+    G.folT[f.id] = (G.folT[f.id] ?? rnd(.2, 1)) - dt * (G.rally > 0 ? 1.6 : 1);
     const tgt = G.enemies.find(e => !e.dead);
     if (G.folT[f.id] <= 0 && tgt && tgt.x <= HX + 120) {
       G.folT[f.id] = K.atk; (G.folKick = G.folKick || {})[f.id] = .15;
@@ -1419,6 +1537,7 @@ function updateParts(dt) {
     p.t += dt;
     if (p.k === 'loot') { p.x += p.vx * dt; p.vy += 240 * dt; p.y += p.vy * dt; if (p.y > GY - 6) p.y = GY - 6; continue; }
     if (p.k === 'spark' || p.k === 'slash') continue;
+    if (p.k === 'mote') { p.x += p.vx * dt; p.y += p.vy * dt; continue; }
     if (p.k === 'bit') { p.x += p.vx * dt; p.vy += 260 * dt; p.y += p.vy * dt; if (p.y > GY) { p.y = GY; p.vy *= -.3; p.vx *= .6; } continue; }
     p.x += (p.vx - (G.moving ? 16 : 0)) * dt; p.y += p.vy * dt;
   }
@@ -2028,7 +2147,7 @@ function drawFoe(e) {
   if (e.sq > 0) { sy *= .88; sx *= 1.1; }
   const fade = e.dead ? clamp(1 - e.die / .25, 0, 1) : 1;
   if (e.dead) { const k = clamp(e.die / .25, 0, 1); rot = k * 1.3; fx += k * 7; fy += k * 2; }
-  const warn = !e.dead && !moving && e.sp && e.sp.some((sp, j) => e.spT[j] < .6);
+  const warn = !e.dead && !(e.stun > 0) && e.engaged && e.sp && e.sp.some((sp, j) => e.spT[j] < WARN);
   const draw = (img, dx, dy) => { L.save(); L.translate(fx + (dx || 0), fy + (dy || 0)); if (rot) L.rotate(rot); L.scale(sx, sy); L.drawImage(img, -SW / 2, -SH, SW, SH); L.restore(); };
   if (!e.dead) { // contact shadow; flyers cast a smaller, fainter one
     const rw = Math.max(5, Math.round(SW * sx * (def.fly ? .25 : .38)));
@@ -2060,7 +2179,8 @@ function drawFoe(e) {
     px(fx - bw / 2, by, bw, 2, '#2a0f0f'); px(fx - bw / 2, by, bw * clamp(e.hp / e.max, 0, 1), 2, e.boss ? '#ff6050' : e.elite ? '#f3b44a' : '#d24a3a');
     if (e.elite) { px(fx - 2, by - 4, 1, 2, '#f3b44a'); px(fx, by - 5, 1, 3, '#f3b44a'); px(fx + 2, by - 4, 1, 2, '#f3b44a'); }
     if (e.el !== 'phys') px(fx - bw / 2 - 3, by, 2, 2, ELEM[e.el].col);
-    if (warn) { const blink = Math.sin(G.t * 22) > 0 ? '#ffe060' : '#ff8030'; px(fx + bw / 2 + 2, by - 6, 1.5, 4, blink); px(fx + bw / 2 + 2, by - 1, 1.5, 1.5, blink); }
+    if (warn) { const blink = Math.sin(G.t * 22) > 0 ? '#ffe060' : '#ff8030'; px(fx + bw / 2 + 2, by - 6, 1.5, 4, blink); px(fx + bw / 2 + 2, by - 1, 1.5, 1.5, blink); if (!S.autoSkills && (S.parries || 0) < 5) G.tapHint = { x: fx, y: by - 9 }; }
+    if (e.stun > 0) for (let q = 0; q < 3; q++) { const a = G.t * 6 + q * 2.1; px(fx + Math.cos(a) * 6, by - 4 + Math.sin(a) * 1.5, 1, 1, q ? '#ffe680' : '#ffffff'); }
   }
 }
 
@@ -2220,14 +2340,14 @@ function drawBackdrop(z, sc) {
   if (!z.day && v !== 3) for (const [sx, sy, k] of STARS) { L.globalAlpha = (.3 + .3 * Math.sin(G.t * 2 + sx)) * (z.dark > .3 ? 1 : .5); px((sx - sc * .02 + W) % W, sy, 1, 1, k ? '#cfd8e8' : '#fff4c8'); }
   L.globalAlpha = 1;
   if (z.day) { // the sun
-    const halo = L.createRadialGradient(200, 18, 4, 200, 18, 30); halo.addColorStop(0, 'rgba(255,250,220,.55)'); halo.addColorStop(1, 'rgba(255,250,220,0)');
-    L.fillStyle = halo; L.fillRect(160, 0, 80, 50); L.fillStyle = '#fff6c8'; L.beginPath(); L.arc(200, 18, 7, 0, Math.PI * 2); L.fill();
+    const halo = L.createRadialGradient(W - 40, 18, 4, W - 40, 18, 30); halo.addColorStop(0, 'rgba(255,250,220,.55)'); halo.addColorStop(1, 'rgba(255,250,220,0)');
+    L.fillStyle = halo; L.fillRect(W - 80, 0, 80, 50); L.fillStyle = '#fff6c8'; L.beginPath(); L.arc(W - 40, 18, 7, 0, Math.PI * 2); L.fill();
   }
   const moon = v === 4 ? '#ff6050' : v === 3 ? '#ffd090' : 'rgba(236,228,200,.85)';
   if (!z.day) {
-  { const halo = L.createRadialGradient(196, 16, 4, 196, 16, 22); halo.addColorStop(0, v === 4 ? 'rgba(255,90,70,.28)' : 'rgba(255,240,200,.16)'); halo.addColorStop(1, 'rgba(255,240,200,0)'); L.fillStyle = halo; L.fillRect(170, 0, 52, 40); }
-  L.fillStyle = moon; L.beginPath(); L.arc(196, 16, v === 4 ? 8 : 6, 0, Math.PI * 2); L.fill();
-  if (v !== 4) { L.fillStyle = z.sky[0]; L.beginPath(); L.arc(199, 14, 5, 0, Math.PI * 2); L.fill(); }
+  { const halo = L.createRadialGradient(W - 44, 16, 4, W - 44, 16, 22); halo.addColorStop(0, v === 4 ? 'rgba(255,90,70,.28)' : 'rgba(255,240,200,.16)'); halo.addColorStop(1, 'rgba(255,240,200,0)'); L.fillStyle = halo; L.fillRect(W - 70, 0, 52, 40); }
+  L.fillStyle = moon; L.beginPath(); L.arc(W - 44, 16, v === 4 ? 8 : 6, 0, Math.PI * 2); L.fill();
+  if (v !== 4) { L.fillStyle = z.sky[0]; L.beginPath(); L.arc(W - 41, 14, 5, 0, Math.PI * 2); L.fill(); }
   }
   // clouds drift slowly, faster than the hills
   const cloudCol = z.day ? (v === 2 ? '#e4e8ee' : '#ffffff') : mix(z.sky[1], '#ffffff', v === 1 ? .35 : .18);
@@ -2354,8 +2474,10 @@ function draw() {
   L.globalCompositeOperation = 'lighter';
   const wg = L.createRadialGradient(lx, ly, 0, lx, ly, 30); const gc = LANTERNS[currentLook('lantern')].glow; wg.addColorStop(0, `rgba(${gc},.24)`); wg.addColorStop(1, `rgba(${gc},0)`);
   L.fillStyle = wg; L.fillRect(0, 0, W, H); L.globalCompositeOperation = 'source-over';
+  drawMoth();
+  if (G.flare > 0) { L.globalAlpha = G.flare * 1.6; L.fillStyle = '#ffe9a8'; L.fillRect(0, 0, W, H); L.globalAlpha = 1; }
   const boss = G.enemies.find(e => e.boss && !e.dead);
-  if (boss) { px(70, 14, 100, 3, '#2a0f0f'); px(70, 14, 100 * boss.hp / boss.max, 3, '#ff6050'); }
+  if (boss) { px(W / 2 - 50, 14, 100, 3, '#2a0f0f'); px(W / 2 - 50, 14, 100 * boss.hp / boss.max, 3, '#ff6050'); }
 
   D.imageSmoothingEnabled = false;
   let sx = 0, sy = 0;
@@ -2371,7 +2493,21 @@ function draw() {
     D.lineWidth = k * 1.1; D.strokeStyle = '#000'; D.strokeText(f.txt, f.x * k, y); D.fillStyle = f.col; D.fillText(f.txt, f.x * k, y);
   }
   D.globalAlpha = 1;
-  if (boss) { D.font = `500 ${4.2 * k}px "Pixelify Sans", monospace`; D.fillStyle = '#ffd0c8'; D.fillText(boss.title || boss.n, 120 * k, 12 * k); }
+  if (G.combo >= 3) {
+    const c = Math.min(50, G.combo), pulse = 1 + Math.max(0, G.comboT - 3.7) * 1.2;
+    D.textAlign = 'left'; D.font = `700 ${6 * k * pulse}px "Pixelify Sans", monospace`; D.lineWidth = k * 1.2; D.strokeStyle = '#000';
+    const txt = `${G.combo} COMBO`, col = c >= 30 ? '#ff8a3d' : c >= 10 ? '#f3b44a' : '#ece4d0';
+    D.strokeText(txt, 6 * k, 22 * k); D.fillStyle = col; D.fillText(txt, 6 * k, 22 * k);
+    D.font = `500 ${4 * k}px "Pixelify Sans", monospace`; D.strokeText(`+${c}% gold`, 6 * k, 28 * k); D.fillStyle = '#f3b44a'; D.fillText(`+${c}% gold`, 6 * k, 28 * k);
+    D.fillStyle = 'rgba(0,0,0,.5)'; D.fillRect(6 * k, 30 * k, 30 * k, k); D.fillStyle = col; D.fillRect(6 * k, 30 * k, 30 * k * G.comboT / 4, k);
+    D.textAlign = 'center';
+  }
+  if (G.tapHint) {
+    D.font = `700 ${5 * k}px "Pixelify Sans", monospace`; D.lineWidth = k * 1.2; D.strokeStyle = '#000';
+    const y = (G.tapHint.y - Math.abs(Math.sin(G.t * 8)) * 2) * k;
+    D.strokeText('TAP!', G.tapHint.x * k, y); D.fillStyle = '#8fd8ff'; D.fillText('TAP!', G.tapHint.x * k, y); G.tapHint = null;
+  }
+  if (boss) { D.font = `500 ${4.2 * k}px "Pixelify Sans", monospace`; D.fillStyle = '#ffd0c8'; D.fillText(boss.title || boss.n, W / 2 * k, 12 * k); }
   if (G.banner) {
     const b = G.banner, a = b.t < .25 ? b.t / .25 : b.t > 1.8 ? 1 - (b.t - 1.8) / .4 : 1;
     D.globalAlpha = clamp(a, 0, 1); D.font = `700 ${7 * k}px "Pixelify Sans", monospace`;
@@ -2402,7 +2538,7 @@ function updateHud() {
   hud.lvl.textContent = `Lv ${S.level}`;
   const xpPct = 100 * S.xp / need(S.level);
   hud.xp.style.width = xpPct.toFixed(1) + '%';
-  hud.xpt.textContent = `XP ${fmt(Math.floor(S.xp))} / ${fmt(need(S.level))} · ${Math.floor(xpPct)}% to Lv ${S.level + 1}`;
+  hud.xpt.textContent = `XP ${fmt(Math.floor(S.xp))}/${fmt(need(S.level))} · ${Math.floor(xpPct)}%`;
   hud.gold.textContent = fmt(Math.floor(S.gold));
   hud.hp.style.width = (100 * clamp(G.hero.hp / st.hp, 0, 1)).toFixed(1) + '%';
   hud.hpt.textContent = `${fmt(Math.max(0, G.hero.hp))}/${fmt(st.hp)}`;
@@ -2421,6 +2557,7 @@ function markTabs() {
   set('tab-company', S.roster.some(f => f.isNew));
   set('tab-talents', TALENTS.some(t => !S.talents[t.id] && talAvail(t) && S.gold >= talCost()));
   set('tab-feats', FEATS.some(f => !S.feats[f.id] && featDone(f)));
+  set('tab-map', TALENTS.some(t => !S.talents[t.id] && talAvail(t) && S.gold >= talCost()) || FEATS.some(f => !S.feats[f.id] && featDone(f)));
   set('tab-shop', (S.maxStage >= 2 && !S.shopNoted) || (S.maxStage >= 2 && dailyReady()));
 }
 
@@ -2648,13 +2785,14 @@ function renderJournal() {
     <div class="card"><h2>Settings</h2>
       <label for="autoSell">Auto-sell drops (upgrades are always kept)</label><select id="autoSell">${opts}</select>
       <h2>Idle mode</h2><p class="sub">The hero always walks and fights by himself. Everything else is yours to do: spend points, unlock waystones, equip gear, pick your company, claim feats and use the Forge. Turn on Idle mode to let the game do all of it for you.</p>
-      <label class="chk"><input type="checkbox" id="idleAll" ${['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge'].every(k => S[k]) ? 'checked' : ''}> <b>Idle mode: do everything automatically</b></label>
+      <label class="chk"><input type="checkbox" id="idleAll" ${['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge', 'autoSkills'].every(k => S[k]) ? 'checked' : ''}> <b>Idle mode: do everything automatically</b></label>
       <p class="sub">Or choose just some of them:</p>
       <label class="chk"><input type="checkbox" id="autoSpend" ${S.autoSpend ? 'checked' : ''}> Spend attribute points</label>
       <label class="chk"><input type="checkbox" id="autoEquip" ${S.autoEquip ? 'checked' : ''}> Equip better gear, and when the bag fills sell what you don't need (keeps upgrades and one best Mythic-or-better spare per slot)</label>
       <label class="chk"><input type="checkbox" id="autoStones" ${S.autoStones ? 'checked' : ''}> Unlock waystones</label>
       <label class="chk"><input type="checkbox" id="autoCompany" ${S.autoCompany ? 'checked' : ''}> Pick the strongest company and train them</label>
       <label class="chk"><input type="checkbox" id="autoForge" ${S.autoForge ? 'checked' : ''}> Use the Forge: salvage Epic and better junk into materials, and temper worn gear</label>
+      <label class="chk"><input type="checkbox" id="autoSkills" ${S.autoSkills ? 'checked' : ''}> Use skills in fights (Idle play never parries or catches moths)</label>
       <label class="chk"><input type="checkbox" id="autoClaim" ${S.autoClaim ? 'checked' : ''}> Claim feats</label>
       <h2>Records</h2><dl class="stats">
         <dt>Enemies defeated</dt><dd>${fmt(S.kills)}</dd><dt>Times fallen</dt><dd>${fmt(S.deaths)}</dd>
@@ -2811,10 +2949,20 @@ function nudge(kind) {
 }
 function newVisit() { offeredThisVisit = false; }
 function offerOnVisit() { for (const k of ['stash', 'slot', 'wall']) if (nudge(k)) break; }
+const TAB_GROUP = { talents: 'map', feats: 'map' };
+function roadSeg() {
+  const seg = [['map', 'Map'], ['talents', 'Waystones'], ['feats', 'Feats']].map(([t, n]) => {
+    const dot = t === 'talents' ? TALENTS.some(x => !S.talents[x.id] && talAvail(x) && S.gold >= talCost()) : t === 'feats' ? FEATS.some(f => !S.feats[f.id] && featDone(f)) : false;
+    return `<button class="btn small ${S.tab === t ? 'primary' : ''}" data-act="seg" data-t="${t}">${n}${dot ? ' •' : ''}</button>`;
+  }).join('');
+  return `<div class="row seg" role="tablist" aria-label="Road">${seg}</div>`;
+}
 function renderPanel() {
   dirtyPanel = false;
-  document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === S.tab)));
+  document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === (TAB_GROUP[S.tab] || S.tab))));
   ({ hero: renderHero, bag: renderBag, forge: renderForge, company: renderCompany, talents: renderTalents, map: renderMap, feats: renderFeats, journal: renderJournal, shop: renderShop }[S.tab] || renderHero)();
+  if ((TAB_GROUP[S.tab] || S.tab) === 'map') panel.insertAdjacentHTML('afterbegin', roadSeg());
+  $('#logBtn').classList.toggle('on', S.tab === 'journal');
   markTabs();
 }
 
@@ -2828,13 +2976,14 @@ panel.addEventListener('change', e => {
   if (e.target.id === 'reforgePick') { forgeSel = e.target.value || null; renderPanel(); return; }
   if (e.target.id.startsWith('gfx-')) { S.gfx[e.target.id.slice(4)] = e.target.checked; document.documentElement.classList.toggle('big', !!S.gfx.big); }
   if (e.target.id === 'testShop') { S.testShop = e.target.checked; log(S.testShop ? 'Shop test mode on: purchases are fake.' : 'Shop test mode off.'); }
-  if (e.target.id === 'idleAll') { for (const k of ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge']) S[k] = e.target.checked; log(e.target.checked ? 'Idle mode on: the game spends, equips and upgrades for you.' : 'Idle mode off: you choose every upgrade.'); autoPlay(); updateHud(); renderPanel(); }
-  if (['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge'].includes(e.target.id)) { S[e.target.id] = e.target.checked; autoPlay(); updateHud(); renderPanel(); }
+  if (e.target.id === 'idleAll') { for (const k of ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge', 'autoSkills']) S[k] = e.target.checked; log(e.target.checked ? 'Idle mode on: the game spends, equips and upgrades for you.' : 'Idle mode off: you choose every upgrade.'); autoPlay(); updateHud(); renderPanel(); }
+  if (['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge', 'autoSkills'].includes(e.target.id)) { S[e.target.id] = e.target.checked; autoPlay(); updateHud(); renderPanel(); }
   save();
 });
 panel.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act, id = b.dataset.id;
+  if (a === 'seg') { S.tab = b.dataset.t; renderPanel(); if (tipQueue[0] && TIPS[tipQueue[0]].tab === S.tab) doneTip(tipQueue[0]); return; }
   if (a !== 'dismiss2' && a !== 'dismiss1') confirmDismiss = null;
   if (a !== 'sellall1') confirmSellAll = false;
   if (a === 'sellall1') confirmSellAll = true;
@@ -3033,7 +3182,7 @@ window.addEventListener('resize', sizeCanvas);
 function frame(now) {
   let dt = Math.min(.1, (now - last) / 1000); last = now;
   if (G.stop > 0) { G.stop -= dt; dt *= .15; }
-  update(dt);
+  update(dt); updateSkillBar();
   G.drawT = (G.drawT || 0) + dt;
   if (!S.gfx.fps30 || G.drawT >= 1 / 31) { G.drawT = 0; draw(); }
   G.hudT += dt; if (G.hudT > .2) { G.hudT = 0; updateHud(); if (dirtyPanel && $('#overlay').hidden) renderPanel(); }
@@ -3113,8 +3262,40 @@ function drawDoll(canvas) {
 }
 function popWrap(html) { return `<div class="popwrap" data-act="closepop"><div class="pop">${html}<button class="btn small closepop" data-act="closepop">Close</button></div></div>`; }
 
+const SKILL_ICONS = {
+  burst: ['.....o......', '.o...o...o..', '..o..o..o...', '...ooooo....', '...oOOOo....', 'oooOOOOOooo.', '...oOOOo....', '...ooooo....', '..o..o..o...', '.o...o...o..', '.....o......', '............'],
+  wind: ['............', '..oo...oo...', '.oOOo.oOOo..', 'oOOOOoOOOOo.', 'oOOOOOOOOOo.', 'oOOOOOOOOOo.', '.oOOOOOOOo..', '..oOOOOOo...', '...oOOOo....', '....oOo.....', '.....o......', '............'],
+  rally: ['............', '.o..........', '.oOOOOOOo...', '.oOOOOOOOo..', '.oOOOOOOo...', '.oOOOOOo....', '.ooooooo....', '.o..........', '.o..........', '.o..........', 'ooo.........', '............'],
+};
+function buildSkills() {
+  { const rows = TAB_ICONS.journal; $('#logBtn').innerHTML = `<img alt="" src="${pixelCanvas(12, 12, x => rows.forEach((row, j) => [...row].forEach((ch, i) => { if (ch === '.') return; x.fillStyle = ch === '#' ? '#0b0d10' : '#f3d27a'; x.fillRect(i, j, 1, 1); })))}">`; }
+  const box = $('#skills'); if (!box) return;
+  box.innerHTML = SKILLS.map(sk => {
+    const rows = SKILL_ICONS[sk.id];
+    const src = pixelCanvas(12, 12, x => rows.forEach((row, j) => [...row].forEach((ch, i) => { if (ch === '.') return; x.fillStyle = ch === 'o' ? shade(sk.col, -.55) : sk.col; x.fillRect(i, j, 1, 1); })));
+    return `<button class="sk" type="button" data-sk="${sk.id}" aria-label="${sk.n}: ${sk.d}" title="${sk.n}: ${sk.d}"><img alt="" src="${src}"><span class="cdt"></span><span class="lock">Stage ${sk.at}</span></button>`;
+  }).join('');
+  box.addEventListener('click', e => { const b = e.target.closest('.sk'); if (!b) return; e.stopPropagation(); if (!useSkill(b.dataset.sk)) b.classList.add('no'), setTimeout(() => b.classList.remove('no'), 200); });
+}
+function updateSkillBar() {
+  for (const b of document.querySelectorAll('#skills .sk')) {
+    const sk = SKILLS.find(x => x.id === b.dataset.sk), cd = G.cd[sk.id] || 0, open = skillOpen(sk);
+    b.classList.toggle('locked', !open); b.disabled = !open;
+    b.style.setProperty('--p', open ? (cd / sk.cd * 100).toFixed(1) + '%' : '100%');
+    b.classList.toggle('ready', open && cd <= 0);
+    const t = b.querySelector('.cdt'), txt = open && cd > 0 ? String(Math.ceil(cd)) : '';
+    if (t.textContent !== txt) t.textContent = txt;
+  }
+  $('#skills').classList.toggle('auto', !!S.autoSkills);
+}
+cv.addEventListener('pointerdown', e => {
+  const r = cv.getBoundingClientRect();
+  roadTap((e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H);
+});
+$('#logBtn').addEventListener('click', () => { S.tab = S.tab === 'journal' ? 'hero' : 'journal'; selBag = selEq = null; renderPanel(); });
+
 function start(data) {
-  buildLayout();
+  buildLayout(); buildSkills();
   const saved = (data && data.S) ? migrate(data.S) : load();
   if (saved) S = saved; else newGame();
   dirtyStats = true;
