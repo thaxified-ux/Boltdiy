@@ -235,6 +235,67 @@ body.strip .top,body.strip .tabs,body.strip .panel{display:none}
 body.strip .wrap{max-width:1400px}
 body.strip .exitstrip{display:block}
 @media (prefers-reduced-motion:reduce){.node.owned{box-shadow:none}}
+
+/* ===== Phone game layout =====
+   One screen: the scene on top, one wood console below it that holds the HUD, the icon bar and the menu,
+   and the menu scrolls inside the console. Frames, planks and icons are pixel images drawn at start. */
+:root{--wood:#2a1f17;--wood-deep:#120d0a;--wood-hi:#3a2b1f;--ink:#0b0d10;--plate:#f3d9a0}
+html,body{height:100%;overflow:hidden;background:#07090b}
+.wrap{max-width:480px;height:100%;padding:0;padding-top:env(safe-area-inset-top,0px);gap:0;margin:0 auto;display:flex;flex-direction:column}
+.top{display:none}
+.road{flex:none;border:0;border-radius:0;box-shadow:none}
+.console{flex:1;min-height:0;display:flex;flex-direction:column;border:8px solid transparent;border-image:var(--frame) 4 / 8px repeat;background:var(--wood) var(--planks);background-size:32px 32px;image-rendering:pixelated;margin-top:-2px;padding-bottom:env(safe-area-inset-bottom,0px)}
+.console > *{flex:none}
+.console .hud{border:0;border-radius:0;background:transparent;padding:6px 8px 4px;gap:6px 10px}
+.console .coach,.console .nudge{margin:2px 6px;border-radius:0;border:2px solid var(--lamp);background:#1b140f}
+.console .tabs{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:2px;padding:4px 6px;border:0;border-top:2px solid #000;border-bottom:2px solid #000;box-shadow:inset 0 2px 0 var(--wood-hi);overflow:visible;background:rgba(0,0,0,.25)}
+.console .panel{flex:1;min-height:0;overflow:auto;padding:8px 6px 16px;gap:8px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0 3px;border:2px solid #000;border-radius:0;background:#3a2a1d;box-shadow:inset 2px 2px 0 #5a4230,inset -2px -2px 0 #22180f;font:500 .52rem/1 var(--display);color:#cbbd9f;min-width:0;overflow:hidden}
+.tab .ti{width:24px;height:24px;image-rendering:pixelated}
+.tab .tl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.tab[aria-selected="true"]{background:#d89a2e;color:#2a1c06;box-shadow:inset 2px 2px 0 #ffd27a,inset -2px -2px 0 #9a6a1a;border-color:#000}
+.tab .dot{top:2px;right:2px;width:7px;height:7px;border-radius:0;box-shadow:0 0 0 2px #000}
+/* menu content: recessed boxes on the wood */
+.panel .card,.item,.ware,.fol,.feat,.zone,.path,.tiles div,.hero-offer,.hint{border-radius:0;background:rgba(9,6,4,.62);border:2px solid #000;box-shadow:inset 2px 2px 0 #050302,inset -2px -2px 0 var(--wood-hi)}
+.item,.ware,.fol,.feat,.zone{border-color:var(--rc,#000)}
+.hero-offer{border-color:var(--lamp)}
+.ware.owned,.feat.done{border-color:var(--good)}
+h2{color:var(--plate);text-shadow:0 2px 0 #000}
+.sub,.hint{color:#bfb197}
+.slot,.cell{border-radius:0;background:var(--wood-deep);border:2px solid var(--rc,#000);box-shadow:inset 3px 3px 0 #050302,inset -2px -2px 0 var(--wood-hi)}
+.cell.empty,.slot.empty{border:2px solid #000;opacity:.9}
+.slot.sel,.cell.sel{outline:2px solid var(--lamp);outline-offset:1px}
+.btn,.plus,.pill,select,textarea,.tagpill{border-radius:0!important}
+.btn{background:#4a3524;color:var(--paper);border:2px solid var(--ink);box-shadow:inset 2px 2px 0 #6e5036,inset -2px -2px 0 #2a1d13;font:500 .86rem/1.1 var(--display);letter-spacing:.03em}
+.btn:hover{border-color:var(--ink);filter:brightness(1.1)}
+.btn:active:not(:disabled){transform:translateY(2px);box-shadow:inset 2px 2px 0 #2a1d13}
+.btn.primary{background:#d89a2e;color:#2a1c06;box-shadow:inset 2px 2px 0 #ffd27a,inset -2px -2px 0 #9a6a1a}
+.btn:disabled{background:#2e241b;color:#7d7262;box-shadow:none}
+.plus{background:#4a3524;border:2px solid var(--ink);box-shadow:inset 2px 2px 0 #6e5036,inset -2px -2px 0 #2a1d13}
+.pill{background:var(--wood-deep);border:2px solid #000;font-family:var(--display)}
+.pill.pts{background:#d89a2e;color:#2a1c06}
+select,textarea{background:var(--wood-deep)!important;border:2px solid #000!important}
+.xpbar,.hpbar,.prog{border:2px solid #000;border-radius:0;background:#0b0705}
+.xpbar i,.hpbar i,.prog i{background-image:repeating-linear-gradient(90deg,transparent 0 6px,rgba(0,0,0,.3) 6px 8px),linear-gradient(#ffffff40,#ffffff40 2px,transparent 2px)}
+.stats{background:var(--wood-deep);padding:6px 8px;box-shadow:inset 2px 2px 0 #050302}
+/* the gear doll: slots around the hero */
+.doll{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr);gap:6px;align-items:stretch}
+.dcol{display:grid;grid-template-rows:repeat(5,minmax(0,1fr));gap:5px}
+.dcol .slot{flex-direction:row;justify-content:flex-start;gap:6px;padding:4px 5px;min-height:46px}
+.dcol .slot img{width:30px;height:30px}
+.dcol .slot .lab{font-size:.6rem}
+.dcol .slot .gs{font-size:.66rem}
+.dcol .slot span.t{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}
+.dmid{position:relative;background:radial-gradient(circle at 50% 60%,rgba(243,180,74,.22),transparent 65%),var(--wood-deep);border:2px solid #000;box-shadow:inset 3px 3px 0 #050302;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px}
+.dmid canvas{width:100%;max-width:150px;height:auto;image-rendering:pixelated}
+.dmid .dlv{font:700 .9rem/1 var(--display);color:var(--plate);text-shadow:0 2px 0 #000}
+.dmid .dgs{font:500 .72rem/1 var(--display);color:var(--lamp)}
+/* item popups float over the menu */
+.popwrap{position:fixed;inset:0;z-index:15;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding:max(60px,12vh) 12px 12px}
+.pop{width:100%;max-width:420px;max-height:80vh;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.pop .item{background:#120d0a;box-shadow:0 0 0 2px #000,0 8px 24px rgba(0,0,0,.6)}
+.pop .closepop{align-self:flex-end}
+body.strip .console{display:none}
 </style>
 
 <div class="wrap">
@@ -262,7 +323,7 @@ body.strip .exitstrip{display:block}
   </section>
 
   <div class="nudge" id="nudge" hidden><span id="nudgeText"></span><div class="row"><button class="btn small primary" id="nudgeGo" type="button">See in Shop</button><button class="btn small" id="nudgeNo" type="button">Not now</button></div></div>
-  <div class="coach" id="coach" hidden><span class="hand" aria-hidden="true"></span><span id="coachText"></span><button class="btn small" id="coachOk" type="button">Got it</button></div>
+  <div class="coach" id="coach" hidden><span class="hand" aria-hidden="true"></span><span id="coachText"></span><button class="btn small primary" id="coachOk" type="button">Show me</button></div>
   <nav class="tabs" role="tablist" aria-label="Menus">
     <button class="tab" role="tab" data-tab="hero" id="tab-hero">Hero</button>
     <button class="tab" role="tab" data-tab="bag" id="tab-bag">Bag</button>
@@ -282,7 +343,7 @@ body.strip .exitstrip{display:block}
 (() => {
 'use strict';
 const $ = s => document.querySelector(s);
-const W = 240, H = 90, GY = 72, HX = 78, WAVES = 15, BAG_MAX = 30, ROSTER_MAX = 12;
+const W = 240, H = 150, GY = 122, HX = 78, WAVES = 15, BAG_MAX = 30, ROSTER_MAX = 12;
 const SAVE_KEY = 'lantern-road-v1';
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pick = a => a[Math.floor(Math.random() * a.length)];
@@ -380,7 +441,8 @@ const ZONES = [
 const WEATHER_NAME = { spores: 'Spore drift', rain: 'Rain', ash: 'Ashfall', sand: 'Sandstorm', stars: 'Starfall', snow: 'Blizzard' };
 /* Every stage inside a zone has its own look: clear, misty, weather, dusk, then a blood moon before the guardian stage ends the zone. */
 const variantOf = stage => (stage - 1) % 5;
-const variantName = (stage, z) => ['Clear night', 'Misty', WEATHER_NAME[z.weather], 'Dusk', 'Blood moon'][variantOf(stage)];
+const variantName = (stage, z) => ['Daylight', 'Misty morning', WEATHER_NAME[z.weather], 'Dusk', 'Blood moon'][variantOf(stage)];
+const isDay = stage => variantOf(stage) <= 2;
 /* Foes grow fiercer deeper into a zone: a darker coat and a title. */
 const TIER_TITLE = ['', 'Feral ', 'Elder ', 'Dread ', 'Dread '];
 const zoneOf = s => Math.min(ZONES.length - 1, Math.floor((s - 1) / 5));
@@ -1190,14 +1252,19 @@ function nextWave() {
   if (Math.random() < (wasBoss ? .35 : .02)) recruit();
   S.wave++;
   if (S.wave > WAVES) {
-    const z0 = zoneOf(S.stage);
+    const z0 = zoneOf(S.stage), cleared = S.stage, first = cleared >= S.maxStage;
     S.wave = 1;
     {
+      const bonus = first ? Math.round(goldPer(cleared) * 15 * boostGold()) : 0;
+      S.gold += bonus;
+      toast(`Stage ${cleared} complete`, bonus ? `All ${WAVES} waves cleared · +${fmt(bonus)} gold` : `All ${WAVES} waves cleared`);
+      log(`Stage ${cleared} complete: all ${WAVES} waves cleared${bonus ? `, +${fmt(bonus)} gold for the first clear` : ''}.`, '#f3b44a');
+      if (S.gfx.weather) burst(HX, GY - 20, ['#f3b44a', '#fff2c0', '#7fd38b'], 18, 80);
       S.stage++;
       if (S.stage > S.maxStage) { S.maxStage = S.stage; log(`New record: reached Stage ${S.stage}.`); dirtyStats = true; if (S.maxStage === 2 && !S.shopNoted) log('The Shop is open: lantern colors, outfits and a supporter pack. Nothing in it is needed to play.', '#97a39d'); }
       const z1 = zoneOf(S.stage);
       if (z1 !== z0) { banner(`New road: ${ZONES[z1].name}`, '#f3b44a'); log(`Entered ${ZONES[z1].name}.`, '#f3b44a'); toast('New zone', ZONES[z1].name); tip('map'); }
-      else banner(`Stage ${S.stage}`);
+      else banner(`Stage ${cleared} complete! On to Stage ${S.stage}`, '#f3b44a');
       if (S.tab === 'map') dirtyPanel = true;
     }
     markTabs();
@@ -1724,6 +1791,7 @@ const SPR = {
     'DDDDDDDDDDDDDDDD'],
   island: ['..l.l...l.....', '.HHHHHHHHHH...', 'HLLLLLLLLLLH..', '.LLLLLLLLLLD..', '..LLLLLLLLD...', '...DLLLLLD....', '....DLLLD.....', '.....DLD......', '......D.......'],
   trim: ['yyyyyy'],
+  cloudBig: ['........cccc............', '.....cccCCCCcc..........', '...ccCCCCCCCCCcc..cc....', '..cCCCCCCCCCCCCCccCCcc..', '.cCCCCCCCCCCCCCCCCCCCCc.', 'cCCCCCCCCCCCCCCCCCCCCCCc', 'cCCCCCCCCCCCCCCCCCCCCCCc', '.cccccccccccccccccccccc.'],
   cloudA: ['....cccc......', '..ccCCCCcc....', '.cCCCCCCCCcc..', 'cCCCCCCCCCCCcc', '.cccccccccccc.'],
   cloudB: ['.....ccc...', '..cccCCCcc.', 'ccCCCCCCCCc', '.ccccccccc.'],
   tree: [
@@ -2002,6 +2070,7 @@ function skyCanvas(z, v) {
   });
 }
 const SKY_W = 480;
+const SKY_OFF = Math.round((GY - 72) * .75); // distant layers sit lower in the taller scene
 function skylineHeight(shape, i) {
   const t = i / SKY_W * Math.PI * 2, hs = hash(Math.floor(i / 6) + 3);
   switch (shape) {
@@ -2020,11 +2089,11 @@ function skylineCanvas(z) {
     const back = mix(z.far, z.sky[1], .5), edge = shade(z.far, .18);
     for (let i = 0; i < w; i++) {
       // distant layer: the same outline, shifted and softened
-      const hb = skylineHeight(z.shape, (i + 137) % w) - 6;
+      const hb = skylineHeight(z.shape, (i + 137) % w) - 6 + SKY_OFF;
       if (hb < h) { x.fillStyle = back; x.fillRect(i, Math.round(hb), 1, h - Math.round(hb)); }
     }
     for (let i = 0; i < w; i++) {
-      const hf = Math.round(skylineHeight(z.shape, i));
+      const hf = Math.round(skylineHeight(z.shape, i)) + SKY_OFF;
       if (hf >= h) continue;
       x.fillStyle = z.far; x.fillRect(i, hf, 1, h - hf);
       x.fillStyle = edge; x.fillRect(i, hf, 1, 1);
@@ -2032,7 +2101,7 @@ function skylineCanvas(z) {
       if (z.shape === 'castle' && (i % 120 === 6) ) { x.fillStyle = '#f3b44a'; x.fillRect(i, hf + 6, 2, 3); }
     }
     if (z.shape === 'islands') for (let k = 0; k < 7; k++) {
-      const cx = hash(k + 40) * w, cy = 22 + hash(k + 50) * 26, rw = 10 + hash(k + 60) * 18;
+      const cx = hash(k + 40) * w, cy = 22 + SKY_OFF * .6 + hash(k + 50) * 26, rw = 10 + hash(k + 60) * 18;
       for (let dy = 0; dy < rw / 2; dy++) { const ww = Math.round(rw * (1 - dy / (rw / 2))); x.fillStyle = dy ? z.far : edge; x.fillRect(Math.round(cx - ww / 2), Math.round(cy + dy), ww, 1); }
     }
   });
@@ -2062,22 +2131,39 @@ function nearGrassCanvas(z) {
   });
 }
 function darkLevel(z) { return clamp(z.dark + [0, .05, .08, -.1, .14][variantOf(S.stage)], 0, .8); }
+/* Daylight versions of each zone: the first three stages of a zone are bright, then dusk, then night. */
+const dayCache = {};
+function lookZ(z) {
+  if (!isDay(S.stage)) return z;
+  if (dayCache[z.name]) return dayCache[z.name];
+  const top = mix(z.sky[0], '#3a8ee0', .78), bot = mix(z.sky[1], '#cdeefa', .7);
+  return (dayCache[z.name] = Object.assign({}, z, { name: z.name + '~day', day: true, sky: [top, bot], far: mix(shade(z.far, .3), bot, .3),
+    mid: shade(z.mid, .32), ground: shade(z.ground, .14), top: shade(z.top, .18), dark: 0 }));
+}
 function drawBackdrop(z, sc) {
   const v = variantOf(S.stage);
   L.drawImage(skyCanvas(z, v), 0, 0);
-  if (v !== 3) for (const [sx, sy, k] of STARS) { L.globalAlpha = (.3 + .3 * Math.sin(G.t * 2 + sx)) * (z.dark > .3 ? 1 : .5); px((sx - sc * .02 + W) % W, sy, 1, 1, k ? '#cfd8e8' : '#fff4c8'); }
+  if (!z.day && v !== 3) for (const [sx, sy, k] of STARS) { L.globalAlpha = (.3 + .3 * Math.sin(G.t * 2 + sx)) * (z.dark > .3 ? 1 : .5); px((sx - sc * .02 + W) % W, sy, 1, 1, k ? '#cfd8e8' : '#fff4c8'); }
   L.globalAlpha = 1;
+  if (z.day) { // the sun
+    const halo = L.createRadialGradient(200, 18, 4, 200, 18, 30); halo.addColorStop(0, 'rgba(255,250,220,.55)'); halo.addColorStop(1, 'rgba(255,250,220,0)');
+    L.fillStyle = halo; L.fillRect(160, 0, 80, 50); L.fillStyle = '#fff6c8'; L.beginPath(); L.arc(200, 18, 7, 0, Math.PI * 2); L.fill();
+  }
   const moon = v === 4 ? '#ff6050' : v === 3 ? '#ffd090' : 'rgba(236,228,200,.85)';
+  if (!z.day) {
   { const halo = L.createRadialGradient(196, 16, 4, 196, 16, 22); halo.addColorStop(0, v === 4 ? 'rgba(255,90,70,.28)' : 'rgba(255,240,200,.16)'); halo.addColorStop(1, 'rgba(255,240,200,0)'); L.fillStyle = halo; L.fillRect(170, 0, 52, 40); }
   L.fillStyle = moon; L.beginPath(); L.arc(196, 16, v === 4 ? 8 : 6, 0, Math.PI * 2); L.fill();
   if (v !== 4) { L.fillStyle = z.sky[0]; L.beginPath(); L.arc(199, 14, 5, 0, Math.PI * 2); L.fill(); }
+  }
   // clouds drift slowly, faster than the hills
-  const cloudCol = mix(z.sky[1], '#ffffff', v === 1 ? .35 : .18);
-  const cp = { c: shade(cloudCol, -.15), C: cloudCol };
-  for (let k = 0; k < 5; k++) {
-    const spr = getSpr(k % 2 ? 'cloudA' : 'cloudB', 0, 'cloud:' + z.name + v, cp, false, true);
+  const cloudCol = z.day ? (v === 2 ? '#e4e8ee' : '#ffffff') : mix(z.sky[1], '#ffffff', v === 1 ? .35 : .18);
+  const cp = { c: shade(cloudCol, z.day ? -.1 : -.15), C: cloudCol };
+  const nClouds = z.day ? 8 : 5;
+  for (let k = 0; k < nClouds; k++) {
+    const big = z.day && k % 3 === 0;
+    const spr = getSpr(big ? 'cloudBig' : k % 2 ? 'cloudA' : 'cloudB', 0, 'cloud:' + z.name + v, cp, false, true);
     const xx = ((hash(k + 70) * SKY_W - sc * .08 - G.t * (2 + k)) % SKY_W + SKY_W) % SKY_W - 30;
-    L.globalAlpha = .55; blit(spr, Math.round(xx), Math.round(6 + hash(k + 80) * 22)); L.globalAlpha = 1;
+    L.globalAlpha = z.day ? .92 : .55; blit(spr, Math.round(xx), Math.round(4 + hash(k + 80) * (z.day ? 40 : 22))); L.globalAlpha = 1;
   }
   if (z.shape !== 'islands') { const rg = rangesCanvas(z), ro = Math.round(sc * .06) % SKY_W; L.drawImage(rg, -ro, 0); L.drawImage(rg, SKY_W - ro, 0); }
   const far = skylineCanvas(z), fo = Math.round(sc * .15) % SKY_W;
@@ -2108,7 +2194,7 @@ function rangesCanvas(z) {
     const col = mix(z.far, z.sky[1], .72), edge = mix(col, '#ffffff', .12);
     for (let i = 0; i < w; i++) {
       const t = i / w * Math.PI * 2;
-      const y = Math.round(34 + Math.abs(Math.sin(t * 3)) * -10 + Math.sin(t * 7) * 3 + Math.abs(Math.sin(t * 13)) * 2);
+      const y = Math.round(34 + SKY_OFF + Math.abs(Math.sin(t * 3)) * -10 + Math.sin(t * 7) * 3 + Math.abs(Math.sin(t * 13)) * 2);
       x.fillStyle = col; x.fillRect(i, y, 1, h - y); x.fillStyle = edge; x.fillRect(i, y, 1, 1);
     }
   });
@@ -2158,7 +2244,8 @@ window.lanternRoadArt = artSheet;
 
 function draw() {
   const z = ZONES[zoneOf(S.stage)], sc = G.scroll;
-  drawBackdrop(z, sc);
+  const zz = lookZ(z);
+  drawBackdrop(zz, sc);
   for (const p of G.parts) {
     if (p.k === 'loot') { px(p.x - 1, p.y - 1, 3, 3, p.c); continue; }
     if (p.k === 'bit') { L.globalAlpha = clamp(1 - p.t / p.life, 0, 1); L.fillStyle = p.c; L.fillRect(Math.round(p.x * 2) / 2, Math.round(p.y * 2) / 2, 1, 1); L.globalAlpha = 1; continue; }
@@ -2175,12 +2262,12 @@ function draw() {
     if (p.kind === 'arrow') { px(p.x - 4, p.y, 5, 1, '#cfc6b0'); px(p.x, p.y, 1, 1, col); }
     else { px(p.x - 1, p.y - 1, 3, 3, col); L.globalAlpha = .4; px(p.x - 5, p.y, 4, 1, col); L.globalAlpha = 1; }
   }
-  drawFront(z, sc);
+  drawFront(zz, sc);
   // lantern light
   const flick = (S.path === 'lamp' ? 54 : 46) + Math.sin(G.t * 9) * 1.5 + Math.sin(G.t * 23);
   const [lx, ly] = lightPos();
   K.globalCompositeOperation = 'source-over'; K.clearRect(0, 0, W, H);
-  K.fillStyle = `rgba(3,5,9,${darkLevel(z)})`; K.fillRect(0, 0, W, H);
+  K.fillStyle = `rgba(3,5,9,${darkLevel(zz)})`; K.fillRect(0, 0, W, H);
   K.globalCompositeOperation = 'destination-out';
   const rg = K.createRadialGradient(lx, ly, 2, lx, ly, flick); rg.addColorStop(0, 'rgba(0,0,0,1)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
   K.fillStyle = rg; K.fillRect(0, 0, W, H);
@@ -2210,7 +2297,7 @@ function draw() {
   if (G.banner) {
     const b = G.banner, a = b.t < .25 ? b.t / .25 : b.t > 1.8 ? 1 - (b.t - 1.8) / .4 : 1;
     D.globalAlpha = clamp(a, 0, 1); D.font = `700 ${7 * k}px "Pixelify Sans", monospace`;
-    D.lineWidth = k * 1.4; D.strokeStyle = '#000'; D.strokeText(b.text, W / 2 * k, 34 * k); D.fillStyle = b.col; D.fillText(b.text, W / 2 * k, 34 * k);
+    D.lineWidth = k * 1.4; D.strokeStyle = '#000'; D.strokeText(b.text, W / 2 * k, 70 * k); D.fillStyle = b.col; D.fillText(b.text, W / 2 * k, 70 * k);
     D.globalAlpha = 1;
   }
 }
@@ -2319,13 +2406,25 @@ function renderHero() {
   };
   const attrs = ATTRS.map(a => `<div class="attr"><div><b>${a.n}</b><small>${nextPt(a.k)}</small></div><span class="val">${S.attrs[a.k]}</span>
     <button class="plus" data-act="attr" data-k="${a.k}" ${S.points ? '' : 'disabled'} aria-label="Add a point to ${a.n}">+</button></div>`).join('');
-  panel.innerHTML = `<div class="card"><div class="row between"><h2>Path</h2><span class="sub">Switch any time. Each path's first visit gives you a weapon for it.</span></div><div class="paths">${paths}</div></div>
+  const dslot = s => {
+    const it = S.equip[s];
+    return it ? `<button class="slot ${selEq === s ? 'sel' : ''}" style="--rc:${RAR[it.r].col}" data-act="seleq" data-slot="${s}" aria-label="${SLOT_LABEL[s]}: ${esc(it.name)}"><img alt="" src="${itemIcon(it)}"><span class="t"><span class="lab">${SLOT_LABEL[s]}</span><span class="gs">GS ${gsOf(it)}${it.up ? ` +${it.up}` : ''}</span></span></button>`
+      : `<button class="slot empty" data-act="tobag" aria-label="${SLOT_LABEL[s]}: empty"><img alt="" src="${icon(s === 'weapon' ? S.path : s, 0)}" style="opacity:.25"><span class="t"><span class="lab">${SLOT_LABEL[s]}</span><span class="gs">empty</span></span></button>`;
+  };
+  const bagCells = [];
+  for (let i = 0; i < bagMax(); i++) { const it = S.bag[i]; bagCells.push(it ? `<button class="cell" style="--rc:${RAR[it.r].col}" data-act="selbag" data-id="${it.id}" aria-label="${RAR[it.r].n} ${esc(it.name)}"><img alt="" src="${itemIcon(it)}">${isUpgrade(it) ? '<span class="up">▲</span>' : ''}${it.isNew ? '<span class="new"></span>' : ''}</button>` : '<div class="cell empty" aria-hidden="true"></div>'); }
+  const bagSel = S.bag.find(b => b.id === selBag);
+  panel.innerHTML = `<div class="doll"><div class="dcol">${['weapon', 'helm', 'armor', 'gloves', 'belt'].map(dslot).join('')}</div>
+      <div class="dmid"><span class="dlv">Lv ${S.level}</span><canvas id="dollCv" width="150" height="150"></canvas><span class="dgs">Gearscore ${gsTotal}</span><span class="sub" style="font-size:.72rem">${PATHS[S.path].n} · ${elemTag(st.elem)}</span></div>
+      <div class="dcol">${['boots', 'cloak', 'amulet', 'ring', 'charm'].map(dslot).join('')}</div></div>
+  <div class="card"><div class="row between"><h2>Bag · ${S.bag.length}/${bagMax()}</h2><button class="btn small primary" data-act="autoequip">Equip best</button></div><div class="bag">${bagCells.join('')}</div></div>
+  ${selEq && S.equip[selEq] ? popWrap(itemCard(S.equip[selEq], 'eq')) : bagSel ? popWrap(itemCard(bagSel, 'bag')) : ''}
+  <div class="card"><div class="row between"><h2>Path</h2><span class="sub">Switch any time. Each path's first visit gives you a weapon for it.</span></div><div class="paths">${paths}</div></div>
   <div class="split">
-    <div class="card"><div class="row between"><h2>Worn gear</h2><span class="sub">Total gearscore ${gsTotal}</span></div><div class="equip">${slots}</div>
-      ${selEq && S.equip[selEq] ? itemCard(S.equip[selEq], 'eq') : '<p class="hint">Tap a slot to inspect it. New gear lands in your Bag.</p>'}</div>
     <div class="card"><h2>The Wanderer · Lv ${S.level}</h2><p class="sub">Power rating ${fmt(rating(st))} · Renown ${renown()} (+${renown() * 2}% damage and gold)</p><dl class="stats">${rows}</dl></div>
   </div>
   <div class="card"><div class="row between"><h2>Attributes</h2><span class="pill ${S.points ? 'pts' : ''}">${S.points} unspent</span></div>${attrs}</div>`;
+  const dc = document.getElementById('dollCv'); if (dc) drawDoll(dc);
 }
 function itemCells(list, max) {
   const cells = [];
@@ -2355,7 +2454,7 @@ function renderStash() {
     <div class="row between"><h2>Stash · ${S.stash.length}/${stashMax()}</h2>${x ? `<div class="row"><span class="sub">Page ${x.page}: 30 more slots</span>${buyBtn}</div>` : ''}</div>
     <p class="sub">Never sold automatically or by the bulk sell buttons. Move items here from the Bag.</p>
     <div class="bag">${itemCells(S.stash, stashMax())}</div></div>
-    ${sel ? itemCard(sel, S.stash.includes(sel) ? 'stash' : 'bag') : '<p class="hint">Tap an item to see it, equip it, or move it back to the bag.</p>'}`;
+    ${sel ? popWrap(itemCard(sel, S.stash.includes(sel) ? 'stash' : 'bag')) : '<p class="hint">Tap an item to see it, equip it, or move it back to the bag.</p>'}`;
 }
 function renderBag() {
   if (S.bagView === 'stash') return renderStash();
@@ -2378,7 +2477,7 @@ function renderBag() {
       <button class="btn small" data-act="salvageall" title="Breaks down every item that is not marked ▲ into Forge materials.">Salvage all except upgrades</button></div></div>
     <p class="sub">▲ marks an upgrade for your current build. Bulk sell skips upgrades.</p>
     <div class="bag">${cells.join('')}</div></div>
-    ${sel ? itemCard(sel, 'bag') : '<p class="hint">Tap an item to compare it with what you are wearing. Green numbers beat your current gear, red ones are worse.</p>'}`;
+    ${sel ? popWrap(itemCard(sel, 'bag')) : '<p class="hint">Tap an item to compare it with what you are wearing. Green numbers beat your current gear, red ones are worse.</p>'}`;
 }
 function renderCompany() {
   const st = stats(), slots = partySlots(), members = partyMembers();
@@ -2485,6 +2584,7 @@ function renderJournal() {
       <label for="saveIn">Load a save code</label>
       <textarea id="saveIn" rows="3" placeholder="Paste a code that starts with LR1: or LR0:" style="width:100%;font:12px/1.3 ui-monospace,monospace;background:var(--raise);color:var(--paper);border:1px solid var(--line);border-radius:6px;padding:6px"></textarea>
       <div class="row"><button class="btn small" data-act="importcode">Load this save</button>${saveCodeMsg ? `<span class="sub">${esc(saveCodeMsg)}</span>` : ''}</div>
+      <div class="row"><button class="btn small" data-act="strip">Strip mode: show only the road</button></div>
       <h2>Graphics</h2>
       <label class="chk"><input type="checkbox" id="gfx-numbers" ${S.gfx.numbers ? 'checked' : ''}> Damage numbers</label>
       <label class="chk"><input type="checkbox" id="gfx-weather" ${S.gfx.weather ? 'checked' : ''}> Weather, fireflies and bursts</label>
@@ -2659,6 +2759,8 @@ panel.addEventListener('click', e => {
   if (a === 'forgeslot') forgeSlot = b.dataset.slot;
   if (a === 'craft') { const it = craft(forgeSlot); if (it) toast('Forged', it.name); }
   if (a === 'sellall2') { let g = 0, n = 0; S.bag = S.bag.filter(it => { if (!isUpgrade(it)) { g += value(it); n++; return false; } return true; }); S.gold += g; if (n) log(`Sold ${n} item${n > 1 ? 's' : ''} for ${fmt(g)} gold. Upgrades were kept.`); selBag = null; }
+  if (a === 'closepop') { if (e.target.closest('.pop') && !e.target.matches('[data-act=closepop]')) return; selBag = null; selEq = null; renderPanel(); return; }
+  if (a === 'strip') { setStrip(true); return; }
   if (a === 'selbag') { selBag = selBag === id ? null : id; const it = S.bag.find(x => x.id === id) || S.stash.find(x => x.id === id); if (it) it.isNew = false; }
   if (a === 'view') { S.bagView = b.dataset.v; selBag = null; }
   if (a === 'store') { const it = S.bag.find(x => x.id === id); if (it && S.stash.length < stashMax()) { S.bag = S.bag.filter(x => x !== it); S.stash.push(it); it.isNew = false; selBag = null; } }
@@ -2701,7 +2803,7 @@ panel.addEventListener('click', e => {
 });
 $('#nudgeGo').addEventListener('click', () => { const k = $('#nudge').dataset.kind; if (S.nudges[k]) S.nudges[k].no = 0; $('#nudge').hidden = true; S.tab = 'shop'; renderPanel(); });
 $('#nudgeNo').addEventListener('click', () => { const k = $('#nudge').dataset.kind; if (S.nudges[k]) S.nudges[k].no = (S.nudges[k].no || 0) + 1; $('#nudge').hidden = true; });
-$('#coachOk').addEventListener('click', () => { if (tipQueue[0]) doneTip(tipQueue[0]); });
+$('#coachOk').addEventListener('click', () => { const id = tipQueue[0]; if (!id) return; S.tab = TIPS[id].tab; selBag = selEq = null; renderPanel(); doneTip(id); });
 $('#ptsBtn').addEventListener('click', () => { S.tab = 'hero'; renderPanel(); });
 
 /* Strip mode: only the road, for a pinned tab or a narrow side window */
@@ -2843,7 +2945,74 @@ function newGame() {
   log('A wanderer lights the lantern and sets out down Mossbarrow Lane.');
   return S;
 }
+/* ---------- Phone layout: pixel frame, planks and tab icons drawn once at start ---------- */
+const TAB_ICONS = {
+  hero: ['............', '....####....', '...#oooo#...', '..#oooooo#..', '..#oooooo#..', '..#o####o#..', '..#o#..#o#..', '..#o#..#o#..', '..#oo##oo#..', '...######...', '............', '............'],
+  bag: ['....####....', '...#....#...', '..########..', '.#oooooooo#.', '.#oo####oo#.', '.#oo#oo#oo#.', '.#oo####oo#.', '.#oooooooo#.', '.#oooooooo#.', '.##########.', '............', '............'],
+  forge: ['........##..', '.......#oo#.', '......#oo#..', '.....#oo#...', '....##.#....', '............', '.##########.', '#oooooooooo#', '.##oooooo##.', '...#oooo#...', '..##oooo##..', '.##########.'],
+  company: ['............', '..###..###..', '.#ooo##ooo#.', '.#ooo##ooo#.', '..###..###..', '.#####.####.', '#ooooo#oooo#', '#ooooo#oooo#', '#ooooo#oooo#', '############', '............', '............'],
+  talents: ['....####....', '...#oooo#...', '..#oooooo#..', '..#oo##oo#..', '..#o#oo#o#..', '..#oo##oo#..', '..#oooooo#..', '..#oo#ooo#..', '..#oooooo#..', '.##########.', '############', '............'],
+  map: ['............', '.##########.', '#oo#oooooo#.', '#oo#o##ooo#.', '#oo#ooo#oo#.', '#oo#oo#ooo#.', '#oo#o#oooo#.', '#oo#oooo#o#.', '#oo########.', '.##.........', '............', '............'],
+  feats: ['............', '.##########.', '#oooooooooo#', '.#oooooooo#.', '..#oooooo#..', '...#oooo#...', '....#oo#....', '.....##.....', '....#oo#....', '...######...', '..########..', '............'],
+  journal: ['............', '.##########.', '.#oooo#ooo#.', '.#o##o#o#o#.', '.#oooo#ooo#.', '.#o##o#o#o#.', '.#oooo#ooo#.', '.#o##o#o#o#.', '.#oooo#ooo#.', '.##########.', '............', '............'],
+  shop: ['....#..#....', '.....##.....', '....####....', '...#oooo#...', '..#oooooo#..', '.#oo#oo#oo#.', '.#ooo##ooo#.', '.#oo#oo#oo#.', '.#oooooooo#.', '..########..', '............', '............'],
+};
+function pixelCanvas(w, h, fn) { const c = document.createElement('canvas'); c.width = w; c.height = h; fn(c.getContext('2d')); return c.toDataURL(); }
+function frameImage(hi, mid, lo, rivet) {
+  return pixelCanvas(12, 12, x => {
+    for (let j = 0; j < 12; j++) for (let i = 0; i < 12; i++) {
+      const d = Math.min(i, j, 11 - i, 11 - j);
+      if ((i === 0 || i === 11) && (j === 0 || j === 11)) continue;
+      let c = null;
+      if (d === 0 || d === 3) c = '#0b0d10'; else if (d === 1) c = (j === 1 || i === 1) && j !== 10 && i !== 10 ? hi : lo; else if (d === 2) c = mid;
+      if (c) { x.fillStyle = c; x.fillRect(i, j, 1, 1); }
+    }
+    x.fillStyle = rivet; for (const [i, j] of [[1, 1], [10, 1], [1, 10], [10, 10]]) x.fillRect(i, j, 1, 1);
+  });
+}
+function plankImage() {
+  return pixelCanvas(16, 16, x => {
+    for (let j = 0; j < 16; j++) for (let i = 0; i < 16; i++) {
+      const seam = j % 8 === 7 || (j < 8 ? i === 11 : i === 4), grain = (i * 7 + j * 3) % 11 === 0;
+      x.fillStyle = seam ? '#1a120c' : grain ? '#33261c' : (j % 8 === 0 ? '#30241a' : '#2a1f17'); x.fillRect(i, j, 1, 1);
+    }
+  });
+}
+function buildLayout() {
+  const r = document.documentElement.style;
+  r.setProperty('--frame', `url(${frameImage('#9a6a3a', '#6b4a2a', '#3e2a17', '#d8b060')})`);
+  r.setProperty('--planks', `url(${plankImage()})`);
+  if (!document.querySelector('.console')) {
+    const con = document.createElement('div'); con.className = 'console';
+    document.querySelector('.road').after(con);
+    for (const sel of ['.hud', '#nudge', '#coach', '.tabs', '#panel']) { const el = document.querySelector(sel); if (el) con.appendChild(el); }
+  }
+  const short = { company: 'Crew', talents: 'Stones', journal: 'Log', feats: 'Feats' };
+  document.querySelectorAll('.tab').forEach(b => {
+    if (b.querySelector('.ti')) return;
+    const rows = TAB_ICONS[b.dataset.tab]; if (!rows) return;
+    const src = pixelCanvas(12, 12, x => rows.forEach((row, j) => [...row].forEach((ch, i) => { if (ch === '.') return; x.fillStyle = ch === '#' ? '#0b0d10' : '#f3d27a'; x.fillRect(i, j, 1, 1); })));
+    const label = b.textContent.trim();
+    b.innerHTML = `<img class="ti" alt="" src="${src}"><span class="tl">${short[b.dataset.tab] || label}</span>`;
+    b.setAttribute('aria-label', label);
+  });
+}
+/* The hero, large, for the gear screen. */
+function drawDoll(canvas) {
+  const c = canvas.getContext('2d'); c.imageSmoothingEnabled = false; c.clearRect(0, 0, canvas.width, canvas.height);
+  const look = currentLook('outfit'), O = OUTFITS[look], lan = LANTERNS[currentLook('lantern')], st = stats();
+  const body = getSpr('hero', 0, 'hero:' + look, Object.assign({}, PAL.hero, { c: O.c, C: shade(O.c, .22), d: shade(O.c, -.28), h: O.h, H: shade(O.h, .2) }));
+  const k = 5, ox = 22, oy = 14, put = (spr, dx, dy) => c.drawImage(spr, ox + dx * k, oy + dy * k, spr.lw * k, spr.lh * k);
+  if (S.path !== 'lamp') put(getSpr('lantern', 0, 'lantern:' + currentLook('lantern'), { b: '#6b4a2a', y: lan.y, Y: lan.Y }), -4, 9);
+  put(body, 0, 0);
+  if (S.path === 'blade') put(getSpr('sword', 0, 'sw:' + st.elem, swordPal(st.elem)), 11, 1);
+  else if (S.path === 'bow') put(getSpr('bow', 0, 'bow'), 11, 4);
+  else put(getSpr('staff', 0, 'staff:' + currentLook('lantern'), Object.assign({}, PAL.staff, { y: lan.y, Y: lan.Y })), 11, 1);
+}
+function popWrap(html) { return `<div class="popwrap" data-act="closepop"><div class="pop">${html}<button class="btn small closepop" data-act="closepop">Close</button></div></div>`; }
+
 function start(data) {
+  buildLayout();
   const saved = (data && data.S) ? migrate(data.S) : load();
   if (saved) S = saved; else newGame();
   dirtyStats = true;
