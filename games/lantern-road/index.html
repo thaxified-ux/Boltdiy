@@ -558,6 +558,28 @@ function save() {
   S.lastSeen = Date.now();
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable: play continues unsaved */ }
 }
+/* Save codes: the whole game as one line of text, to move it to another device or share it.
+   Format: "LR1:" + base64 of the gzipped save JSON (or "LR0:" + base64 of plain JSON where gzip is not available). */
+async function exportCode() {
+  const json = JSON.stringify(Object.assign({}, S, { log: S.log.slice(0, 10) }));
+  const bytes = new TextEncoder().encode(json);
+  let tag = 'LR0:', data = bytes;
+  if (window.CompressionStream) { data = new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer()); tag = 'LR1:'; }
+  let bin = ''; for (let i = 0; i < data.length; i += 8192) bin += String.fromCharCode.apply(null, data.subarray(i, i + 8192));
+  return tag + btoa(bin);
+}
+async function importCode(code) {
+  code = (code || '').trim();
+  const tag = code.slice(0, 4), b = Uint8Array.from(atob(code.slice(4)), c => c.charCodeAt(0));
+  let text;
+  if (tag === 'LR1:') text = await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  else if (tag === 'LR0:') text = new TextDecoder().decode(b);
+  else throw new Error('not a Lantern Road save code');
+  const d = migrate(JSON.parse(text));
+  if (!d) throw new Error('this save code is from an unknown version');
+  return d;
+}
+let saveCodeOut = '', saveCodeMsg = '';
 function migrate(d) {
   if (!d || ![1, 2, 3].includes(d.v)) return null;
   const s = Object.assign(fresh(), d);
@@ -2456,6 +2478,13 @@ function renderJournal() {
         <dt>Enemies defeated</dt><dd>${fmt(S.kills)}</dd><dt>Times fallen</dt><dd>${fmt(S.deaths)}</dd>
         <dt>Furthest stage</dt><dd>${S.maxStage}</dd><dt>Travellers recruited</dt><dd>${S.recruited}</dd><dt>Time on the road</dt><dd>${dur(S.played)}</dd>
         <dt>Best find</dt><dd ${S.best ? `style="color:${RAR[S.best.r].col}"` : ''}>${S.best ? esc(S.best.name) + ' · GS ' + S.best.gs : '–'}</dd></dl>
+      <h2>Save code</h2>
+      <p class="sub">Your whole game as one line of text. Copy it to move your game to another device, or to share it. Loading a code replaces the game in this browser.</p>
+      <div class="row"><button class="btn small" data-act="exportcode">Make save code</button>${saveCodeOut ? '<button class="btn small" data-act="copycode">Copy</button>' : ''}</div>
+      ${saveCodeOut ? `<textarea id="saveOut" readonly rows="3" style="width:100%;font:12px/1.3 ui-monospace,monospace;background:var(--raise);color:var(--paper);border:1px solid var(--line);border-radius:6px;padding:6px">${saveCodeOut}</textarea>` : ''}
+      <label for="saveIn">Load a save code</label>
+      <textarea id="saveIn" rows="3" placeholder="Paste a code that starts with LR1: or LR0:" style="width:100%;font:12px/1.3 ui-monospace,monospace;background:var(--raise);color:var(--paper);border:1px solid var(--line);border-radius:6px;padding:6px"></textarea>
+      <div class="row"><button class="btn small" data-act="importcode">Load this save</button>${saveCodeMsg ? `<span class="sub">${esc(saveCodeMsg)}</span>` : ''}</div>
       <h2>Graphics</h2>
       <label class="chk"><input type="checkbox" id="gfx-numbers" ${S.gfx.numbers ? 'checked' : ''}> Damage numbers</label>
       <label class="chk"><input type="checkbox" id="gfx-weather" ${S.gfx.weather ? 'checked' : ''}> Weather, fireflies and bursts</label>
@@ -2658,6 +2687,13 @@ panel.addEventListener('click', e => {
   if (a === 'daily') claimDaily();
   if (a === 'try') { S.trial = { slot: b.dataset.slot, key: b.dataset.key, until: now() + 5 * 60000 }; sprCacheReset(); toast('Trying on', ({ lantern: LANTERNS, outfit: OUTFITS, company: COMPANY_LOOKS }[b.dataset.slot][b.dataset.key] || {}).n || ''); }
   if (a === 'look') { if (lookOwned(b.dataset.slot, b.dataset.key)) { S.look[b.dataset.slot] = b.dataset.key; sprCacheReset(); } }
+  if (a === 'exportcode') { exportCode().then(c => { saveCodeOut = c; saveCodeMsg = ''; renderPanel(); }); return; }
+  if (a === 'copycode') { const t = $('#saveOut'); navigator.clipboard.writeText(saveCodeOut).then(() => { saveCodeMsg = 'Copied.'; renderPanel(); }).catch(() => { t.select(); saveCodeMsg = 'Selected: copy it with your keyboard or long-press.'; renderPanel(); }); return; }
+  if (a === 'importcode') {
+    importCode($('#saveIn').value).then(d => { S = d; S.lastSeen = Date.now(); saveCodeOut = ''; saveCodeMsg = `Loaded: Stage ${S.stage}, level ${S.level}.`; dirtyStats = true; sprCacheReset(); resetRuntime(); save(); updateHud(); renderPanel(); })
+      .catch(() => { saveCodeMsg = 'That code did not load. Check that you copied all of it, from LR1: to the end.'; renderPanel(); });
+    return;
+  }
   if (a === 'reset1') confirmReset = true;
   if (a === 'reset0') confirmReset = false;
   if (a === 'reset2') { S = newGame(); confirmReset = false; selBag = selEq = selTal = null; dirtyStats = true; resetRuntime(); }
