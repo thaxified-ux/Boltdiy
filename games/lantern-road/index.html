@@ -395,7 +395,7 @@ const ELEM = {
 const STAT = {
   hp: { l: 'Max HP', p: 0, base: 18 }, dmg: { l: 'Damage', p: 0, base: 3 }, def: { l: 'Defense', p: 0, base: 3 },
   regen: { l: 'Regen / sec', p: 0, base: 0.6 }, aspd: { l: 'Attack speed', p: 1, base: 3 }, crit: { l: 'Crit chance', p: 1, base: 1.2 },
-  critd: { l: 'Crit damage', p: 1, base: 8 }, dodge: { l: 'Dodge', p: 1, base: 1 }, block: { l: 'Block', p: 1, base: 1.5 },
+  critd: { l: 'Crit damage', p: 1, base: 8 }, block: { l: 'Block', p: 1, base: 1.5 },
   ls: { l: 'Lifesteal', p: 1, base: 0.6 }, gold: { l: 'Gold find', p: 1, base: 5 }, xp: { l: 'XP gain', p: 1, base: 5 }, drop: { l: 'Drop chance', p: 1, base: 5 },
   rFire: { l: 'Fire resist', p: 1, base: 4 }, rFrost: { l: 'Frost resist', p: 1, base: 4 }, rShadow: { l: 'Shadow resist', p: 1, base: 4 },
   rAll: { l: 'All resists', p: 1, base: 2 }, elem: { l: 'Elemental damage', p: 1, base: 5 }, comp: { l: 'Company power', p: 1, base: 5 },
@@ -404,7 +404,7 @@ const SLOTS = ['weapon', 'helm', 'armor', 'gloves', 'belt', 'boots', 'cloak', 'a
 const SLOT_LABEL = { weapon: 'Weapon', helm: 'Helm', armor: 'Armor', gloves: 'Gloves', belt: 'Belt', boots: 'Boots', cloak: 'Cloak', amulet: 'Amulet', ring: 'Ring', charm: 'Charm' };
 const SLOT_MAIN = {
   weapon: { dmg: 6 }, helm: { hp: 30, def: 2 }, armor: { def: 5, hp: 20 }, gloves: { aspd: 3, crit: .8 }, belt: { hp: 22, regen: .6 },
-  boots: { dodge: 1.5, hp: 14 }, cloak: { def: 3, rAll: 3 }, amulet: { dmg: 3, critd: 8 }, ring: { crit: 1.5, critd: 10 }, charm: { gold: 6, comp: 4 },
+  boots: { block: 1.5, hp: 14 }, cloak: { def: 3, rAll: 3 }, amulet: { dmg: 3, critd: 8 }, ring: { crit: 1.5, critd: 10 }, charm: { gold: 6, comp: 4 },
 };
 const PATHS = {
   blade: { n: 'Blade', d: 'Fights up close. +20% max HP, +15% defense.', range: 26, mult: 1, elem: 'phys', weapons: ['Shortsword', 'Sabre', 'Warpick', 'Hatchet', 'Falchion'] },
@@ -413,7 +413,7 @@ const PATHS = {
 };
 const BASES = { helm: ['Cap', 'Coif', 'Helm', 'Visor'], armor: ['Jerkin', 'Hauberk', 'Brigandine', 'Cuirass'], gloves: ['Wraps', 'Gauntlets', 'Grips', 'Mitts'], belt: ['Sash', 'Girdle', 'Cord', 'Buckle'], boots: ['Sandals', 'Boots', 'Greaves', 'Treads'], cloak: ['Mantle', 'Shroud', 'Cape', 'Oilskin'], amulet: ['Pendant', 'Locket', 'Torc'], ring: ['Band', 'Signet', 'Loop'], charm: ['Talisman', 'Wick Charm', 'Idol', 'Token'] };
 const PREFIX = ['Rusted', 'Plain', 'Tempered', 'Runed', 'Starforged', 'Lanternlit', 'Old-Kingdom', 'Comet-born'];
-const SUFFIX = { dodge: 'of the Fox', dmg: 'of Embers', hp: 'of the Oak', aspd: 'of Haste', gold: 'of Fortune', xp: 'of the Owl', crit: 'of Precision', critd: 'of Ruin', block: 'of the Wall', def: 'of the Wall', ls: 'of Leeches', regen: 'of Renewal', drop: 'of the Magpie', rFire: 'of the Hearth', rFrost: 'of the Thaw', rShadow: 'of Dawn', rAll: 'of the Pilgrim', elem: 'of the Storm', comp: 'of Fellowship' };
+const SUFFIX = { dmg: 'of Embers', hp: 'of the Oak', aspd: 'of Haste', gold: 'of Fortune', xp: 'of the Owl', crit: 'of Precision', critd: 'of Ruin', block: 'of the Wall', def: 'of the Wall', ls: 'of Leeches', regen: 'of Renewal', drop: 'of the Magpie', rFire: 'of the Hearth', rFrost: 'of the Thaw', rShadow: 'of Dawn', rAll: 'of the Pilgrim', elem: 'of the Storm', comp: 'of Fellowship' };
 
 const ZONES = [
   { name: 'Mossbarrow Lane', sky: ['#14212d', '#3b5a50'], far: '#21363a', mid: '#2c4838', ground: '#33291f', top: '#4f7a3f', dark: .38, prop: 'tree', part: 'firefly',
@@ -476,11 +476,11 @@ const TALENTS = [
   { id: 'wind', x: 2, y: 5, n: 'Second Wind', d: 'Regenerate 1% of max HP per second', k: 'regen', v: .01 },
   { id: 'emberward', x: 1, y: 5, n: 'Ember Ward', d: '+15% fire resist', k: 'rFire', v: 15 },
   { id: 'quick', x: 5, y: 4, n: 'Quickstep', d: '+8% attack speed', k: 'aspd', v: .08 },
-  { id: 'runner', x: 6, y: 4, n: 'Windrunner', d: '+4% dodge', k: 'dodge', v: 4 },
+  { id: 'runner', x: 6, y: 4, n: 'Bulwark', d: '+4% block', k: 'block', v: 4 },
   { id: 'tempest', x: 7, y: 4, n: 'Tempest', d: '+12% attack speed', k: 'aspd', v: .12 },
   { id: 'flurry', x: 6, y: 3, n: 'Flurry', d: '+10% attack speed', k: 'aspd', v: .10 },
   { id: 'frostward', x: 7, y: 3, n: 'Frost Ward', d: '+15% frost resist', k: 'rFrost', v: 15 },
-  { id: 'phantom', x: 6, y: 5, n: 'Phantom', d: '+4% dodge', k: 'dodge', v: 4 },
+  { id: 'phantom', x: 6, y: 5, n: 'Iron Will', d: '+4% block', k: 'block', v: 4 },
   { id: 'duskward', x: 7, y: 5, n: 'Dusk Ward', d: '+15% shadow resist', k: 'rShadow', v: 15 },
   { id: 'purse', x: 4, y: 5, n: 'Coin Purse', d: '+15% gold', k: 'gold', v: .15 },
   { id: 'scholar', x: 4, y: 6, n: 'Scholar', d: '+15% XP', k: 'xp', v: .15 },
@@ -498,7 +498,7 @@ const TALENTS = [
 const MINOR = {
   off: [['dmg', .05, 'Sharpness'], ['crit', 1.5, 'Precision'], ['critd', 12, 'Cruelty'], ['ls', .8, 'Hunger']],
   def: [['hp', .06, 'Vigor'], ['def', .08, 'Plating'], ['block', 2.5, 'Guard'], ['rAll', 5, 'Warding']],
-  spd: [['aspd', .04, 'Swiftness'], ['dodge', 2, 'Evasion'], ['regen', .004, 'Renewal'], ['elem', 6, 'Storm']],
+  spd: [['aspd', .04, 'Swiftness'], ['block', 2, 'Guard'], ['regen', .004, 'Renewal'], ['elem', 6, 'Storm']],
   fort: [['gold', .1, 'Greed'], ['xp', .1, 'Insight'], ['drop', .12, 'Fortune'], ['comp', 8, 'Fellowship']],
 };
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
@@ -514,7 +514,7 @@ const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'
   }
 })();
 const PCT_KEYS = ['hp', 'dmg', 'def', 'aspd', 'gold', 'xp', 'drop'];
-const ABBR = { dmg: 'DMG', hp: 'HP', crit: 'CRIT', critd: 'CRDMG', ls: 'LEECH', def: 'DEF', block: 'BLOCK', regen: 'REGEN', aspd: 'SPEED', dodge: 'DODGE', gold: 'GOLD', xp: 'XP', drop: 'DROP', luck: 'LUCK', rFire: 'FIRE', rFrost: 'FROST', rShadow: 'SHADE', comp: 'CREW', elem: 'ELEM', slots: 'SLOT', rAll: 'RESIST' };
+const ABBR = { dmg: 'DMG', hp: 'HP', crit: 'CRIT', critd: 'CRDMG', ls: 'LEECH', def: 'DEF', block: 'BLOCK', regen: 'REGEN', aspd: 'SPEED', gold: 'GOLD', xp: 'XP', drop: 'DROP', luck: 'LUCK', rFire: 'FIRE', rFrost: 'FROST', rShadow: 'SHADE', comp: 'CREW', elem: 'ELEM', slots: 'SLOT', rAll: 'RESIST' };
 function talValue(t) {
   if (t.k === 'luck') return '★';
   if (t.k === 'slots') return '+1';
@@ -523,14 +523,14 @@ function talValue(t) {
 }
 function talDesc(t) {
   if (!t.minor) return t.d;
-  const what = { dmg: 'damage', hp: 'max HP', crit: 'crit chance', critd: 'crit damage', ls: 'lifesteal', def: 'defense', block: 'block chance', regen: 'of max HP regenerated per second', aspd: 'attack speed', dodge: 'dodge', gold: 'gold', xp: 'XP', drop: 'drop chance', comp: 'company power', elem: 'elemental damage', rAll: 'fire, frost and shadow resist' }[t.k];
+  const what = { dmg: 'damage', hp: 'max HP', crit: 'crit chance', critd: 'crit damage', ls: 'lifesteal', def: 'defense', block: 'block chance', regen: 'of max HP regenerated per second', aspd: 'attack speed', gold: 'gold', xp: 'XP', drop: 'drop chance', comp: 'company power', elem: 'elemental damage', rAll: 'fire, frost and shadow resist' }[t.k];
   return `${talValue(t)} ${what}`;
 }
 const TAL = Object.fromEntries(TALENTS.map(t => [t.id, t]));
 const ATTRS = [
   { k: 'mig', n: 'Might', d: '+2.4 damage' },
   { k: 'vit', n: 'Vitality', d: '+14 max HP, +0.5 defense' },
-  { k: 'agi', n: 'Agility', d: '+1.2% attack speed, +0.25% dodge' },
+  { k: 'agi', n: 'Agility', d: '+1.2% attack speed, +0.25% block' },
   { k: 'for', n: 'Fortune', d: '+0.4% crit chance, +1% gold' },
 ];
 
@@ -679,6 +679,7 @@ function migrate(d) {
   const s = Object.assign(fresh(), d);
   s.equip = Object.assign(emptyEquip(), d.equip || {});
   for (const it of [...Object.values(s.equip), ...s.bag]) if (it && it.slot === 'weapon' && !it.path) it.path = 'blade';
+  for (const it of [...Object.values(s.equip), ...(s.bag || []), ...(s.stash || [])]) if (it && it.stats && 'dodge' in it.stats) { it.stats.block = +((it.stats.block || 0) + it.stats.dodge).toFixed(1); delete it.stats.dodge; if (it.name) it.name = it.name.replace(' of the Fox', ' of the Wall'); }
   if (d.v === 1) { s.bestR = d.best ? d.best.r : 0; }
   if (d.v < 3) Object.assign(s, { autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true });
   s.farm = false; s.v = 3;
@@ -892,7 +893,7 @@ const matsTxt = c => [c.shards ? `${fmt(c.shards)} shards` : '', c.glass ? `${c.
 
 /* ---------- Stats ---------- */
 function talentBonus() {
-  const t = { hp: 0, dmg: 0, critd: 0, crit: 0, ls: 0, def: 0, block: 0, regen: 0, aspd: 0, dodge: 0, gold: 0, xp: 0, drop: 0, luck: 0, rFire: 0, rFrost: 0, rShadow: 0, rAll: 0, comp: 0, elem: 0, slots: 0 };
+  const t = { hp: 0, dmg: 0, critd: 0, crit: 0, ls: 0, def: 0, block: 0, regen: 0, aspd: 0, gold: 0, xp: 0, drop: 0, luck: 0, rFire: 0, rFrost: 0, rShadow: 0, rAll: 0, comp: 0, elem: 0, slots: 0 };
   for (const id in S.talents) if (S.talents[id] && TAL[id]) t[TAL[id].k] += TAL[id].v;
   return t;
 }
@@ -937,8 +938,7 @@ function heroStats(eq) {
     aspd: Math.min(4, (1 + a.agi * .012 + G0('aspd') / 100 + t.aspd) * (S.path === 'bow' ? 1.15 : 1)),
     crit: Math.min(75, 5 + a.for * .4 + G0('crit') + t.crit), critd: 150 + G0('critd') + t.critd,
     def: ((G0('def') + a.vit * .5) * (1 + t.def) + fDef) * (S.path === 'blade' ? 1.15 : 1),
-    dodge: Math.min(50, a.agi * .25 + G0('dodge') + t.dodge),
-    block: Math.min(60, G0('block') + t.block + fBlock), regen: hp * .004 + G0('regen') + hp * t.regen + fHeal,
+    block: Math.min(60, a.agi * .25 + G0('block') + t.block + fBlock), regen: hp * .004 + G0('regen') + hp * t.regen + fHeal,
     ls: G0('ls') + t.ls, gold: G0('gold') + t.gold * 100 + a.for + fGold + ren * 2, xp: G0('xp') + t.xp * 100, drop: G0('drop') + t.drop * 100 + fDrop, luck: t.luck,
     res: { phys: 0, fire: Math.min(75, G0('rFire') + rAll + t.rFire), frost: Math.min(75, G0('rFrost') + rAll + t.rFrost), shadow: Math.min(75, G0('rShadow') + rAll + t.rShadow) },
     range: P.range,
@@ -948,7 +948,7 @@ function stats() { if (dirtyStats) { ST = heroStats(); dirtyStats = false; } ret
 function rating(st) {
   const dps = st.dmg * st.aspd * (1 + st.crit / 100 * (st.critd / 100 - 1)) * (1 + st.ls / 200) * (S.path === 'lamp' ? 1.25 : 1);
   const r = (st.res.fire + st.res.frost + st.res.shadow) / 3;
-  const ehp = st.hp * (1 + st.def / armorK(S.stage)) / (1 - st.dodge / 100) / (1 - st.block / 200) * (1 + r / 200) + st.regen * 20;
+  const ehp = st.hp * (1 + st.def / armorK(S.stage)) / (1 - st.block / 200) * (1 + r / 200) + st.regen * 20;
   return dps * Math.sqrt(ehp) * (st.elem !== 'phys' ? 1.05 : 1) * (1 + (st.cp - 1) * .3) * (1 + (st.gold + st.drop) / 2000);
 }
 function ratingWith(item) { const eq = Object.assign({}, S.equip, { [item.slot]: item }); return rating(heroStats(eq)); }
@@ -1154,7 +1154,7 @@ const SPECIALS = {
   'The Light-Eater': [{ k: 'blind', n: 'Swallow the Light', cd: 7, hit: 1.4 }, { k: 'chill', n: 'Endless Cold', cd: 10 }, { k: 'summon', n: 'Call the Void', cd: 13, foe: 'Void Eye' }],
 };
 function foeByName(n) { for (const z of ZONES) for (const f of [...z.foes, z.boss]) if (f.n === n) return f; return ZONES[4].foes[1]; }
-const SP_DESC = { poison: 'poisons you', frenzy: 'attacks twice as fast for a while', snare: 'roots you so you cannot attack, and heals itself', shell: 'takes 70% less damage for a while', drain: 'drains your HP to heal itself', slam: 'a heavy hit', burn: 'sets you on fire', pounce: 'leaps in for a heavy hit', reflect: 'reflects 30% of the damage it takes', evade: 'dodges most hits for a while', blind: 'blinds you so half your attacks miss', guard: 'shields every foe in the wave', summon: 'calls two minions to its side', chill: 'chills you so you attack 40% slower', charge: 'charges in for a heavy hit you cannot dodge or block', leech: 'latches on and drains your HP for 4 seconds', fuse: 'lights a fuse and explodes for a huge hit unless you kill it or parry first', sting: 'poisons you and stuns you for a moment', heal: 'heals every foe in the wave', howl: 'makes every foe hit 40% harder and faster for a while', curse: 'curses you so you deal 40% less damage for a while', execute: 'a massive hit when your HP is below 40%', corrode: 'melts your armor to half for a while' };
+const SP_DESC = { poison: 'poisons you', frenzy: 'attacks twice as fast for a while', snare: 'roots you so you cannot attack, and heals itself', shell: 'takes 70% less damage for a while', drain: 'drains your HP to heal itself', slam: 'a heavy hit', burn: 'sets you on fire', pounce: 'leaps in for a heavy hit', reflect: 'reflects 30% of the damage it takes', evade: 'dodges most hits for a while', blind: 'blinds you so half your attacks miss', guard: 'shields every foe in the wave', summon: 'calls two minions to its side', chill: 'chills you so you attack 40% slower', charge: 'charges in for a heavy hit you cannot block', leech: 'latches on and drains your HP for 4 seconds', fuse: 'lights a fuse and explodes for a huge hit unless you kill it or parry first', sting: 'poisons you and stuns you for a moment', heal: 'heals every foe in the wave', howl: 'makes every foe hit 40% harder and faster for a while', curse: 'curses you so you deal 40% less damage for a while', execute: 'a massive hit when your HP is below 40%', corrode: 'melts your armor to half for a while' };
 const goldPer = (s, boss) => 2 * Math.pow(1.13, s - 1) * (boss ? 6 : 1);
 const xpPer = (s, boss) => 6 * Math.pow(1.12, s - 1) * (boss ? 5 : 1);
 const boostGold = () => (passActive() ? 1.25 : 1) * (charmActive() ? 1.5 : 1);
@@ -1355,7 +1355,6 @@ function useSpecial(e, sp) {
 function enemyHit(e, mult, sure) {
   e.atk = .25;
   const st = stats(), h = G.hero;
-  if (!sure && Math.random() * 100 < st.dodge) { fx(HX, GY - 22, 'dodge', '#97a39d', .7, 4); return; }
   let d = e.dmg * rnd(.9, 1.1) * (mult || 1) * (e.howl > 0 ? 1.4 : 1), blocked = false;
   const def = st.def * (h.corrode > 0 ? .5 : 1);
   const k = armorK(S.stage);
@@ -2626,13 +2625,13 @@ function renderHero() {
   }).join('');
   const gsTotal = SLOTS.reduce((a, s) => a + (S.equip[s] ? gsOf(S.equip[s]) : 0), 0);
   const rows = [['Path', PATHS[S.path].n], ['Damage type', elemTag(st.elem)], ['Max HP', fmt(st.hp)], ['Damage', fmt(st.dmg)], ['Attacks / sec', st.aspd.toFixed(2)], ['Crit chance', st.crit.toFixed(1) + '%'], ['Crit damage', Math.round(st.critd) + '%'],
-    ['Defense', fmt(st.def) + ` (−${Math.round(100 * st.def / (armorK(S.stage) + st.def))}% physical here)`], ['Dodge', st.dodge.toFixed(1) + '%'], ['Block', st.block.toFixed(1) + '%'], ['Regen', fmt(st.regen) + ' / sec'],
+    ['Defense', fmt(st.def) + ` (−${Math.round(100 * st.def / (armorK(S.stage) + st.def))}% physical here)`], ['Block', st.block.toFixed(1) + '%'], ['Regen', fmt(st.regen) + ' / sec'],
     ['Fire resist', st.res.fire.toFixed(1) + '%'], ['Frost resist', st.res.frost.toFixed(1) + '%'], ['Shadow resist', st.res.shadow.toFixed(1) + '%'],
     ['Lifesteal', st.ls.toFixed(1) + '%'], ['Gold find', '+' + Math.round(st.gold) + '%'], ['XP gain', '+' + Math.round(st.xp) + '%'], ['Drop chance', '+' + Math.round(st.drop) + '%'], ['Company power', '+' + Math.round((st.cp - 1) * 100) + '%']]
     .map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
   const nextPt = k => {
     S.attrs[k]++; const n = heroStats(); S.attrs[k]--;
-    const show = { mig: [['Damage', st.dmg, n.dmg, fmt]], vit: [['Max HP', st.hp, n.hp, fmt], ['Defense', st.def, n.def, fmt]], agi: [['Attacks/sec', st.aspd, n.aspd, v => v.toFixed(2)], ['Dodge', st.dodge, n.dodge, v => v.toFixed(1) + '%']], for: [['Crit', st.crit, n.crit, v => v.toFixed(1) + '%'], ['Gold find', st.gold, n.gold, v => '+' + Math.round(v) + '%']] }[k];
+    const show = { mig: [['Damage', st.dmg, n.dmg, fmt]], vit: [['Max HP', st.hp, n.hp, fmt], ['Defense', st.def, n.def, fmt]], agi: [['Attacks/sec', st.aspd, n.aspd, v => v.toFixed(2)], ['Block', st.block, n.block, v => v.toFixed(1) + '%']], for: [['Crit', st.crit, n.crit, v => v.toFixed(1) + '%'], ['Gold find', st.gold, n.gold, v => '+' + Math.round(v) + '%']] }[k];
     return show.map(([l, a, b, f]) => `${l} ${f(a)} → <span class="next">${f(b)}</span>`).join(' · ');
   };
   const attrs = ATTRS.map(a => `<div class="attr"><div><b>${a.n}</b><small>${nextPt(a.k)}</small></div><span class="val">${S.attrs[a.k]}</span>
@@ -3109,7 +3108,7 @@ function autoPlay(quiet) {
   }
   if (S.autoStones) {
     for (let guard = 0; guard < 40; guard++) {
-      const MINOR_PRIO = ['dmg', 'aspd', 'crit', 'critd', 'hp', 'def', 'comp', 'elem', 'rAll', 'gold', 'drop', 'xp', 'dodge', 'block', 'ls', 'regen'];
+      const MINOR_PRIO = ['dmg', 'aspd', 'crit', 'critd', 'hp', 'def', 'comp', 'elem', 'rAll', 'gold', 'drop', 'xp', 'block', 'ls', 'regen'];
       const id = STONE_ORDER.find(i => TAL[i] && !S.talents[i] && talAvail(TAL[i])) || (TALENTS.filter(t => t.minor && !S.talents[t.id] && talAvail(t)).sort((a, b) => MINOR_PRIO.indexOf(a.k) - MINOR_PRIO.indexOf(b.k))[0] || {}).id;
       const c = talCost();
       if (!id || S.gold < c) break;
