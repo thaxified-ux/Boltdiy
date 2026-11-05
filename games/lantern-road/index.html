@@ -208,6 +208,12 @@ html.big{font-size:112.5%}
 .up-pips i.on{background:var(--lamp)}
 .slotpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px}
 .slotpick button[aria-pressed="true"]{border-color:var(--lamp);color:var(--lamp)}
+.nudge{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--lamp);border-radius:8px;padding:8px 10px;font-size:.92rem}
+.nudge span{flex:1 1 220px;min-width:0}
+.daily{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.daily .chest{width:34px;height:28px;flex:none;border-radius:4px;background:linear-gradient(#8a5a2a 0 45%,#f3b44a 45% 55%,#6b4a2a 55%);box-shadow:inset 0 0 0 2px #2a1c06}
+.bundle{border-color:#7ff0ff;background:linear-gradient(135deg,#10282e,var(--panel) 60%)}
+.bundle h2{color:#7ff0ff}
 .log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:320px;overflow:auto;font-size:.9rem}
 .log li{display:flex;gap:8px;border-bottom:1px solid #1e2a30;padding:4px 0}
 .log time{color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
@@ -255,6 +261,7 @@ body.strip .exitstrip{display:block}
     </div>
   </section>
 
+  <div class="nudge" id="nudge" hidden><span id="nudgeText"></span><div class="row"><button class="btn small primary" id="nudgeGo" type="button">See in Shop</button><button class="btn small" id="nudgeNo" type="button">Not now</button></div></div>
   <div class="coach" id="coach" hidden><span class="hand" aria-hidden="true"></span><span id="coachText"></span><button class="btn small" id="coachOk" type="button">Got it</button></div>
   <nav class="tabs" role="tablist" aria-label="Menus">
     <button class="tab" role="tab" data-tab="hero" id="tab-hero">Hero</button>
@@ -540,7 +547,7 @@ function fresh() {
     stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true, autoForge: true, shards: 0, glass: 0, tempered: 0, crafted: 0, kills: 0, deaths: 0, best: null,
     played: 0, lastSeen: Date.now(), log: [], tab: 'hero', created: Date.now(),
     owned: {}, passUntil: 0, charmUntil: 0, look: { lantern: 'amber', outfit: 'wanderer', company: 'plain' }, testShop: false, shopNoted: false,
-    seen: {}, tips: {}, featSeen: {}, stash: [], bagView: 'bag', gfx: { numbers: true, weather: true, shake: true, fps30: false, big: false } };
+    seen: {}, tips: {}, featSeen: {}, stash: [], bagView: 'bag', nudges: {}, soldFull: 0, trial: null, daily: { last: '', streak: 0 }, gfx: { numbers: true, weather: true, shake: true, fps30: false, big: false } };
 }
 let S = fresh();
 let G, ST;
@@ -561,6 +568,7 @@ function migrate(d) {
   s.farm = false; s.v = 3;
   s.gfx = Object.assign({ numbers: true, weather: true, shake: true, fps30: false, big: false }, s.gfx || {});
   if (s.autoForge === undefined) s.autoForge = true; s.shards = s.shards || 0; s.glass = s.glass || 0; s.tempered = s.tempered || 0; s.crafted = s.crafted || 0;
+  s.nudges = s.nudges || {}; s.soldFull = s.soldFull || 0; s.daily = s.daily || { last: '', streak: 0 };
   s.tips = s.tips || {}; s.featSeen = s.featSeen || {}; s.stash = s.stash || []; s.bagView = s.bagView || 'bag';
   if (!s.seen) { // older saves: everything already passed counts as met
     s.seen = {}; const zc = Math.min(9, Math.floor((s.maxStage - 1) / 5));
@@ -599,6 +607,7 @@ const OUTFITS = {
 };
 const COMPANY_LOOKS = { plain: { n: 'Travel cloaks' }, banners: { n: 'Company Banners' } };
 const PRODUCTS = [
+  { id: 'starter_bundle', kind: 'bundle', price: '€2.99', n: 'Starter Bundle', gives: ['stash_page_1', 'company_slot_1', 'lantern_blue'], d: 'The stash, a second company slot and the Moonwater Blue lantern. €4.97 if bought separately. One time only, for players who own none of the three.' },
   { id: 'supporter_pack', kind: 'once', price: '€4.99', n: 'Wayfarer’s Supporter Pack', d: 'Thank you for supporting the game.',
     perks: ['+10 bag slots', '+1 company slot', 'Offline rewards for 24 hours instead of 12', 'Supporter Gold lantern'] },
   { id: 'road_pass', kind: 'pass', price: '€3.99', days: 30, n: 'Road Pass', d: '30 days of +25% gold and +25% XP, and the Pathfinder outfit while it lasts.' },
@@ -627,12 +636,15 @@ const bagMax = () => BAG_MAX + (hasSupporter() ? 10 : 0);
 const STASH_IDS = ['stash_page_1', 'stash_page_2', 'stash_page_3'];
 const stashMax = () => STASH_IDS.filter(id => S.owned[id]).length * 30;
 const nextStashPage = () => STASH_IDS.find(id => !S.owned[id]);
+const bundleOpen = () => !S.owned.starter_bundle && PROD.starter_bundle.gives.every(id => !S.owned[id]);
 function lookOwned(slot, key) {
   if (slot === 'lantern') return key === 'amber' || (key === 'gold' ? hasSupporter() : !!S.owned['lantern_' + key]);
   if (slot === 'outfit') return key === 'wanderer' || (key === 'pathfinder' ? passActive() : !!S.owned['outfit_' + key]);
   return key === 'plain' || !!S.owned['company_' + key];
 }
-function currentLook(slot) { const k = S.look[slot]; return lookOwned(slot, k) ? k : { lantern: 'amber', outfit: 'wanderer', company: 'plain' }[slot]; }
+function currentLook(slot) {
+  if (S.trial && S.trial.slot === slot) { if (S.trial.until > now()) return S.trial.key; S.trial = null; sprCacheReset(); }
+  const k = S.look[slot]; return lookOwned(slot, k) ? k : { lantern: 'amber', outfit: 'wanderer', company: 'plain' }[slot]; }
 
 /* Billing. The Android app injects window.LanternBilling (see games/lantern-road/ANDROID.md):
      available: true
@@ -654,6 +666,7 @@ function store() {
 const priceOf = x => { const st = store(); return (st && st.prices && st.prices[x.id]) || x.price; };
 function grant(id) {
   const x = PROD[id]; if (!x) return;
+  if (x.kind === 'bundle') { S.owned[id] = true; for (const g of x.gives) S.owned[g] = true; S.look.lantern = 'blue'; }
   if (x.kind === 'once') { S.owned[id] = true; if (x.look) S.look[x.look[0]] = x.look[1]; if (id === 'supporter_pack') S.look.lantern = 'gold'; }
   if (x.kind === 'pass') { S.passUntil = Math.max(now(), S.passUntil) + x.days * 864e5; S.look.outfit = 'pathfinder'; }
   if (x.kind === 'charm') S.charmUntil = Math.max(now(), S.charmUntil) + x.days * 864e5;
@@ -670,7 +683,7 @@ async function buy(id) {
 }
 async function restorePurchases() {
   const st = store(); if (!st) return;
-  try { const ids = await st.restore(); let n = 0; for (const id of ids || []) if (PROD[id] && PROD[id].kind === 'once' && !S.owned[id]) { S.owned[id] = true; n++; } log(n ? `Restored ${n} purchase${n > 1 ? 's' : ''}.` : 'Everything you own is already here.'); }
+  try { const ids = await st.restore(); let n = 0; for (const id of ids || []) if (PROD[id] && (PROD[id].kind === 'once' || PROD[id].kind === 'bundle') && !S.owned[id]) { S.owned[id] = true; if (PROD[id].gives) PROD[id].gives.forEach(g => { S.owned[g] = true; }); n++; } log(n ? `Restored ${n} purchase${n > 1 ? 's' : ''}.` : 'Everything you own is already here.'); }
   catch (e) { log('Could not reach the store to restore purchases.'); }
   dirtyStats = true; sprCacheReset(); save(); renderPanel();
 }
@@ -863,6 +876,7 @@ function gainItem(it, quiet) {
     if (S.bag.length >= bagMax()) {
       S.gold += value(it);
       if (!quiet) log(`Bag full. Sold ${it.name} for ${fmt(value(it))} gold.`);
+      S.soldFull = (S.soldFull || 0) + 1; nudge('stash');
       return 'sold';
     }
   }
@@ -924,7 +938,7 @@ function recruit(quiet) {
     if (!quiet) log(`${weakest.name} stays behind at camp so ${f.name} can join.`);
   }
   S.roster.push(f); S.recruited++;
-  if (S.party.length < partySlots()) S.party.push(f.id);
+  if (S.party.length < partySlots()) S.party.push(f.id); else if (!quiet) setTimeout(() => nudge('slot'), 4000);
   dirtyStats = true;
   if (!quiet) { log(`${f.name}, a ${RAR[r].n} ${KINDS[kind].n}, follows your light.`, RAR[r].col); banner(`${f.name} joins your company`, '#f3b44a'); toast('New follower', `${f.name} the ${KINDS[kind].n}`); tip('company'); }
   if (S.tab === 'company') dirtyPanel = true;
@@ -1138,6 +1152,8 @@ function enemyHit(e, mult) {
 }
 function heroDie(killer) {
   const h = G.hero; h.hp = 0; h.dead = 2; S.deaths++; G.proj = [];
+  G.wall = G.wallStage === S.stage ? (G.wall || 0) + 1 : 1; G.wallStage = S.stage;
+  if (G.wall >= 3) setTimeout(() => nudge('wall'), 6000);
   const from = S.stage;
   if (S.stage > 1) S.stage--;
   S.wave = 1;
@@ -2216,7 +2232,7 @@ function markTabs() {
   set('tab-company', S.roster.some(f => f.isNew));
   set('tab-talents', TALENTS.some(t => !S.talents[t.id] && talAvail(t) && S.gold >= talCost()));
   set('tab-feats', FEATS.some(f => !S.feats[f.id] && featDone(f)));
-  set('tab-shop', S.maxStage >= 2 && !S.shopNoted);
+  set('tab-shop', (S.maxStage >= 2 && !S.shopNoted) || (S.maxStage >= 2 && dailyReady()));
 }
 
 /* ---------- Panels ---------- */
@@ -2472,11 +2488,13 @@ function renderShop() {
   const st = store(), live = !!st, test = live && st.test;
   const days = t => { const d = (t - now()) / 864e5; return d >= 1 ? `${Math.floor(d)}d ${Math.floor((d % 1) * 24)}h left` : `${Math.max(1, Math.ceil(d * 24))}h left`; };
   const btn = x => {
-    if (x.kind === 'once' && S.owned[x.id]) return '<span class="tagpill">Owned</span>';
+    if ((x.kind === 'once' || x.kind === 'bundle') && S.owned[x.id]) return '<span class="tagpill">Owned</span>';
     if (!live) return '<button class="btn small" disabled>Coming soon</button>';
     return `<button class="btn small primary" data-act="buy" data-id="${x.id}" ${buying ? 'disabled' : ''}>${buying === x.id ? 'Waiting for store…' : (test ? 'Test buy · ' : 'Buy · ') + priceOf(x)}</button>`;
   };
-  const useBtn = (slot, key) => lookOwned(slot, key) ? (currentLook(slot) === key ? '<span class="tagpill">In use</span>' : `<button class="btn small" data-act="look" data-slot="${slot}" data-key="${key}">Use</button>`) : '';
+  const useBtn = (slot, key) => lookOwned(slot, key) ? (currentLook(slot) === key ? '<span class="tagpill">In use</span>' : `<button class="btn small" data-act="look" data-slot="${slot}" data-key="${key}">Use</button>`)
+    : (S.trial && S.trial.slot === slot && S.trial.key === key && S.trial.until > now()) ? `<span class="tagpill">Trying · ${Math.ceil((S.trial.until - now()) / 60000)} min</span>`
+    : (key === 'gold' || key === 'pathfinder') ? '' : `<button class="btn small" data-act="try" data-slot="${slot}" data-key="${key}">Try for 5 min</button>`;
   const sup = PROD.supporter_pack;
   const wares = (slot, map) => Object.keys(map).map(key => {
     const prod = PRODUCTS.find(x => x.look && x.look[0] === slot && x.look[1] === key);
@@ -2490,6 +2508,8 @@ function renderShop() {
   panel.innerHTML = `
     ${!live ? '<p class="notice">Purchases open when Lantern Road comes to Android. Everything here can be previewed now, and the free looks can be used already.</p>' : ''}
     ${test ? '<p class="notice"><b>Developer test mode.</b> Purchases are free and fake. Turn it off in Journal → Settings before release.</p>' : ''}
+    ${dailyCard()}
+    ${bundleOpen() ? `<section class="hero-offer bundle"><h2>${PROD.starter_bundle.n}</h2><p class="sub">${PROD.starter_bundle.d}</p><div class="row">${btn(PROD.starter_bundle)}</div></section>` : ''}
     <section class="hero-offer"><h2>${sup.n}</h2><p class="sub">${sup.d} No ads, ever, and nothing in the shop is random.</p>
       <ul>${sup.perks.map(x => `<li>${x}</li>`).join('')}</ul><div class="row">${btn(sup)}${hasSupporter() ? '<span class="sub">Thank you for supporting Lantern Road.</span>' : ''}</div></section>
     <div class="card"><h2>Boosts</h2><p class="sub">Faster gold and XP for a while. Free players reach every stage too; this only shortens the walls.</p><div class="shop">${boost(PROD.road_pass)}${boost(PROD.ember_charm)}</div></div>
@@ -2530,6 +2550,44 @@ function renderForge() {
         <div class="slotpick">${SLOTS.map(s => `<button class="btn small" data-act="forgeslot" data-slot="${s}" aria-pressed="${forgeSlot === s}">${SLOT_LABEL[s]}</button>`).join('')}</div>
         <div class="row"><button class="btn primary small" data-act="craft" ${canPay(cc) && S.bag.length < bagMax() ? '' : 'disabled'}>Craft ${SLOT_LABEL[forgeSlot].toLowerCase()} · ${matsTxt(cc)}</button>${S.bag.length >= bagMax() ? '<span class="sub">Your bag is full.</span>' : ''}</div></div>
     </div>`;
+}
+const today = () => new Date().toISOString().slice(0, 10);
+const dailyReady = () => S.daily.last !== today();
+function dailyReward(pass) {
+  const g = Math.round(goldPer(S.maxStage) * 60), sh = Math.round(20 * lvlMult(S.maxStage));
+  return pass ? { gold: g * 2, shards: sh * 2, glass: 3 } : { gold: g, shards: sh, glass: 0 };
+}
+function claimDaily() {
+  if (!dailyReady()) return;
+  const y = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+  S.daily.streak = S.daily.last === y ? S.daily.streak + 1 : 1; S.daily.last = today();
+  const r = dailyReward(passActive());
+  S.gold += r.gold; S.shards += r.shards; S.glass += r.glass;
+  log(`Daily chest: +${fmt(r.gold)} gold, +${fmt(r.shards)} shards${r.glass ? `, +${r.glass} starglass` : ''}. Day ${S.daily.streak} in a row.`, '#f3b44a');
+  toast('Daily chest', `+${fmt(r.gold)} gold`);
+}
+function dailyCard() {
+  const free = dailyReward(false), pass = dailyReward(true);
+  return `<div class="card daily"><div class="chest" aria-hidden="true"></div><div style="flex:1 1 200px;min-width:0"><h2>Daily chest</h2>
+    <p class="sub">${dailyReady() ? `Today: ${fmt(free.gold)} gold and ${fmt(free.shards)} shards.` : 'Claimed today. Come back tomorrow.'}${passActive() ? ' Road Pass: doubled, plus 3 starglass.' : ` With the Road Pass: ${fmt(pass.gold)} gold, ${fmt(pass.shards)} shards and 3 starglass.`}${S.daily.streak > 1 ? ` · ${S.daily.streak} days in a row` : ''}</p></div>
+    <button class="btn ${dailyReady() ? 'primary' : ''}" data-act="daily" ${dailyReady() ? '' : 'disabled'}>${dailyReady() ? 'Open chest' : 'Opened'}</button></div>`;
+}
+
+/* ---------- Offers at the moment of need ----------
+   Shown in a bar above the tabs, at most once every 30 minutes in total and three times per kind, always dismissible.
+   They never appear on the death screen and never block play. */
+const NUDGES = {
+  stash: () => !stashMax() && S.soldFull >= 5 ? `Your bag was full, so ${S.soldFull} items were sold. A stash keeps the ones you care about, safe from every sell.` : null,
+  slot: () => nextSlotProduct() && S.roster.length > partySlots() ? `${S.roster.filter(f => !S.party.includes(f.id))[0].name} is waiting at camp. A company slot lets another follower fight beside you.` : null,
+  wall: () => (G && G.wall >= 3) ? `Stuck on Stage ${S.stage + 1}? Free ways forward: temper gear in the Forge and unlock waystones. Faster: the Ember Charm gives +50% gold for 7 days.` : null,
+};
+function nudge(kind) {
+  const n = S.nudges[kind] || { n: 0, last: 0 }, lastAny = Math.max(0, ...Object.values(S.nudges).map(x => x.last || 0));
+  if (n.n >= 3 || now() - lastAny < 30 * 60000 || !$('#overlay').hidden) return;
+  const text = NUDGES[kind](); if (!text) return;
+  S.nudges[kind] = { n: n.n + 1, last: now() };
+  $('#nudgeText').textContent = text; $('#nudge').hidden = false; $('#nudge').dataset.kind = kind;
+  if (kind === 'stash') S.soldFull = 0;
 }
 function renderPanel() {
   dirtyPanel = false;
@@ -2590,12 +2648,16 @@ panel.addEventListener('click', e => {
   if (a === 'toshop') { S.tab = 'shop'; renderPanel(); return; }
   if (a === 'buy') { buy(id); return; }
   if (a === 'restore') { restorePurchases(); return; }
+  if (a === 'daily') claimDaily();
+  if (a === 'try') { S.trial = { slot: b.dataset.slot, key: b.dataset.key, until: now() + 5 * 60000 }; sprCacheReset(); toast('Trying on', ({ lantern: LANTERNS, outfit: OUTFITS, company: COMPANY_LOOKS }[b.dataset.slot][b.dataset.key] || {}).n || ''); }
   if (a === 'look') { if (lookOwned(b.dataset.slot, b.dataset.key)) { S.look[b.dataset.slot] = b.dataset.key; sprCacheReset(); } }
   if (a === 'reset1') confirmReset = true;
   if (a === 'reset0') confirmReset = false;
   if (a === 'reset2') { S = newGame(); confirmReset = false; selBag = selEq = selTal = null; dirtyStats = true; resetRuntime(); }
   save(); updateHud(); renderPanel();
 });
+$('#nudgeGo').addEventListener('click', () => { $('#nudge').hidden = true; S.tab = 'shop'; renderPanel(); });
+$('#nudgeNo').addEventListener('click', () => { $('#nudge').hidden = true; });
 $('#coachOk').addEventListener('click', () => { if (tipQueue[0]) doneTip(tipQueue[0]); });
 $('#ptsBtn').addEventListener('click', () => { S.tab = 'hero'; renderPanel(); });
 
@@ -2704,6 +2766,8 @@ function showAway(r) {
       <div><b>+${r.levels}</b><small>Levels</small></div><div><b>+${fmt(r.gold)}</b><small>Gold</small></div></div>
     ${r.kept.length ? `<p class="sub">${r.kept.length} item${r.kept.length > 1 ? 's' : ''} added to your bag${r.sold ? `, ${r.sold} sold for gold (auto-sell or full bag)` : ''}.</p><ul class="found">${list}</ul>` : `<p class="sub">${r.sold ? r.sold + ' drops were sold for gold.' : 'No gear dropped this time.'}</p>`}
     ${r.joined.length ? `<p class="sub">New travellers followed your light:</p><ul class="found">${joined}</ul>` : ''}
+    ${!passActive() && r.gold > 0 ? `<p class="sub" style="text-align:center">With a Road Pass you would have earned <b style="color:var(--lamp)">+${fmt(r.gold * .25)} more gold</b> and 25% more XP.</p>` : ''}
+    ${dailyReady() && S.maxStage >= 2 ? '<p class="sub" style="text-align:center">Your daily chest is ready in the Shop.</p>' : ''}
     <button class="btn primary" id="awayOk" type="button">Back to the road</button>`;
   $('#overlay').hidden = false;
   $('#awayOk').focus();
