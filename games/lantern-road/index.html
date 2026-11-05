@@ -876,7 +876,7 @@ function gainItem(it, quiet) {
     if (S.bag.length >= bagMax()) {
       S.gold += value(it);
       if (!quiet) log(`Bag full. Sold ${it.name} for ${fmt(value(it))} gold.`);
-      S.soldFull = (S.soldFull || 0) + 1; nudge('stash');
+      S.soldFull = (S.soldFull || 0) + 1; if (!quiet) nudge('stash');
       return 'sold';
     }
   }
@@ -1152,8 +1152,8 @@ function enemyHit(e, mult) {
 }
 function heroDie(killer) {
   const h = G.hero; h.hp = 0; h.dead = 2; S.deaths++; G.proj = [];
-  G.wall = G.wallStage === S.stage ? (G.wall || 0) + 1 : 1; G.wallStage = S.stage;
-  if (G.wall >= 3) setTimeout(() => nudge('wall'), 6000);
+  S.wall = S.wall && S.wall.stage === S.stage ? { stage: S.stage, n: S.wall.n + 1 } : { stage: S.stage, n: 1 };
+  if (S.wall.n >= 3) setTimeout(() => nudge('wall'), 6000);
   const from = S.stage;
   if (S.stage > 1) S.stage--;
   S.wave = 1;
@@ -2574,21 +2574,28 @@ function dailyCard() {
 }
 
 /* ---------- Offers at the moment of need ----------
-   Shown in a bar above the tabs, at most once every 30 minutes in total and three times per kind, always dismissible.
-   They never appear on the death screen and never block play. */
+   People open the game for short visits, so the limits are per visit, not per minute: at most one offer per visit
+   (shown when they come back, or once when something happens during the visit), each kind at most once a day,
+   and once a week after three "Not now" in a row. Never on the death screen, never blocking play. */
 const NUDGES = {
   stash: () => !stashMax() && S.soldFull >= 5 ? `Your bag was full, so ${S.soldFull} items were sold. A stash keeps the ones you care about, safe from every sell.` : null,
   slot: () => nextSlotProduct() && S.roster.length > partySlots() ? `${S.roster.filter(f => !S.party.includes(f.id))[0].name} is waiting at camp. A company slot lets another follower fight beside you.` : null,
-  wall: () => (G && G.wall >= 3) ? `Stuck on Stage ${S.stage + 1}? Free ways forward: temper gear in the Forge and unlock waystones. Faster: the Ember Charm gives +50% gold for 7 days.` : null,
+  wall: () => (S.wall && S.wall.n >= 3 && S.maxStage <= S.wall.stage) ? `Stuck on Stage ${S.wall.stage}? Free ways forward: temper gear in the Forge and unlock waystones. Faster: the Ember Charm gives +50% gold for 7 days.` : null,
 };
+let offeredThisVisit = false;
 function nudge(kind) {
-  const n = S.nudges[kind] || { n: 0, last: 0 }, lastAny = Math.max(0, ...Object.values(S.nudges).map(x => x.last || 0));
-  if (n.n >= 3 || now() - lastAny < 30 * 60000 || !$('#overlay').hidden) return;
-  const text = NUDGES[kind](); if (!text) return;
-  S.nudges[kind] = { n: n.n + 1, last: now() };
+  const n = S.nudges[kind] || { n: 0, last: 0, no: 0 };
+  const gap = (n.no || 0) >= 3 ? 7 * 864e5 : 864e5 - 3600e3; // about once a day; weekly after three "Not now"
+  if (offeredThisVisit || now() - (n.last || 0) < gap || !$('#overlay').hidden) return false;
+  const text = NUDGES[kind](); if (!text) return false;
+  offeredThisVisit = true;
+  S.nudges[kind] = { n: (n.n || 0) + 1, last: now(), no: n.no || 0 };
   $('#nudgeText').textContent = text; $('#nudge').hidden = false; $('#nudge').dataset.kind = kind;
   if (kind === 'stash') S.soldFull = 0;
+  return true;
 }
+function newVisit() { offeredThisVisit = false; }
+function offerOnVisit() { for (const k of ['stash', 'slot', 'wall']) if (nudge(k)) break; }
 function renderPanel() {
   dirtyPanel = false;
   document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === S.tab)));
@@ -2656,8 +2663,8 @@ panel.addEventListener('click', e => {
   if (a === 'reset2') { S = newGame(); confirmReset = false; selBag = selEq = selTal = null; dirtyStats = true; resetRuntime(); }
   save(); updateHud(); renderPanel();
 });
-$('#nudgeGo').addEventListener('click', () => { $('#nudge').hidden = true; S.tab = 'shop'; renderPanel(); });
-$('#nudgeNo').addEventListener('click', () => { $('#nudge').hidden = true; });
+$('#nudgeGo').addEventListener('click', () => { const k = $('#nudge').dataset.kind; if (S.nudges[k]) S.nudges[k].no = 0; $('#nudge').hidden = true; S.tab = 'shop'; renderPanel(); });
+$('#nudgeNo').addEventListener('click', () => { const k = $('#nudge').dataset.kind; if (S.nudges[k]) S.nudges[k].no = (S.nudges[k].no || 0) + 1; $('#nudge').hidden = true; });
 $('#coachOk').addEventListener('click', () => { if (tipQueue[0]) doneTip(tipQueue[0]); });
 $('#ptsBtn').addEventListener('click', () => { S.tab = 'hero'; renderPanel(); });
 
@@ -2771,11 +2778,11 @@ function showAway(r) {
     <button class="btn primary" id="awayOk" type="button">Back to the road</button>`;
   $('#overlay').hidden = false;
   $('#awayOk').focus();
-  $('#awayOk').onclick = () => { $('#overlay').hidden = true; dirtyPanel = true; };
+  $('#awayOk').onclick = () => { $('#overlay').hidden = true; dirtyPanel = true; setTimeout(offerOnVisit, 1500); };
 }
 function catchUp() {
   const gap = (Date.now() - S.lastSeen) / 1000;
-  if (gap > 60) { const r = simulateAway(gap); autoPlay(true); if (r) showAway(r); }
+  if (gap > 60) { newVisit(); const r = simulateAway(gap); autoPlay(true); if (r) showAway(r); else setTimeout(offerOnVisit, 3000); }
   S.lastSeen = Date.now();
 }
 let last = performance.now();
@@ -2806,7 +2813,9 @@ function start(data) {
   dirtyStats = true;
   resetRuntime();
   sizeCanvas();
+  newVisit();
   if (!data || !data.S) catchUp();
+  if ($('#overlay').hidden) setTimeout(offerOnVisit, 3000);
   document.documentElement.classList.toggle('big', !!S.gfx.big);
   updateHud(); renderPanel();
   requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
