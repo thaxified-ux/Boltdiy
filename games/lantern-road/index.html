@@ -216,6 +216,7 @@ html.big{font-size:112.5%}
 .bundle{border-color:#7ff0ff;background:linear-gradient(135deg,#10282e,var(--panel) 60%)}
 .bundle h2{color:#7ff0ff}
 .slot{background-image:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--rc,transparent) 38%,transparent) 0,transparent 70%)!important}
+.revive{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);z-index:3;white-space:nowrap;animation:pulse 1s steps(2) infinite;box-shadow:0 0 0 3px #000,0 0 16px rgba(243,180,74,.7)}
 .log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:320px;overflow:auto;font-size:.9rem}
 .log li{display:flex;gap:8px;border-bottom:1px solid #1e2a30;padding:4px 0}
 .log time{color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
@@ -310,6 +311,7 @@ body.strip .console{display:none}
     <canvas id="cv" width="960" height="360"></canvas>
     <div class="toasts" id="toasts" aria-live="polite"></div>
     <div class="roadhud"><span id="hudStage">Stage 1 · Wave 1/10</span><span class="zone" id="hudZone">Mossbarrow Lane</span></div>
+    <button class="btn primary revive" id="reviveBtn" type="button" hidden></button>
     <button class="btn small exitstrip" id="exitStrip" type="button">Show menus</button>
   </section>
 
@@ -632,7 +634,7 @@ function fresh() {
     stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: false, autoEquip: false, autoStones: false, autoCompany: false, autoClaim: false, autoForge: false, manualV1: true, shards: 0, glass: 0, tempered: 0, crafted: 0, kills: 0, deaths: 0, best: null,
     played: 0, lastSeen: Date.now(), log: [], tab: 'hero', created: Date.now(),
     owned: {}, passUntil: 0, charmUntil: 0, look: { lantern: 'amber', outfit: 'wanderer', company: 'plain' }, testShop: false, shopNoted: false,
-    seen: {}, tips: {}, featSeen: {}, stash: [], bagView: 'bag', nudges: {}, soldFull: 0, trial: null, daily: { last: '', streak: 0 }, gfx: { numbers: true, weather: true, shake: true, fps30: false, big: false } };
+    seen: {}, tips: {}, featSeen: {}, stash: [], bagView: 'bag', nudges: {}, soldFull: 0, embers: 1, hourglass: 0, trial: null, daily: { last: '', streak: 0 }, gfx: { numbers: true, weather: true, shake: true, fps30: false, big: false } };
 }
 let S = fresh();
 let G, ST;
@@ -676,6 +678,7 @@ function migrate(d) {
   s.gfx = Object.assign({ numbers: true, weather: true, shake: true, fps30: false, big: false }, s.gfx || {});
   if (!d.manualV1) { for (const k of ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge']) s[k] = false; s.manualV1 = true; }
   if (s.autoForge === undefined) s.autoForge = false; s.shards = s.shards || 0; s.glass = s.glass || 0; s.tempered = s.tempered || 0; s.crafted = s.crafted || 0;
+  if (s.embers === undefined) s.embers = 1; if (s.hourglass === undefined) s.hourglass = 0;
   s.nudges = s.nudges || {}; s.soldFull = s.soldFull || 0; s.daily = s.daily || { last: '', streak: 0 };
   s.tips = s.tips || {}; s.featSeen = s.featSeen || {}; s.stash = s.stash || []; s.bagView = s.bagView || 'bag';
   if (!s.seen) { // older saves: everything already passed counts as met
@@ -715,10 +718,13 @@ const OUTFITS = {
 };
 const COMPANY_LOOKS = { plain: { n: 'Travel cloaks' }, banners: { n: 'Company Banners' } };
 const PRODUCTS = [
+  { id: 'embers_5', kind: 'consumable', price: '€0.99', give: { embers: 5 }, n: '5 Lantern Embers', d: 'Rise again on the spot when a guardian beats you, without losing the stage.' },
+  { id: 'embers_20', kind: 'consumable', price: '€2.99', give: { embers: 20 }, n: '20 Lantern Embers', d: 'Twenty second chances against guardians. The best value.' },
+  { id: 'hourglass_3', kind: 'consumable', price: '€1.99', give: { hourglass: 3 }, n: '3 Hourglasses', d: 'Each one collects 2 hours of rewards instantly: gold, XP, gear and travellers.' },
   { id: 'starter_bundle', kind: 'bundle', price: '€2.99', n: 'Starter Bundle', gives: ['stash_page_1', 'company_slot_1', 'lantern_blue'], d: 'The stash, a second company slot and the Moonwater Blue lantern. €4.97 if bought separately. One time only, for players who own none of the three.' },
   { id: 'supporter_pack', kind: 'once', price: '€4.99', n: 'Wayfarer’s Supporter Pack', d: 'Thank you for supporting the game.',
-    perks: ['+10 bag slots', '+1 company slot', 'Offline rewards for 24 hours instead of 12', 'Supporter Gold lantern'] },
-  { id: 'road_pass', kind: 'pass', price: '€3.99', days: 30, n: 'Road Pass', d: '30 days of +25% gold and +25% XP, and the Pathfinder outfit while it lasts.' },
+    perks: ['+10 bag slots', '+1 company slot', 'Offline rewards for 24 hours instead of 6', 'Supporter Gold lantern'] },
+  { id: 'road_pass', kind: 'pass', price: '€3.99', days: 30, n: 'Road Pass', d: '30 days of +25% gold and +25% XP, offline rewards for 12 hours instead of 6, a bigger daily chest, and the Pathfinder outfit while it lasts.' },
   { id: 'ember_charm', kind: 'charm', price: '€1.49', days: 7, n: 'Ember Charm', d: '7 days of +50% gold. Buying another adds 7 more days.' },
   { id: 'lantern_blue', kind: 'once', price: '€1.99', look: ['lantern', 'blue'], n: 'Moonwater Blue lantern', d: 'Your lantern and the road around you glow blue.' },
   { id: 'lantern_green', kind: 'once', price: '€1.99', look: ['lantern', 'green'], n: 'Firefly Green lantern', d: 'Your lantern and the road around you glow green.' },
@@ -739,6 +745,7 @@ const PROD = Object.fromEntries(PRODUCTS.map(x => [x.id, x]));
 const now = () => Date.now();
 const hasSupporter = () => !!S.owned.supporter_pack;
 const passActive = () => S.passUntil > now();
+const offlineCapH = () => window.__capOverride || (hasSupporter() ? 24 : passActive() ? 12 : 6);
 const charmActive = () => S.charmUntil > now();
 const bagMax = () => BAG_MAX + (hasSupporter() ? 10 : 0);
 const STASH_IDS = ['stash_page_1', 'stash_page_2', 'stash_page_3'];
@@ -777,6 +784,7 @@ function grant(id) {
   if (x.kind === 'bundle') { S.owned[id] = true; for (const g of x.gives) S.owned[g] = true; S.look.lantern = 'blue'; }
   if (x.kind === 'once') { S.owned[id] = true; if (x.look) S.look[x.look[0]] = x.look[1]; if (id === 'supporter_pack') S.look.lantern = 'gold'; }
   if (x.kind === 'pass') { S.passUntil = Math.max(now(), S.passUntil) + x.days * 864e5; S.look.outfit = 'pathfinder'; }
+  if (x.kind === 'consumable') { S.embers += x.give.embers || 0; S.hourglass += x.give.hourglass || 0; }
   if (x.kind === 'charm') S.charmUntil = Math.max(now(), S.charmUntil) + x.days * 864e5;
   dirtyStats = true; sprCacheReset();
   log(`${store() && store().test ? 'Test purchase: ' : 'Thank you! '}${x.n} is yours.`, '#f3b44a');
@@ -1267,6 +1275,9 @@ function enemyHit(e, mult) {
 }
 function heroDie(killer) {
   const h = G.hero; h.hp = 0; h.dead = 2; S.deaths++; G.proj = [];
+  // Falling to a guardian: offer to rise again on the spot for a few seconds instead of losing the stage.
+  G.revive = S.wave === WAVES ? { stage: S.stage, foes: G.enemies.filter(e => !e.dead).map(e => Object.assign({}, e)), until: G.t + 6 } : null;
+  if (G.revive) h.dead = 6;
   S.wall = S.wall && S.wall.stage === S.stage ? { stage: S.stage, n: S.wall.n + 1 } : { stage: S.stage, n: 1 };
   if (S.wall.n >= 3) setTimeout(() => nudge('wall'), 6000);
   const from = S.stage;
@@ -1313,6 +1324,7 @@ function update(dt) {
   updateParts(dt);
   if (h.dead > 0) {
     h.dead -= dt; G.moving = false;
+    if (G.revive && G.t > G.revive.until) G.revive = null;
     for (const e of G.enemies) e.x += 40 * dt;
     if (h.dead <= 0) { G.enemies = []; h.hp = st.hp; h.stun = h.blind = h.chill = 0; h.dots = []; G.phase = 'walk'; G.walkT = 1.5; banner(G.fallBanner || `Stage ${S.stage} · ${ZONES[zoneOf(S.stage)].name}`, '#ff8070'); G.fallBanner = null; }
     return;
@@ -2370,6 +2382,8 @@ function updateHud() {
   hud.hpt.textContent = `${fmt(Math.max(0, G.hero.hp))}/${fmt(st.hp)}`;
   hud.power.textContent = `Power ${fmt(rating(st))}`;
   hud.pts.hidden = !S.points;
+  { const rb = document.getElementById('reviveBtn'), on = !!(G.revive && G.hero.dead > 0 && G.t < G.revive.until);
+    rb.hidden = !on; if (on) rb.textContent = S.embers > 0 ? `Rise again · 1 Ember (${S.embers} left) · ${Math.ceil(G.revive.until - G.t)}s` : `Rise again? Get Lantern Embers · ${Math.ceil(G.revive.until - G.t)}s`; }
   hud.pts.textContent = `${S.points} point${S.points === 1 ? '' : 's'} to spend`;
   document.title = `Lantern Road · Stage ${S.stage} ${S.wave}/${WAVES}`;
 }
@@ -2537,6 +2551,7 @@ function renderCompany() {
       </div></article>`;
   }).join('');
   panel.innerHTML = `<div class="card"><div class="row between"><h2>Company · ${S.roster.length}/${ROSTER_MAX}</h2><span class="sub">${nextSlot}</span></div>
+    ${S.roster.length > slots ? `<p class="notice">${S.roster.length - members.length} traveller${S.roster.length - members.length > 1 ? 's are' : ' is'} waiting at camp, with about <b>${fmt(S.roster.filter(f => !S.party.includes(f.id)).reduce((a, f) => a + folPower(f, st.cp), 0))}</b> power that is not fighting. ${nextSlotProduct() ? `<button class="btn small primary" data-act="toshop">Unlock a slot · ${priceOf(PROD[nextSlotProduct()])}</button>` : ''}</p>` : ''}
     <p class="sub">Lost travellers sometimes follow your lantern after a wave, and often after a guardian falls. ${slots === 1 ? 'One walks with you for free' : `${slots} walk with you`}; the rest wait at camp. More slots are in the Shop.</p>
     <div class="partybar">${bar}</div></div>
     ${S.roster.length ? `<div class="roster">${cards}</div>` : '<p class="hint">No one has followed your light yet. Keep walking: guardians give the best chance.</p>'}`;
@@ -2683,6 +2698,9 @@ function renderShop() {
     ${bundleOpen() ? `<section class="hero-offer bundle"><h2>${PROD.starter_bundle.n}</h2><p class="sub">${PROD.starter_bundle.d}</p><div class="row">${btn(PROD.starter_bundle)}</div></section>` : ''}
     <section class="hero-offer"><h2>${sup.n}</h2><p class="sub">${sup.d} No ads, ever, and nothing in the shop is random.</p>
       <ul>${sup.perks.map(x => `<li>${x}</li>`).join('')}</ul><div class="row">${btn(sup)}${hasSupporter() ? '<span class="sub">Thank you for supporting Lantern Road.</span>' : ''}</div></section>
+    <div class="card"><h2>Second chances and time</h2><p class="sub">You have <b>${S.embers}</b> Lantern Ember${S.embers === 1 ? '' : 's'} and <b>${S.hourglass}</b> Hourglass${S.hourglass === 1 ? '' : 'es'}. The daily chest gives a free Ember every day.</p>
+      ${S.hourglass > 0 ? '<div class="row"><button class="btn small primary" data-act="hourglass">Use an Hourglass: collect 2 hours now</button></div>' : ''}
+      <div class="shop">${['embers_5', 'embers_20', 'hourglass_3'].map(id => { const x = PROD[id]; return `<article class="ware"><h3>${x.n}</h3><p>${x.d}</p><div class="row">${btn(x)}</div></article>`; }).join('')}</div></div>
     <div class="card"><h2>Boosts</h2><p class="sub">Faster gold and XP for a while. Free players reach every stage too; this only shortens the walls.</p><div class="shop">${boost(PROD.road_pass)}${boost(PROD.ember_charm)}</div></div>
     <div class="card"><h2>Lanterns</h2><p class="sub">Your lantern lights the whole road in its color.</p><div class="shop">${wares('lantern', LANTERNS)}</div></div>
     <div class="card"><h2>Outfits</h2><div class="shop">${wares('outfit', OUTFITS)}</div></div>
@@ -2726,15 +2744,15 @@ const today = () => new Date().toISOString().slice(0, 10);
 const dailyReady = () => S.daily.last !== today();
 function dailyReward(pass) {
   const g = Math.round(goldPer(S.maxStage) * 60), sh = Math.round(20 * lvlMult(S.maxStage));
-  return pass ? { gold: g * 2, shards: sh * 2, glass: 3 } : { gold: g, shards: sh, glass: 0 };
+  return pass ? { gold: g * 2, shards: sh * 2, glass: 3, embers: 2 } : { gold: g, shards: sh, glass: 0, embers: 1 };
 }
 function claimDaily() {
   if (!dailyReady()) return;
   const y = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
   S.daily.streak = S.daily.last === y ? S.daily.streak + 1 : 1; S.daily.last = today();
   const r = dailyReward(passActive());
-  S.gold += r.gold; S.shards += r.shards; S.glass += r.glass;
-  log(`Daily chest: +${fmt(r.gold)} gold, +${fmt(r.shards)} shards${r.glass ? `, +${r.glass} starglass` : ''}. Day ${S.daily.streak} in a row.`, '#f3b44a');
+  S.gold += r.gold; S.shards += r.shards; S.glass += r.glass; S.embers += r.embers;
+  log(`Daily chest: +${r.embers} Ember${r.embers > 1 ? 's' : ''}, +${fmt(r.gold)} gold, +${fmt(r.shards)} shards${r.glass ? `, +${r.glass} starglass` : ''}. Day ${S.daily.streak} in a row.`, '#f3b44a');
   toast('Daily chest', `+${fmt(r.gold)} gold`);
 }
 function dailyCard() {
@@ -2830,6 +2848,7 @@ panel.addEventListener('click', e => {
   if (a === 'buy') { buy(id); return; }
   if (a === 'restore') { restorePurchases(); return; }
   if (a === 'daily') claimDaily();
+  if (a === 'hourglass') { if (S.hourglass > 0) { S.hourglass--; const capSave = S.lastSeen; const r = simulateAwayFixed(2 * 3600); autoPlay(true); if (r) showAway(r); S.lastSeen = capSave; } }
   if (a === 'try') { S.trial = { slot: b.dataset.slot, key: b.dataset.key, until: now() + 5 * 60000 }; sprCacheReset(); toast('Trying on', ({ lantern: LANTERNS, outfit: OUTFITS, company: COMPANY_LOOKS }[b.dataset.slot][b.dataset.key] || {}).n || ''); }
   if (a === 'look') { if (lookOwned(b.dataset.slot, b.dataset.key)) { S.look[b.dataset.slot] = b.dataset.key; sprCacheReset(); } }
   if (a === 'exportcode') { exportCode().then(c => { saveCodeOut = c; saveCodeMsg = ''; renderPanel(); }); return; }
@@ -2847,6 +2866,16 @@ panel.addEventListener('click', e => {
 $('#nudgeGo').addEventListener('click', () => { const k = $('#nudge').dataset.kind; if (S.nudges[k]) S.nudges[k].no = 0; $('#nudge').hidden = true; S.tab = 'shop'; renderPanel(); });
 $('#nudgeNo').addEventListener('click', () => { const k = $('#nudge').dataset.kind; if (S.nudges[k]) S.nudges[k].no = (S.nudges[k].no || 0) + 1; $('#nudge').hidden = true; });
 $('#coachOk').addEventListener('click', () => { const id = tipQueue[0]; if (!id) return; S.tab = TIPS[id].tab; selBag = selEq = null; renderPanel(); doneTip(id); });
+$('#reviveBtn').addEventListener('click', () => {
+  const R = G.revive; if (!R) return;
+  if (S.embers <= 0) { S.tab = 'shop'; renderPanel(); return; }
+  S.embers--; S.deaths = Math.max(0, S.deaths - 1);
+  S.stage = R.stage; S.wave = WAVES; S.wall = null;
+  const h = G.hero; h.dead = 0; h.hp = stats().hp; h.stun = h.blind = h.chill = 0; h.dots = [];
+  G.enemies = R.foes.map((e, i) => Object.assign(e, { x: W + 10 + i * 26, t: 1, enraged: false, age: 0 })); G.phase = 'fight'; G.revive = null; G.fallBanner = null;
+  banner('You rise again!', '#f3b44a'); burst(HX, GY - 12, ['#f3b44a', '#fff2c0'], 20, 70); log(`Used a Lantern Ember to rise again against ${R.foes[0] ? (R.foes[0].title || R.foes[0].n) : 'the guardian'}.`, '#f3b44a');
+  save(); updateHud();
+});
 $('#ptsBtn').addEventListener('click', () => { S.tab = 'hero'; renderPanel(); });
 
 /* Strip mode: only the road, for a pinned tab or a narrow side window */
@@ -2917,7 +2946,7 @@ function autoPlay(quiet) {
 
 /* ---------- Offline progress ---------- */
 function simulateAway(sec) {
-  sec = Math.min(sec, (hasSupporter() ? 24 : 12) * 3600);
+  const capH = offlineCapH(); const capped = sec > capH * 3600; sec = Math.min(sec, capH * 3600);
   const st = stats(), s = S.stage, z = ZONES[zoneOf(s)];
   const avgRes = [...z.foes].reduce((a, f) => a + resMult(f, st.elem), 0) / z.foes.length;
   let dps = st.dmg * st.aspd * (1 + st.crit / 100 * (st.critd / 100 - 1)) * avgRes * (S.path === 'lamp' ? 1.25 : 1);
@@ -2941,7 +2970,7 @@ function simulateAway(sec) {
   const tries = Math.min(3, Math.floor(kills / 400));
   for (let i = 0; i < tries; i++) if (Math.random() < .5) { const f = recruit(true); if (f) joined.push(f); }
   log(`While away (${dur(sec)}): ${fmt(kills)} enemies, ${fmt(gold)} gold, ${kept.length} items kept${joined.length ? `, ${joined.length} new follower${joined.length > 1 ? 's' : ''}` : ''}.`);
-  return { sec, kills, gold: gold + soldGold, levels: S.level - lv0, kept, sold, joined };
+  return { capped, capH, sec, kills, gold: gold + soldGold, levels: S.level - lv0, kept, sold, joined };
 }
 function showAway(r) {
   const card = $('#awayCard');
@@ -2954,6 +2983,7 @@ function showAway(r) {
       <div><b>+${r.levels}</b><small>Levels</small></div><div><b>+${fmt(r.gold)}</b><small>Gold</small></div></div>
     ${r.kept.length ? `<p class="sub">${r.kept.length} item${r.kept.length > 1 ? 's' : ''} added to your bag${r.sold ? `, ${r.sold} sold for gold (auto-sell or full bag)` : ''}.</p><ul class="found">${list}</ul>` : `<p class="sub">${r.sold ? r.sold + ' drops were sold for gold.' : 'No gear dropped this time.'}</p>`}
     ${r.joined.length ? `<p class="sub">New travellers followed your light:</p><ul class="found">${joined}</ul>` : ''}
+    ${r.capped ? `<p class="sub" style="text-align:center">Your lantern burned out after <b>${r.capH} hours</b>, so the rest of the time earned nothing. ${r.capH < 24 ? `${r.capH < 12 ? 'The Road Pass keeps it lit for 12 hours, the' : 'The'} Supporter Pack for 24.` : ''}</p>` : ''}
     ${!passActive() && r.gold > 0 ? `<p class="sub" style="text-align:center">With a Road Pass you would have earned <b style="color:var(--lamp)">+${fmt(r.gold * .25)} more gold</b> and 25% more XP.</p>` : ''}
     ${dailyReady() && S.maxStage >= 2 ? '<p class="sub" style="text-align:center">Your daily chest is ready in the Shop.</p>' : ''}
     <button class="btn primary" id="awayOk" type="button">Back to the road</button>`;
@@ -2961,6 +2991,8 @@ function showAway(r) {
   $('#awayOk').focus();
   $('#awayOk').onclick = () => { $('#overlay').hidden = true; dirtyPanel = true; setTimeout(offerOnVisit, 1500); };
 }
+/* An Hourglass collects exactly 2 hours, whatever the offline window. */
+function simulateAwayFixed(sec) { const keep = offlineCapH; try { window.__capOverride = 24; return simulateAway(sec); } finally { window.__capOverride = 0; } }
 function catchUp() {
   const gap = (Date.now() - S.lastSeen) / 1000;
   if (gap > 60) { newVisit(); const r = simulateAway(gap); autoPlay(true); if (r) showAway(r); else setTimeout(offerOnVisit, 3000); }

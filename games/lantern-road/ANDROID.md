@@ -33,6 +33,9 @@ window.LanternBilling = {
 
 | Product id | Type in Play Console | Price | What the game gives |
 |---|---|---|---|
+| `embers_5` | One-time, **consumable** | €0.99 | 5 Lantern Embers: rise again on the spot when a guardian wins |
+| `embers_20` | One-time, **consumable** | €2.99 | 20 Lantern Embers |
+| `hourglass_3` | One-time, **consumable** | €1.99 | 3 Hourglasses: each collects 2 hours of rewards instantly |
 | `starter_bundle` | One-time, non-consumable | €2.99 | Unlocks `stash_page_1`, `company_slot_1` and `lantern_blue` together. Only offered while the player owns none of the three. |
 | `supporter_pack` | One-time, non-consumable | €4.99 | +10 bag slots, +1 company slot, 24 h offline rewards, Supporter Gold lantern |
 | `road_pass` | One-time, **consumable** | €3.99 | 30 days of +25% gold and XP, plus the Pathfinder outfit (buying again adds 30 days) |
@@ -85,7 +88,7 @@ document.addEventListener('deviceready', async () => {
     'outfit_ember', 'outfit_frost', 'outfit_royal', 'company_banners',
     'company_slot_1', 'company_slot_2', 'company_slot_3',
     'stash_page_1', 'stash_page_2', 'stash_page_3'];
-  const repeat = ['road_pass', 'ember_charm'];
+  const repeat = ['road_pass', 'ember_charm', 'embers_5', 'embers_20', 'hourglass_3'];
   store.register([
     ...once.map(id => ({ id, type: ProductType.NON_CONSUMABLE, platform: Platform.GOOGLE_PLAY })),
     ...repeat.map(id => ({ id, type: ProductType.CONSUMABLE, platform: Platform.GOOGLE_PLAY })),
