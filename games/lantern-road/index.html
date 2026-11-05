@@ -398,7 +398,7 @@ const SLOT_MAIN = {
   boots: { dodge: 1.5, hp: 14 }, cloak: { def: 3, rAll: 3 }, amulet: { dmg: 3, critd: 8 }, ring: { crit: 1.5, critd: 10 }, charm: { gold: 6, comp: 4 },
 };
 const PATHS = {
-  blade: { n: 'Blade', d: 'Fights up close. +20% max HP, +15% defense.', range: 18, mult: 1, elem: 'phys', weapons: ['Shortsword', 'Sabre', 'Warpick', 'Hatchet', 'Falchion'] },
+  blade: { n: 'Blade', d: 'Fights up close. +20% max HP, +15% defense.', range: 26, mult: 1, elem: 'phys', weapons: ['Shortsword', 'Sabre', 'Warpick', 'Hatchet', 'Falchion'] },
   bow: { n: 'Bow', d: 'Shoots from range, so foes take hits before they reach you. +15% attack speed, 90% damage.', range: 110, mult: .9, elem: 'phys', weapons: ['Shortbow', 'Longbow', 'Sling', 'Recurve'] },
   lamp: { n: 'Lamp', d: 'Casts radiant light from the lantern. Every bolt splashes 40% onto the other foes. 85% damage.', range: 85, mult: .85, elem: 'radiant', weapons: ['Wick Staff', 'Censer', 'Lamp Rod', 'Glimmer Wand'] },
 };
@@ -829,7 +829,9 @@ function doneTip(id) { S.tips[id] = true; tipQueue = tipQueue.filter(x => x !== 
    Tempering adds 8% to all of an item's stats per level, up to +10. Salvaging a tempered item returns half
    of the materials spent on it. Reforging rerolls an item's extra stats; crafting makes a new Rare-or-better item. */
 const MAX_UP = 10;
-const itemStats = it => { if (!it.up) return it.stats; const m = 1 + .08 * it.up; return Object.fromEntries(Object.entries(it.stats).map(([k, v]) => [k, roundStat(k, v * m)])); };
+const FOE_SCALE = 1.5; // monsters are drawn half again as large
+const ITEM_POWER = .7; // every item gives 70% of its listed base stats
+const itemStats = it => { const m = ITEM_POWER * (1 + .08 * (it.up || 0)); return Object.fromEntries(Object.entries(it.stats).map(([k, v]) => [k, roundStat(k, v * m)])); };
 const gsOf = it => Math.round(it.gs * (1 + .05 * (it.up || 0)));
 const itemName = it => it.name + (it.up ? ` +${it.up}` : '');
 const lvlMult = il => 1 + il / 8;
@@ -1155,7 +1157,7 @@ function spawnWave() {
   G.enemies = [];
   for (let i = 0; i < n; i++) {
     const f = boss ? z.boss : pick(z.foes), b = enemyBase(S.stage, S.wave, boss);
-    G.enemies.push(makeFoe(f, b, boss, W + 4 + i * 20, !boss && Math.random() < eliteChance));
+    G.enemies.push(makeFoe(f, b, boss, W + 10 + i * 26, !boss && Math.random() < eliteChance));
   }
   G.phase = 'fight';
   if (boss) banner(`Guardian: ${z.boss.n}`, '#ff8070');
@@ -1169,7 +1171,7 @@ function damage(e, raw, el, crit, small) {
   if (crit) G.stop = Math.max(G.stop || 0, .05);
   if (e.reflect > 0 && G.hero.dead <= 0) { G.hero.hp -= d * .3 * (1 - stats().res.fire / 100); if (G.hero.hp <= 0) heroDie(e); }
   const col = crit ? '#f3b44a' : el === 'phys' ? '#ece4d0' : ELEM[el].col;
-  if (S.gfx.numbers) fx(e.x + rnd(-3, 3), GY - (e.boss ? 30 : 18), fmt(d) + (m > 1.2 ? '!' : ''), col, .8, small ? 4 : crit ? 6 : 5);
+  if (S.gfx.numbers) fx(e.x + rnd(-3, 3), GY - (e.boss ? 44 : 28), fmt(d) + (m > 1.2 ? '!' : ''), col, .8, small ? 4 : crit ? 6 : 5);
   if (e.hp <= 0) kill(e);
   return d;
 }
@@ -1190,7 +1192,7 @@ function updateProj(dt) {
   for (const p of G.proj) {
     const t = p.tgt;
     if (!t || t.dead) { p.done = true; continue; }
-    const tx = t.x, ty = GY - (t.boss ? 16 : 8);
+    const tx = t.x, ty = GY - (t.boss ? 24 : 12);
     const dx = tx - p.x, dy = ty - p.y, dist = Math.hypot(dx, dy);
     if (dist < 4) {
       p.done = true;
@@ -1224,7 +1226,7 @@ function kill(e) {
 }
 function useSpecial(e, sp) {
   const h = G.hero, st = stats();
-  fx(e.x, GY - (e.boss ? 46 : 34), sp.n, '#d8a8ff', 1.3, e.boss ? 6 : 5);
+  fx(e.x, GY - (e.boss ? 62 : 46), sp.n, '#d8a8ff', 1.3, e.boss ? 6 : 5);
   switch (sp.k) {
     case 'poison': case 'burn': {
       const el = sp.k === 'burn' ? 'fire' : 'phys', resist = el === 'phys' ? 1 : 1 - st.res.fire / 100;
@@ -1244,7 +1246,7 @@ function useSpecial(e, sp) {
     case 'summon': {
       const alive = G.enemies.filter(o => !o.dead).length, foe = foeByName(sp.foe || 'Lost Sentinel');
       for (let k = 0; k < 2 && alive + k < 5; k++) {
-        const b = enemyBase(S.stage, S.wave, false), m = makeFoe(foe, { hp: b.hp * .6, dmg: b.dmg * .7 }, false, W + 4 + k * 20, false);
+        const b = enemyBase(S.stage, S.wave, false), m = makeFoe(foe, { hp: b.hp * .6, dmg: b.dmg * .7 }, false, W + 10 + k * 26, false);
         m.minion = true; G.enemies.push(m);
       }
       break;
@@ -1333,10 +1335,10 @@ function update(dt) {
   const alive = G.enemies.filter(e => !e.dead).sort((a, b) => a.x - b.x);
   // The hero keeps walking toward the wave and only stops once the front foe is in reach.
   const lead = alive[0];
-  G.moving = !!lead && !(h.stun > 0) && lead.x > HX + st.range + (lead.boss ? 6 : 0) + 1;
+  G.moving = !!lead && !(h.stun > 0) && lead.x > HX + st.range + (lead.boss ? 10 : 0) + 1;
   if (G.moving) { G.scroll += 32 * dt; for (const e of G.enemies) if (e.dead) e.x -= 32 * dt; }
   alive.forEach((e, i) => {
-    const target = HX + 16 + i * 18 + (e.boss ? 6 : 0);
+    const target = HX + 20 + i * 25 + (e.boss ? 10 : 0);
     if (e.x > target) e.x = Math.max(target, e.x - (62 + (G.moving ? 32 : 0)) * dt);
     e.flash = Math.max(0, e.flash - dt);
     for (const k of ['shell', 'haste', 'evade', 'reflect']) e[k] = Math.max(0, e[k] - dt);
@@ -1349,7 +1351,7 @@ function update(dt) {
   if (h.dead > 0) return;
   const front = alive.find(e => !e.dead);
   if (!(h.stun > 0)) h.atkT -= dt * (h.chill > 0 ? .6 : 1);
-  if (front && !(h.stun > 0) && front.x <= HX + st.range + (front.boss ? 6 : 0) && h.atkT <= 0 && h.dead <= 0) { h.atkT = 1 / st.aspd; h.swing = .16; heroAttack(front); }
+  if (front && !(h.stun > 0) && front.x <= HX + st.range + (front.boss ? 10 : 0) && h.atkT <= 0 && h.dead <= 0) { h.atkT = 1 / st.aspd; h.swing = .16; heroAttack(front); }
   // company
   partyMembers().forEach((f, i) => {
     const K = KINDS[f.kind]; if (!K.atk) return;
@@ -1998,35 +2000,36 @@ function drawFoe(e) {
   const def = SPR[sn], t = G.t + e.ph;
   const frame = Math.floor(t * (def.fly ? 7 : 5)) % 2;
   const c = getSpr(sn, frame, pk, null, false);
-  let y = GY - c.lh + 1;
+  const SW = c.lw * FOE_SCALE, SH = c.lh * FOE_SCALE;
+  let y = GY - SH + FOE_SCALE;
   if (def.fly) y -= 5 + Math.round(Math.sin(t * 3) * 2);
   else if (e.boss) y += frame;
   const fade = e.dead ? clamp(1 - e.die / .25, 0, 1) : 1;
   if (e.dead) y += e.die * 6;
   L.globalAlpha = fade * (alpha || 1);
   if (e.elite && !e.dead) { // a thin gold rim that follows the sprite
-    const gold = getSpr(sn, frame, pk, null, '#f3b44a'), gx = e.x - c.lw / 2;
+    const gold = getSpr(sn, frame, pk, null, '#f3b44a'), gx = e.x + (e.kb || 0) - SW / 2;
     L.globalAlpha = fade * (.55 + .25 * Math.sin(G.t * 5));
-    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) blit(gold, gx + dx, y + dy);
+    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) L.drawImage(gold, gx + dx, y + dy, SW, SH);
     L.globalAlpha = fade * (alpha || 1);
   }
   if (!e.dead) { // contact shadow; flyers cast a smaller, fainter one
-    const rw = Math.max(4, Math.round(c.lw * (def.fly ? .25 : .38)));
+    const rw = Math.max(5, Math.round(SW * (def.fly ? .25 : .38)));
     L.globalAlpha = fade * (def.fly ? .18 : .32); L.fillStyle = '#000';
     L.fillRect(Math.round(e.x - rw), GY, rw * 2, 1); L.fillRect(Math.round(e.x - rw + 2), GY + 1, rw * 2 - 4, 1);
     L.globalAlpha = fade * (alpha || 1);
   }
-  const ex = e.x + (e.kb || 0) - c.lw / 2, sq = e.sq > 0 ? 1 : 0;
-  L.drawImage(c, Math.round(ex * 2) / 2, Math.round((y + sq) * 2) / 2, c.lw, c.lh - sq);
-  if (e.flash > 0 && !e.dead) { const a = L.globalAlpha; L.globalAlpha = a * .5; blit(getSpr(sn, frame, pk, null, true), e.x - c.lw / 2, y); L.globalAlpha = a; }
+  const ex = e.x + (e.kb || 0) - SW / 2, sq = e.sq > 0 ? 1.5 : 0;
+  L.drawImage(c, Math.round(ex * 2) / 2, Math.round((y + sq) * 2) / 2, SW, SH - sq);
+  if (e.flash > 0 && !e.dead) { const a = L.globalAlpha; L.globalAlpha = a * .5; L.drawImage(getSpr(sn, frame, pk, null, true), Math.round(ex * 2) / 2, Math.round((y + sq) * 2) / 2, SW, SH - sq); L.globalAlpha = a; }
   if (!e.dead && (e.shell > 0 || e.evade > 0 || e.reflect > 0 || e.haste > 0)) {
     const col = e.shell > 0 ? '#8fd8ff' : e.evade > 0 ? '#c8c8c8' : e.reflect > 0 ? '#ff8a3d' : '#ff5a3a';
     L.globalAlpha = .4 + .2 * Math.sin(G.t * 10); L.strokeStyle = col; L.lineWidth = 1;
-    L.lineWidth = .5; L.strokeRect(Math.round(e.x - c.lw / 2) + 1.25, Math.round(y) + 1.25, c.lw - 2.5, c.lh - 2.5);
+    L.lineWidth = .5; L.strokeRect(Math.round(ex) + 1.25, Math.round(y) + 1.25, SW - 2.5, SH - 2.5);
   }
   L.globalAlpha = 1;
   if (!e.dead) {
-    const bw = e.boss ? 22 : 12, top = y - 3;
+    const bw = e.boss ? 30 : 18, top = y - 3;
     px(e.x - bw / 2, top, bw, 2, '#2a0f0f'); px(e.x - bw / 2, top, bw * clamp(e.hp / e.max, 0, 1), 2, e.boss ? '#ff6050' : e.elite ? '#f3b44a' : '#d24a3a');
     if (e.elite) { px(e.x - 2, top - 4, 1, 2, '#f3b44a'); px(e.x, top - 5, 1, 3, '#f3b44a'); px(e.x + 2, top - 4, 1, 2, '#f3b44a'); }
     if (e.el !== 'phys') px(e.x - bw / 2 - 3, top, 2, 2, ELEM[e.el].col);
