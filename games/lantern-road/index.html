@@ -251,10 +251,10 @@ html,body{height:100%;overflow:hidden;background:#07090b}
 .console > *{flex:none}
 .console .hud{border:0;border-radius:0;background:transparent;padding:6px 8px 4px;gap:6px 10px}
 .console .coach,.console .nudge{margin:2px 6px;border-radius:0;border:2px solid var(--lamp);background:#1b140f}
-.console .tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;padding:4px 6px;border:0;border-top:2px solid #000;border-bottom:2px solid #000;box-shadow:inset 0 2px 0 var(--wood-hi);overflow:visible;background:rgba(0,0,0,.25)}
+.console .tabs{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:2px;padding:4px 6px;border:0;border-top:2px solid #000;border-bottom:2px solid #000;box-shadow:inset 0 2px 0 var(--wood-hi);overflow:visible;background:rgba(0,0,0,.25)}
 .console .panel{flex:1;min-height:0;overflow:auto;padding:8px 6px 16px;gap:8px}
 .tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0 3px;border:2px solid #000;border-radius:0;background:#3a2a1d;box-shadow:inset 2px 2px 0 #5a4230,inset -2px -2px 0 #22180f;font:500 .52rem/1 var(--display);color:#cbbd9f;min-width:0;overflow:hidden}
-.tab .ti{width:26px;height:26px;image-rendering:pixelated}
+.tab .ti{width:24px;height:24px;image-rendering:pixelated}
 .tab .tl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .tab[aria-selected="true"]{background:#d89a2e;color:#2a1c06;box-shadow:inset 2px 2px 0 #ffd27a,inset -2px -2px 0 #9a6a1a;border-color:#000}
 .tab .dot{top:2px;right:2px;width:7px;height:7px;border-radius:0;box-shadow:0 0 0 2px #000}
@@ -299,7 +299,6 @@ select,textarea{background:var(--wood-deep)!important;border:2px solid #000!impo
 .pop .item{background:#120d0a;box-shadow:0 0 0 2px #000,0 8px 24px rgba(0,0,0,.6)}
 .pop .closepop{align-self:flex-end}
 body.strip .console{display:none}
-.tab{font-size:.62rem}
 /* skills sit on the ground in the scene */
 .skills{position:absolute;right:6px;bottom:6px;display:flex;gap:6px;z-index:3}
 .sk{position:relative;width:46px;height:46px;padding:0;display:grid;place-items:center;border:2px solid #000;background:#3a2a1d;box-shadow:inset 2px 2px 0 #5a4230,inset -2px -2px 0 #22180f;cursor:pointer;touch-action:manipulation}
@@ -317,7 +316,6 @@ body.strip .console{display:none}
 .road canvas{touch-action:manipulation;cursor:pointer}
 .seg{gap:4px}
 .seg .btn{flex:1}
-.console .hud{grid-template-columns:auto 1fr auto auto}
 .logbtn{width:30px;height:30px;padding:0;display:grid;place-items:center;border:2px solid #000;background:#4a3524;box-shadow:inset 2px 2px 0 #6e5036,inset -2px -2px 0 #2a1d13;cursor:pointer}
 .logbtn img{width:20px;height:20px;image-rendering:pixelated}
 .logbtn.on{background:#d89a2e}
@@ -343,7 +341,6 @@ body.strip .skills{display:none}
     <span class="lvl" id="hudLvl">Lv 1</span>
     <div class="xpbar" title="Experience: fill the bar to reach the next level"><i id="hudXp"></i><span id="hudXpTxt"></span></div>
     <div class="purse"><span><span class="coin"></span><span id="hudGold">0</span></span></div>
-    <button class="logbtn" id="logBtn" type="button" title="Journal and settings" aria-label="Journal and settings"></button>
     <div class="hudrow2">
       <div class="hp"><span>HP</span><div class="hpbar"><i id="hudHp"></i></div><span id="hudHpTxt" style="font-variant-numeric:tabular-nums">100/100</span></div>
       <span class="pill" id="hudPower" title="Power rating: damage and toughness combined. It should keep climbing.">Power 0</span>
@@ -358,7 +355,10 @@ body.strip .skills{display:none}
     <button class="tab" role="tab" data-tab="bag" id="tab-bag">Bag</button>
     <button class="tab" role="tab" data-tab="forge" id="tab-forge">Forge</button>
     <button class="tab" role="tab" data-tab="company" id="tab-company">Company</button>
-    <button class="tab" role="tab" data-tab="map" id="tab-map">Road</button>
+    <button class="tab" role="tab" data-tab="talents" id="tab-talents">Waystones</button>
+    <button class="tab" role="tab" data-tab="map" id="tab-map">Map</button>
+    <button class="tab" role="tab" data-tab="feats" id="tab-feats">Feats</button>
+    <button class="tab" role="tab" data-tab="journal" id="tab-journal">Journal</button>
     <button class="tab" role="tab" data-tab="shop" id="tab-shop">Shop</button>
   </nav>
   <section class="panel" id="panel" role="tabpanel"></section>
@@ -849,7 +849,7 @@ function showTip() {
   const id = tipQueue[0];
   if (!id || S.tab === TIPS[id].tab) { if (id) doneTip(id); box.hidden = !tipQueue.length; return; }
   document.getElementById('coachText').textContent = TIPS[id].text;
-  const tb = document.getElementById('tab-' + ({ talents: 'map', feats: 'map' }[TIPS[id].tab] || TIPS[id].tab)); if (tb) tb.classList.add('pulse');
+  const tb = document.getElementById('tab-' + TIPS[id].tab); if (tb) tb.classList.add('pulse');
   box.hidden = false;
 }
 function doneTip(id) { S.tips[id] = true; tipQueue = tipQueue.filter(x => x !== id); showTip(); }
@@ -2557,7 +2557,6 @@ function markTabs() {
   set('tab-company', S.roster.some(f => f.isNew));
   set('tab-talents', TALENTS.some(t => !S.talents[t.id] && talAvail(t) && S.gold >= talCost()));
   set('tab-feats', FEATS.some(f => !S.feats[f.id] && featDone(f)));
-  set('tab-map', TALENTS.some(t => !S.talents[t.id] && talAvail(t) && S.gold >= talCost()) || FEATS.some(f => !S.feats[f.id] && featDone(f)));
   set('tab-shop', (S.maxStage >= 2 && !S.shopNoted) || (S.maxStage >= 2 && dailyReady()));
 }
 
@@ -2949,7 +2948,7 @@ function nudge(kind) {
 }
 function newVisit() { offeredThisVisit = false; }
 function offerOnVisit() { for (const k of ['stash', 'slot', 'wall']) if (nudge(k)) break; }
-const TAB_GROUP = { talents: 'map', feats: 'map' };
+const TAB_GROUP = {};
 function roadSeg() {
   const seg = [['map', 'Map'], ['talents', 'Waystones'], ['feats', 'Feats']].map(([t, n]) => {
     const dot = t === 'talents' ? TALENTS.some(x => !S.talents[x.id] && talAvail(x) && S.gold >= talCost()) : t === 'feats' ? FEATS.some(f => !S.feats[f.id] && featDone(f)) : false;
@@ -2962,7 +2961,6 @@ function renderPanel() {
   document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === (TAB_GROUP[S.tab] || S.tab))));
   ({ hero: renderHero, bag: renderBag, forge: renderForge, company: renderCompany, talents: renderTalents, map: renderMap, feats: renderFeats, journal: renderJournal, shop: renderShop }[S.tab] || renderHero)();
   if ((TAB_GROUP[S.tab] || S.tab) === 'map') panel.insertAdjacentHTML('afterbegin', roadSeg());
-  $('#logBtn').classList.toggle('on', S.tab === 'journal');
   markTabs();
 }
 
@@ -3268,7 +3266,6 @@ const SKILL_ICONS = {
   rally: ['............', '.o..........', '.oOOOOOOo...', '.oOOOOOOOo..', '.oOOOOOOo...', '.oOOOOOo....', '.ooooooo....', '.o..........', '.o..........', '.o..........', 'ooo.........', '............'],
 };
 function buildSkills() {
-  { const rows = TAB_ICONS.journal; $('#logBtn').innerHTML = `<img alt="" src="${pixelCanvas(12, 12, x => rows.forEach((row, j) => [...row].forEach((ch, i) => { if (ch === '.') return; x.fillStyle = ch === '#' ? '#0b0d10' : '#f3d27a'; x.fillRect(i, j, 1, 1); })))}">`; }
   const box = $('#skills'); if (!box) return;
   box.innerHTML = SKILLS.map(sk => {
     const rows = SKILL_ICONS[sk.id];
@@ -3292,7 +3289,6 @@ cv.addEventListener('pointerdown', e => {
   const r = cv.getBoundingClientRect();
   roadTap((e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H);
 });
-$('#logBtn').addEventListener('click', () => { S.tab = S.tab === 'journal' ? 'hero' : 'journal'; selBag = selEq = null; renderPanel(); });
 
 function start(data) {
   buildLayout(); buildSkills();
