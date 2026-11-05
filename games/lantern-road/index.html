@@ -1079,7 +1079,7 @@ function addXp(x) {
   while (S.xp >= need(S.level)) {
     S.xp -= need(S.level); S.level++; S.points += 3; dirtyStats = true;
     log(`Reached level ${S.level}. +3 attribute points.`, '#f3b44a');
-    if (G) { fx(HX, GY - 26, 'LEVEL UP', '#f3b44a', 1.4, 6); burst(HX, GY - 10, ['#f3b44a', '#fff2c0'], 14, 70); }
+    if (G) { G.hero.hop = .35; fx(HX, GY - 26, 'LEVEL UP', '#f3b44a', 1.4, 6); burst(HX, GY - 10, ['#f3b44a', '#fff2c0'], 14, 70); }
   }
   if (S.autoSpend) autoSpend();
   markTabs();
@@ -1262,6 +1262,7 @@ function useSpecial(e, sp) {
   }
 }
 function enemyHit(e, mult) {
+  e.atk = .25;
   const st = stats(), h = G.hero;
   if (Math.random() * 100 < st.dodge) { fx(HX, GY - 22, 'dodge', '#97a39d', .7, 4); return; }
   let d = e.dmg * rnd(.9, 1.1) * (mult || 1), blocked = false;
@@ -1274,7 +1275,7 @@ function enemyHit(e, mult) {
   if (h.hp <= 0) heroDie(e);
 }
 function heroDie(killer) {
-  const h = G.hero; h.hp = 0; h.dead = 2; S.deaths++; G.proj = [];
+  const h = G.hero; h.hp = 0; h.dead = 2; h.deadT = 0; S.deaths++; G.proj = [];
   // Falling to a guardian: offer to rise again on the spot for a few seconds instead of losing the stage.
   G.revive = S.wave === WAVES ? { stage: S.stage, foes: G.enemies.filter(e => !e.dead).map(e => Object.assign({}, e)), until: G.t + 6 } : null;
   if (G.revive) h.dead = 6;
@@ -1334,7 +1335,9 @@ function update(dt) {
   h.dots = (h.dots || []).filter(d => (d.t -= dt) > 0);
   for (const d of h.dots) h.hp -= d.dps * dt;
   if (h.hp <= 0) { heroDie(G.enemies.find(e => !e.dead)); return; }
-  for (const e of G.enemies) { if (e.dead) e.die += dt; e.kb = Math.max(0, (e.kb || 0) - 30 * dt); e.sq = Math.max(0, (e.sq || 0) - dt); }
+  for (const e of G.enemies) { if (e.dead) e.die += dt; e.kb = Math.max(0, (e.kb || 0) - 30 * dt); e.sq = Math.max(0, (e.sq || 0) - dt); e.atk = Math.max(0, (e.atk || 0) - dt); }
+  h.hop = Math.max(0, (h.hop || 0) - dt); h.deadT = (h.deadT || 0) + dt;
+  if (G.folKick) for (const k in G.folKick) G.folKick[k] = Math.max(0, G.folKick[k] - dt);
   G.enemies = G.enemies.filter(e => !e.dead || e.die < .25);
   h.kb = Math.max(0, (h.kb || 0) - 20 * dt);
   if (G.phase === 'walk') {
@@ -1370,7 +1373,7 @@ function update(dt) {
     G.folT[f.id] = (G.folT[f.id] ?? rnd(.2, 1)) - dt;
     const tgt = G.enemies.find(e => !e.dead);
     if (G.folT[f.id] <= 0 && tgt && tgt.x <= HX + 120) {
-      G.folT[f.id] = K.atk;
+      G.folT[f.id] = K.atk; (G.folKick = G.folKick || {})[f.id] = .15;
       G.proj.push({ x: HX - 18 - i * 13 + 6, y: GY - 10, tgt, sp: f.kind === 'archer' ? 220 : 150, kind: f.kind === 'archer' ? 'arrow' : 'bolt', el: K.el, raw: folPower(f, st.cp) * K.atk * rnd(.9, 1.1), crit: false, splash: f.kind === 'fire' ? .5 : 0, hero: false });
     }
   });
@@ -2006,6 +2009,8 @@ function drawProp(kind, x, i, z) {
   else L.drawImage(c, 0, cut * 2, c.width, h * 2, Math.round(x), y, c.lw, h);
 }
 
+/* Monsters are drawn around their feet so they can breathe (squash and stretch), hop while approaching, lunge when
+   they attack, glow before a special attack, and tip over when they fall. */
 function drawFoe(e) {
   const [sn, pk0, alpha] = FOE_ART[e.n] || ['slime', 'moss'];
   const pk = tierPal(pk0, e.tier || 0);
@@ -2013,38 +2018,49 @@ function drawFoe(e) {
   const frame = Math.floor(t * (def.fly ? 7 : 5)) % 2;
   const c = getSpr(sn, frame, pk, null, false);
   const SW = c.lw * FOE_SCALE, SH = c.lh * FOE_SCALE;
-  let y = GY - SH + FOE_SCALE;
-  if (def.fly) y -= 5 + Math.round(Math.sin(t * 3) * 2);
-  else if (e.boss) y += frame;
+  const moving = e.lx !== undefined && Math.abs(e.x - e.lx) > .05; e.lx = e.x;
+  let fx = e.x + (e.kb || 0), fy = GY + FOE_SCALE, sx = 1, sy = 1, rot = 0;
+  if (def.fly) fy -= 5 + Math.sin(t * 3) * 2.5;
+  else if (moving && !e.boss) fy -= Math.abs(Math.sin(t * 9)) * 2.2;
+  else { const br = Math.sin(t * (e.boss ? 1.6 : 2.6)); sy = 1 + br * (e.boss ? .025 : .045); sx = 1 - br * .02; }
+  if (e.boss && moving) fy += Math.abs(Math.sin(t * 5)) * -1;
+  if (e.atk > 0) { const k = Math.sin((1 - e.atk / .25) * Math.PI); fx -= k * (e.boss ? 7 : 4.5); sx *= 1 + k * .07; sy *= 1 - k * .04; }
+  if (e.sq > 0) { sy *= .88; sx *= 1.1; }
   const fade = e.dead ? clamp(1 - e.die / .25, 0, 1) : 1;
-  if (e.dead) y += e.die * 6;
-  L.globalAlpha = fade * (alpha || 1);
-  if (e.elite && !e.dead) { // a thin gold rim that follows the sprite
-    const gold = getSpr(sn, frame, pk, null, '#f3b44a'), gx = e.x + (e.kb || 0) - SW / 2;
-    L.globalAlpha = fade * (.55 + .25 * Math.sin(G.t * 5));
-    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) L.drawImage(gold, gx + dx, y + dy, SW, SH);
-    L.globalAlpha = fade * (alpha || 1);
-  }
+  if (e.dead) { const k = clamp(e.die / .25, 0, 1); rot = k * 1.3; fx += k * 7; fy += k * 2; }
+  const warn = !e.dead && !moving && e.sp && e.sp.some((sp, j) => e.spT[j] < .6);
+  const draw = (img, dx, dy) => { L.save(); L.translate(fx + (dx || 0), fy + (dy || 0)); if (rot) L.rotate(rot); L.scale(sx, sy); L.drawImage(img, -SW / 2, -SH, SW, SH); L.restore(); };
   if (!e.dead) { // contact shadow; flyers cast a smaller, fainter one
-    const rw = Math.max(5, Math.round(SW * (def.fly ? .25 : .38)));
-    L.globalAlpha = fade * (def.fly ? .18 : .32); L.fillStyle = '#000';
-    L.fillRect(Math.round(e.x - rw), GY, rw * 2, 1); L.fillRect(Math.round(e.x - rw + 2), GY + 1, rw * 2 - 4, 1);
-    L.globalAlpha = fade * (alpha || 1);
+    const rw = Math.max(5, Math.round(SW * sx * (def.fly ? .25 : .38)));
+    L.globalAlpha = def.fly ? .18 : .32; L.fillStyle = '#000';
+    L.fillRect(Math.round(fx - rw), GY, rw * 2, 1); L.fillRect(Math.round(fx - rw + 2), GY + 1, rw * 2 - 4, 1);
   }
-  const ex = e.x + (e.kb || 0) - SW / 2, sq = e.sq > 0 ? 1.5 : 0;
-  L.drawImage(c, Math.round(ex * 2) / 2, Math.round((y + sq) * 2) / 2, SW, SH - sq);
-  if (e.flash > 0 && !e.dead) { const a = L.globalAlpha; L.globalAlpha = a * .5; L.drawImage(getSpr(sn, frame, pk, null, true), Math.round(ex * 2) / 2, Math.round((y + sq) * 2) / 2, SW, SH - sq); L.globalAlpha = a; }
+  if (e.elite && !e.dead) { // a thin gold rim that follows the sprite
+    const gold = getSpr(sn, frame, pk, null, '#f3b44a');
+    L.globalAlpha = .55 + .25 * Math.sin(G.t * 5);
+    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) draw(gold, dx, dy);
+  }
+  if (warn) { // about to use a special attack: a purple glow
+    const glow = getSpr(sn, frame, pk, null, '#c070ff');
+    L.globalAlpha = .45 + .35 * Math.sin(G.t * 22);
+    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) draw(glow, dx * 1.5, dy * 1.5);
+  }
+  L.globalAlpha = fade * (alpha || 1);
+  draw(c);
+  if (e.flash > 0 && !e.dead) { L.globalAlpha = fade * .5; draw(getSpr(sn, frame, pk, null, true)); }
+  const top = fy - SH * sy;
   if (!e.dead && (e.shell > 0 || e.evade > 0 || e.reflect > 0 || e.haste > 0)) {
     const col = e.shell > 0 ? '#8fd8ff' : e.evade > 0 ? '#c8c8c8' : e.reflect > 0 ? '#ff8a3d' : '#ff5a3a';
-    L.globalAlpha = .4 + .2 * Math.sin(G.t * 10); L.strokeStyle = col; L.lineWidth = 1;
-    L.lineWidth = .5; L.strokeRect(Math.round(ex) + 1.25, Math.round(y) + 1.25, SW - 2.5, SH - 2.5);
+    L.globalAlpha = .4 + .2 * Math.sin(G.t * 10); L.strokeStyle = col; L.lineWidth = .5;
+    L.strokeRect(Math.round(fx - SW / 2) + 1.25, Math.round(top) + 1.25, SW - 2.5, SH * sy - 2.5);
   }
   L.globalAlpha = 1;
   if (!e.dead) {
-    const bw = e.boss ? 30 : 18, top = y - 3;
-    px(e.x - bw / 2, top, bw, 2, '#2a0f0f'); px(e.x - bw / 2, top, bw * clamp(e.hp / e.max, 0, 1), 2, e.boss ? '#ff6050' : e.elite ? '#f3b44a' : '#d24a3a');
-    if (e.elite) { px(e.x - 2, top - 4, 1, 2, '#f3b44a'); px(e.x, top - 5, 1, 3, '#f3b44a'); px(e.x + 2, top - 4, 1, 2, '#f3b44a'); }
-    if (e.el !== 'phys') px(e.x - bw / 2 - 3, top, 2, 2, ELEM[e.el].col);
+    const bw = e.boss ? 30 : 18, by = top - 3;
+    px(fx - bw / 2, by, bw, 2, '#2a0f0f'); px(fx - bw / 2, by, bw * clamp(e.hp / e.max, 0, 1), 2, e.boss ? '#ff6050' : e.elite ? '#f3b44a' : '#d24a3a');
+    if (e.elite) { px(fx - 2, by - 4, 1, 2, '#f3b44a'); px(fx, by - 5, 1, 3, '#f3b44a'); px(fx + 2, by - 4, 1, 2, '#f3b44a'); }
+    if (e.el !== 'phys') px(fx - bw / 2 - 3, by, 2, 2, ELEM[e.el].col);
+    if (warn) { const blink = Math.sin(G.t * 22) > 0 ? '#ffe060' : '#ff8030'; px(fx + bw / 2 + 2, by - 6, 1.5, 4, blink); px(fx + bw / 2 + 2, by - 1, 1.5, 1.5, blink); }
   }
 }
 
@@ -2053,7 +2069,8 @@ function drawFollower(f, x, walking, phase) {
   const frame = walking ? Math.floor((G ? G.t : 0) * 8 + phase) % 2 : 0;
   const body = getSpr('fol', frame, 'fol:' + f.kind + ':' + currentLook('company'), folPal(f.kind));
   if (currentLook('company') === 'banners') { const tr = getSpr('trim', 0, 'trim'); blit(tr, Math.round(x - 6) + 2, GY - body.lh + 6); }
-  const ox = Math.round(x - 6), oy = GY - body.lh + 1 - (walking && frame ? 1 : 0);
+  const kick = G && G.folKick && G.folKick[f.id] ? Math.sin(G.folKick[f.id] / .15 * Math.PI) * 1.5 : 0;
+  const ox = Math.round((x - 6 - kick) * 2) / 2, oy = GY - body.lh + 1 - (walking && frame ? 1 : 0) + (walking || !G ? 0 : Math.round(Math.sin(G.t * 2.4 + phase) * 1) / 2);
   L.globalAlpha = .3; L.fillStyle = '#000'; L.fillRect(ox + 2, GY, 8, 1); L.fillRect(ox + 3, GY + 1, 6, 1); L.globalAlpha = 1;
   blit(body, ox, oy);
   const K = KINDS[f.kind];
@@ -2068,12 +2085,21 @@ function drawFollower(f, x, walking, phase) {
 function drawHero() {
   const h = G.hero, x = HX, walking = G.moving && h.dead <= 0;
   const st = stats();
-  if (h.dead > 0) { px(x - 7, GY - 3, 12, 3, '#3d5a6b'); px(x + 5, GY - 4, 4, 3, '#2f4757'); px(x - 9, GY - 3, 3, 3, '#6b4a2a'); return; }
+  if (h.dead > 0) { // tips over backwards onto the road
+    const look0 = currentLook('outfit'), O0 = OUTFITS[look0];
+    const b0 = getSpr('hero', 0, 'hero:' + look0, Object.assign({}, PAL.hero, { c: O0.c, C: shade(O0.c, .22), d: shade(O0.c, -.28), h: O0.h, H: shade(O0.h, .2) }));
+    const k = clamp((h.deadT || 0) / .3, 0, 1);
+    L.save(); L.translate(x - 4, GY + 1); L.rotate(-k * Math.PI / 2); L.drawImage(b0, -b0.lw / 2, -b0.lh, b0.lw, b0.lh); L.restore();
+    return;
+  }
   const frame = walking ? Math.floor(G.t * 8) % 2 : 0;
   const look = currentLook('outfit'), O = OUTFITS[look];
   const body = getSpr('hero', frame, 'hero:' + look, Object.assign({}, PAL.hero, { c: O.c, C: shade(O.c, .22), d: shade(O.c, -.28), h: O.h, H: shade(O.h, .2) }));
   const lan = LANTERNS[currentLook('lantern')], lanPal = { b: '#6b4a2a', y: lan.y, Y: lan.Y };
-  const ox = x - 8 - (h.kb || 0), oy = GY - body.lh + 1 - (walking && frame ? 1 : 0), sway = walking ? frame : 0;
+  const lunge = h.swing > 0 ? Math.sin((1 - h.swing / .16) * Math.PI) * (S.path === 'blade' ? 3 : -1.5) : 0;
+  const breathe = walking ? 0 : Math.round(Math.sin(G.t * 2.4) * 1) / 2;
+  const hop = h.hop > 0 ? Math.sin((1 - h.hop / .35) * Math.PI) * 5 : 0;
+  const ox = Math.round((x - 8 - (h.kb || 0) + lunge) * 2) / 2, oy = GY - body.lh + 1 - (walking && frame ? 1 : 0) + breathe - hop, sway = walking ? frame : 0;
   L.globalAlpha = .34; L.fillStyle = '#000'; L.fillRect(ox + 3, GY, 10, 1); L.fillRect(ox + 4, GY + 1, 8, 1); L.globalAlpha = 1;
   if (S.path !== 'lamp') blit(getSpr('lantern', 0, 'lantern:' + currentLook('lantern'), lanPal), ox - 4, oy + 9 + sway);
   blit(body, ox, oy);
