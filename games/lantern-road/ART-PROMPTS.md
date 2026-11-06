@@ -163,3 +163,185 @@ the game, so draw the items in natural colors.
 
 Backgrounds are wide scrolling layers (sky, far hills, near trees, ground) for each of the
 10 zones. They take more planning, so leave them until the characters look right.
+
+## 9. Gemini: 14 sprite sheets instead of 60 images
+
+Gemini makes one picture per message, so ask for a sheet of 3 to 12 sprites at a time. Paste one
+block, save the image, start the next. Upload the sheets here; Claude cuts them into the single
+files listed in sections 5 to 7. Sheets marked green use a green background because those
+sprites are pink or purple. If Gemini merges two characters or adds labels, ask it to redo the
+sheet with "more space between them, no text".
+
+### Sheet 1 · Hero
+Saves as: hero-blade, hero-bow, hero-lamp
+
+```
+Create a game sprite sheet: a single row of 3 separate poses of the SAME hero character (identical face, clothes and proportions), evenly spaced with plenty of empty space between them, each one complete and not touching any other, all on one solid flat pure magenta (#FF00FF) background. No grid lines, no labels, no text, no ground, no shadows, no scenery. Side view, full body, every character faces RIGHT (toward the right edge of the image). 16-bit SNES-era pixel art, crisp pixels, clean 1-pixel dark outline, limited palette, soft light from the top left with 2 to 3 shades per color, no anti-aliasing, no blur, no gradients. Cozy dark-fantasy style, readable at small size. All of them in exactly the same style, scale and lighting. The cloak and hood must stay flat neutral gray in all three.
+
+Left: a young hooded wanderer in a long flat neutral-gray cloak and hood, brown leather boots and belt, holding a short steel sword forward in the right hand and a small glowing amber lantern in the left hand
+Middle: the same wanderer drawing a wooden longbow, small amber lantern hanging at the belt
+Right: the same wanderer holding a tall wooden staff topped with a glowing lantern
+```
+
+### Sheet 2 · Crew A
+Saves as: crew-archer, crew-fire, crew-frost, crew-herb
+
+```
+Create a game sprite sheet: a 2×2 grid of 4 separate small companion characters, evenly spaced with plenty of empty space between them, each one complete and not touching any other, all on one solid flat pure magenta (#FF00FF) background. No grid lines, no labels, no text, no ground, no shadows, no scenery. Side view, full body, every character faces RIGHT (toward the right edge of the image). 16-bit SNES-era pixel art, crisp pixels, clean 1-pixel dark outline, limited palette, soft light from the top left with 2 to 3 shades per color, no anti-aliasing, no blur, no gradients. Cozy dark-fantasy style, readable at small size. All of them in exactly the same style, scale and lighting.
+
+Top-left: a travelling archer in a moss-green hooded cloak with a short bow
+Top-right: a fire mage in a rust-red hooded robe, a flame floating above one hand
+Bottom-left: a frost mage in a steel-blue hooded robe holding a pale ice orb
+Bottom-right: a herbalist in a leaf-green cloak carrying a basket of glowing herbs
+```
+
+### Sheet 3 · Crew B (green)
+Saves as: crew-hex, crew-warden, crew-lamp
+
+```
+Create a game sprite sheet: a single row of 3 separate small companion characters, evenly spaced with plenty of empty space between them, each one complete and not touching any other, all on one solid flat pure green (#00FF00) background. No grid lines, no labels, no text, no ground, no shadows, no scenery. Side view, full body, every character faces RIGHT (toward the right edge of the image). 16-bit SNES-era pixel art, crisp pixels, clean 1-pixel dark outline, limited palette, soft light from the top left with 2 to 3 shades per color, no anti-aliasing, no blur, no gradients. Cozy dark-fantasy style, readable at small size. All of them in exactly the same style, scale and lighting.
+
+Left: a hexer in a dusky purple hooded robe with a shadowy violet orb
+Middle: a ferry warden in gray armor with a round shield and a lantern pole
+Right: a lamplighter in an ochre coat holding a long pole with a lit lamp
+```
+
+### Sheet 4 · Zone 1: Mossbarrow Lane
+Saves as: moss-slime, burrow-rat, thornback-boar, old-stump
+
+```
+Create a game sprite sheet: a 2×2 grid of 4 separate monsters, evenly spaced with plenty of empty space between them, each one complete and not touching any other, all on one solid flat pure magenta (#FF00FF) background. No grid lines, no labels, no text, no ground, no shadows, no scenery. Side view, full body, every character faces LEFT (toward the left edge of the image). 16-bit SNES-era pixel art, crisp pixels, clean 1-pixel dark outline, limited palette, soft light from the top left with 2 to 3 shades per color, no anti-aliasing, no blur, no gradients. Cozy dark-fantasy style, readable at small size. All of them in exactly the same style, scale and lighting. The bottom-right one is the guardian boss: draw it about twice as big as the others, filling its whole cell.
+
+Top-left: a round green gelatinous slime with moss and sprouts on top and two dark eyes
+Top-right: a big gray-brown rat on all fours, pink ears and long pink tail, beady black eyes
+Bottom-left: a brown wild boar with pale thorny spines along its back and ivory tusks
+Bottom-right: a giant living tree stump with a carved bark face, glowing amber eyes, root legs and moss on top
+```
+
+### Sheet 5 · Zone 2: Saltmarsh Causeway
+Saves as: reed-crab, bog-lantern, mire-leech, brine-matron
+
+```
+Create a game sprite sheet: a 2×2 grid of 4 separate monsters, evenly spaced with plenty of empty space between them, each one complete and not touching any other, all on one solid flat pure magenta (#FF00FF) background. No grid lines, no labels, no text, no ground, no shadows, no scenery. Side view, full body, every character faces LEFT (toward the left edge of the image). 16-bit SNES-era pixel art, crisp pixels, clean 1-pixel dark outline, limited palette, soft light from the top left with 2 to 3 shades per color, no anti-aliasing, no blur, no gradients. Cozy dark-fantasy style, readable at small size. All of them in exactly the same style, scale and lighting. The bottom-right one is the guardian boss: draw it about twice as big as the others, filling its whole cell.
+
+Top-left: an orange-red crab with one oversized claw and marsh reeds stuck to its shell
+Top-right: a floating will-o'-wisp, a pale mint-green ghostly flame with a hollow face, hovering
+Bottom-left: a fat olive-green leech with segmented bands, a round red mouth full of teeth and yellow eyes
+Bottom-right: a towering sea hag of teal kelp and barnacles with a coral crown and long dripping arms
+```
+
+### Sheet 6 · Zone 3: Cinder Steppe
+Saves as: ember-wisp, ash-hound, cinder-tick, kiln-golem
+
+```
+Create a game sprite sheet: a 2×2 grid of 4 separate monsters, evenly spaced with plenty of empty space between them, each one complete and not touching any other, all on one solid flat pure magenta (#FF00FF) background. No grid lines, no labels, no text, no ground, no shadows, no scenery. Side view, full body, every character faces LEFT (toward the left edge of the image). 16-bit SNES-era pixel art, crisp pixels, clean 1-pixel dark outline, limited palette, soft light from the top left with 2 to 3 shades per color, no anti-aliasing, no blur, no gradients. Cozy dark-fantasy style, readable at small size. All of them in exactly the same style, scale and lighting. The bottom-right one is the guardian boss: draw it about twice as big as the others, filling its whole cell.
+
+Top-left: a floating orange fire spirit with a bright yellow core and two dark eyes, hovering
+Top-right: a lean charcoal-gray hound with glowing ember cracks in its fur and orange eyes
+Bottom-left: a dark-brown armored tick with a glowing orange egg sac and cracks on its back
+Bottom-right: a hulking golem of red brick and clay with a glowing furnace in its belly
+```
+
+### Sheet 7 · Zone 4: Glasswind Dunes (green)
+Saves as: glass-scarab, mirage, dune-stinger, prism-wyrm
+
+```
+Create a game sprite sheet: a 2×2 grid of 4 separate monsters, evenly spaced with plenty of empty space between them, each one complete and not touching any other, all on one solid flat pure green (#00FF00) background. No grid lines, no labels, no text, no ground, no shadows, no scenery. Side view, full body, every character faces LEFT (toward the left edge of the image). 16-bit SNES-era pixel art, crisp pixels, clean 1-pixel dark outline, limited palette, soft light from the top left with 2 to 3 shades per color, no anti-aliasing, no blur, no gradients. Cozy dark-fantasy style, readable at small size. All of them in exactly the same style, scale and lighting. The bottom-right one is the guardian boss: draw it about twice as big as the others, filling its whole cell.
+
+Top-left: a beetle with a translucent pale-cyan glass shell
+Top-right: a shimmering translucent lilac slime ghost, partly see-through
+Bottom-left: a sand-colored scorpion with big pincers and its tail curled over its back, red stinger tip
+Bottom-right: a serpentine dragon made of pale-blue crystal prisms that split light into rainbows
+```
+
+### Sheet 8 · Zone 5: Starfall Ruins (green)
+Saves as: star-moth, lost-sentinel, comet-acolyte, the-unlit-king
+
+```
+Create a game sprite sheet: a 2×2 grid of 4 separate monsters, evenly spaced with plenty of empty space between them, each one complete and not touching any other, all on one solid flat pure green (#00FF00) background. No grid lines, no labels, no text, no ground, no shadows, no scenery. Side view, full body, every character faces LEFT (toward the left edge of the image). 16-bit SNES-era pixel art, crisp pixels, clean 1-pixel dark outline, limited palette, soft light from the top left with 2 to 3 shades per color, no anti-aliasing, no blur, no gradients. Cozy dark-fantasy style, readable at small size. All of them in exactly the same style, scale and lighting. The bottom-right one is the guardian boss: draw it about twice as big as the others, filling its whole cell.
+
+Top-left: a large moth with pale-yellow glowing wings dotted with stars, hovering
+Top-right: a hollow suit of ancient lavender-gray armor with a tower shield and a glowing visor slit
+Bottom-left: a hooded cultist in deep-violet robes with glowing cyan eyes and a staff topped with a star
+Bottom-right: a tall dark king in violet-black robes and a broken crown, a dark void where the face should be
+```
+
+### Sheet 9 · Zone 6: Frostfang Pass
+Saves as: snow-wolf, frost-wraith, ice-howler, glacier-troll
+
+```
+Create a game sprite sheet: a 2×2 grid of 4 separate monsters, evenly spaced with plenty of empty space between them, each one complete and not touching any other, all on one solid flat pure magenta (#FF00FF) background. No grid lines, no labels, no text, no ground, no shadows, no scenery. Side view, full body, every character faces LEFT (toward the left edge of the image). 16-bit SNES-era pixel art, crisp pixels, clean 1-pixel dark outline, limited palette, soft light from the top left with 2 to 3 shades per color, no anti-aliasing, no blur, no gradients. Cozy dark-fantasy style, readable at small size. All of them in exactly the same style, scale and lighting. The bottom-right one is the guardian boss: draw it about twice as big as the others, filling its whole cell.
+
+Top-left: a white-gray wolf with icy blue eyes and frost on its fur
+Top-right: a translucent icy-blue ghost with tattered trailing robes, hovering
+Bottom-left: a white yeti with blue face markings and dark claws, mouth open in a howl
+Bottom-right: a huge blue-gray troll with ice chunks on its shoulders carrying a frozen club
+```
+
+### Sheet 10 · Zone 7: Sunken Archive
+Saves as: ink-slime, page-swarm, candle-ghost, the-drowned-librarian
+
+```
+Create a game sprite sheet: a 2×2 grid of 4 separate monsters, evenly spaced with plenty of empty space between them, each one complete and not touching any other, all on one solid flat pure magenta (#FF00FF) background. No grid lines, no labels, no text, no ground, no shadows, no scenery. Side view, full body, every character faces LEFT (toward the left edge of the image). 16-bit SNES-era pixel art, crisp pixels, clean 1-pixel dark outline, limited palette, soft light from the top left with 2 to 3 shades per color, no anti-aliasing, no blur, no gradients. Cozy dark-fantasy style, readable at small size. All of them in exactly the same style, scale and lighting. The bottom-right one is the guardian boss: draw it about twice as big as the others, filling its whole cell.
+
+Top-left: a black-blue ink slime with torn page scraps floating inside it
+Top-right: a swarm of loose flying paper pages with eyes, hovering
+Bottom-left: a pale ghost made of melted white wax with a lit candle flame on its head
+Bottom-right: a tall drowned scholar in waterlogged robes with seaweed hair, carrying a giant soggy book
+```
+
+### Sheet 11 · Zone 8: Thornveil Woods
+Saves as: spore-toad, thorn-stalker, mantis-reaper, briar-mother
+
+```
+Create a game sprite sheet: a 2×2 grid of 4 separate monsters, evenly spaced with plenty of empty space between them, each one complete and not touching any other, all on one solid flat pure magenta (#FF00FF) background. No grid lines, no labels, no text, no ground, no shadows, no scenery. Side view, full body, every character faces LEFT (toward the left edge of the image). 16-bit SNES-era pixel art, crisp pixels, clean 1-pixel dark outline, limited palette, soft light from the top left with 2 to 3 shades per color, no anti-aliasing, no blur, no gradients. Cozy dark-fantasy style, readable at small size. All of them in exactly the same style, scale and lighting. The bottom-right one is the guardian boss: draw it about twice as big as the others, filling its whole cell.
+
+Top-left: a squat green toad with yellow eyes and puffy spore pustules on its back
+Top-right: a lean four-legged predator made of brambles and thorns, red eyes
+Bottom-left: a tall green praying mantis with bone-white scythe arms and red eyes
+Bottom-right: a giant bramble creature with vine arms and a dark-red rose blooming on its chest
+```
+
+### Sheet 12 · Zone 9: Ashen Citadel
+Saves as: cinder-knight, ash-bat, ash-priest, the-warden-of-ash
+
+```
+Create a game sprite sheet: a 2×2 grid of 4 separate monsters, evenly spaced with plenty of empty space between them, each one complete and not touching any other, all on one solid flat pure magenta (#FF00FF) background. No grid lines, no labels, no text, no ground, no shadows, no scenery. Side view, full body, every character faces LEFT (toward the left edge of the image). 16-bit SNES-era pixel art, crisp pixels, clean 1-pixel dark outline, limited palette, soft light from the top left with 2 to 3 shades per color, no anti-aliasing, no blur, no gradients. Cozy dark-fantasy style, readable at small size. All of them in exactly the same style, scale and lighting. The bottom-right one is the guardian boss: draw it about twice as big as the others, filling its whole cell.
+
+Top-left: a knight in soot-black plate armor with glowing orange seams, sword and shield
+Top-right: a bat with charred black wings glowing orange at the edges, flying
+Bottom-left: a hooded priest in ash-gray and rust robes with glowing orange eyes and a burning censer staff
+Bottom-right: a towering warden in charcoal plate armor with molten gold trim and a burning greatsword
+```
+
+### Sheet 13 · Zone 10: The Hollow Sky (green)
+Saves as: void-eye, sky-serpent, rift-spawn, the-light-eater
+
+```
+Create a game sprite sheet: a 2×2 grid of 4 separate monsters, evenly spaced with plenty of empty space between them, each one complete and not touching any other, all on one solid flat pure green (#00FF00) background. No grid lines, no labels, no text, no ground, no shadows, no scenery. Side view, full body, every character faces LEFT (toward the left edge of the image). 16-bit SNES-era pixel art, crisp pixels, clean 1-pixel dark outline, limited palette, soft light from the top left with 2 to 3 shades per color, no anti-aliasing, no blur, no gradients. Cozy dark-fantasy style, readable at small size. All of them in exactly the same style, scale and lighting. The bottom-right one is the guardian boss: draw it about twice as big as the others, filling its whole cell.
+
+Top-left: a giant floating eyeball with a purple void iris and dark tendrils, hovering
+Top-right: a long pale-blue cloud serpent coiling in the air, flying
+Bottom-left: a jagged violet crystal blob with a glowing pink crack for a mouth and white eyes
+Bottom-right: a colossal shadow beast with a gaping maw full of stars, swallowing light
+```
+
+### Sheet 14 · Item icons
+Saves as: icon-blade, icon-bow, icon-lamp, icon-helm, icon-armor, icon-gloves, icon-belt, icon-boots, icon-cloak, icon-amulet, icon-ring, icon-charm
+
+```
+Create a game sprite sheet: a 4×3 grid of 12 (4 across, 3 down) separate inventory item icons, evenly spaced with plenty of empty space between them, each one complete and not touching any other, all on one solid flat pure magenta (#FF00FF) background. No grid lines, no labels, no text, no ground, no shadows, no scenery. Each icon centered in its cell at a slight 3/4 angle, all the same size. 16-bit SNES-era pixel art, crisp pixels, clean 1-pixel dark outline, limited palette, soft light from the top left with 2 to 3 shades per color, no anti-aliasing, no blur, no gradients. Cozy dark-fantasy style, readable at small size. All of them in exactly the same style, scale and lighting.
+
+1. a steel short sword with a brass hilt, diagonal
+2. a wooden longbow with a string, diagonal
+3. a wooden staff topped with a glowing lantern, diagonal
+4. a steel helmet with a nose guard
+5. a chest plate over a leather jerkin
+6. a pair of leather gauntlets
+7. a leather belt with a brass buckle
+8. a pair of brown leather boots
+9. a folded deep-red cloak with a clasp
+10. a gold amulet with a glowing gem
+11. a gold ring with a blue gem
+12. a small carved lantern charm on a cord
+```
