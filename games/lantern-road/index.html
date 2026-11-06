@@ -2254,11 +2254,12 @@ function heroArt(key) {
   x.putImageData(d, 0, 0);
   return (artCache[ck] = { img: c, m, red: silhouette(c, '#ff4030'), white: silhouette(c, '#ffffff'), blue: silhouette(c, '#9fdcff') });
 }
+const WALK_FPS = 6; // walk-cycle frames per second
 function walkFrames() { const n = []; for (let i = 1; ART['hero-' + S.path + '-walk-' + i]; i++) n.push('hero-' + S.path + '-walk-' + i); return n; }
 function drawHeroArt(a) {
   const h = G.hero, st = stats(), walking = G.moving && h.dead <= 0;
   const frames = walking && !(h.swing > 0) ? walkFrames() : [];
-  const fa = frames.length ? heroArt(frames[Math.floor(G.t * 9) % frames.length]) : null;
+  const fa = frames.length ? heroArt(frames[Math.floor(G.t * WALK_FPS) % frames.length]) : null;
   if (fa) a = fa;
   const m = a.m, sc = ART_SCALE, w = m.w * sc, hh = m.h * sc;
   let x = HX - (h.kb || 0), y = GY + 1, rot = 0, sx = 1, sy = 1;
@@ -2320,7 +2321,7 @@ function drawHero() {
   px(x - 7, oy - 3, 14, 2, '#0e1a12'); px(x - 7, oy - 3, 14 * clamp(h.hp / st.hp, 0, 1), 2, '#7fd38b');
 }
 function lightPos() {
-  const wf = G && G.moving && G.hero.dead <= 0 && !(G.hero.swing > 0) ? walkFrames() : [], key = wf.length ? wf[Math.floor(G.t * 9) % wf.length] : 'hero-' + S.path, m = ART[key];
+  const wf = G && G.moving && G.hero.dead <= 0 && !(G.hero.swing > 0) ? walkFrames() : [], key = wf.length ? wf[Math.floor(G.t * WALK_FPS) % wf.length] : 'hero-' + S.path, m = ART[key];
   if (m && m.lx !== undefined && artReady(key)) return [HX + (m.lx - m.fx) * ART_SCALE, GY + 1 - (m.h - m.ly) * ART_SCALE];
   return S.path === 'lamp' ? [HX + 6, GY - 15] : [HX - 10, GY - 8];
 }
