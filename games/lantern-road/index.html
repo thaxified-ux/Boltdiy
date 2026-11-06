@@ -2259,13 +2259,13 @@ function walkFrames() { const n = []; for (let i = 1; ART['hero-' + S.path + '-w
 function drawHeroArt(a) {
   const h = G.hero, st = stats(), walking = G.moving && h.dead <= 0;
   const frames = walking && !(h.swing > 0) ? walkFrames() : [];
-  const fa = frames.length ? heroArt(frames[Math.floor(G.t * WALK_FPS) % frames.length]) : null;
+  const fi = Math.floor(G.t * WALK_FPS), fa = frames.length ? heroArt(frames[fi % frames.length]) : null;
   if (fa) a = fa;
   const m = a.m, sc = ART_SCALE, w = m.w * sc, hh = m.h * sc;
   let x = HX - (h.kb || 0), y = GY + 1, rot = 0, sx = 1, sy = 1;
   if (h.dead > 0) { const k = clamp((h.deadT || 0) / .3, 0, 1); rot = -k * Math.PI / 2; x -= k * 3; }
   else {
-    if (walking && fa) { /* the walk frames carry the motion */ }
+    if (walking && fa) { y -= fi % 2 ? 1 : 0; rot = .03; } // a small bounce on every other frame so each step reads
     else if (walking) { const ph = G.t * 9; y -= Math.abs(Math.sin(ph)) * 1.3; rot = Math.sin(ph) * .035; sy = 1 - Math.abs(Math.cos(ph)) * .02; }
     else { const br = Math.sin(G.t * 2.4); sy = 1 + br * .014; sx = 1 - br * .007; }
     if (h.swing > 0) {
