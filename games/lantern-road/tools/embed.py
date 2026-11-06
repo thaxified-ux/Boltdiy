@@ -10,8 +10,9 @@ game, src, dst = sys.argv[1:]
 os.makedirs(dst, exist_ok=True)
 LANTERN = {'hero-blade': (46, 49), 'hero-bow': (15, 58), 'hero-lamp': (48, 18)}
 art = {}
+OVR = json.load(open(os.path.join(src, 'meta.json'))) if os.path.exists(os.path.join(src, 'meta.json')) else {}
 for fn in sorted(os.listdir(src)):
-    if not fn.endswith('.png') or fn == 'preview.png':
+    if not fn.endswith('.png') or 'preview' in fn:
         continue
     name = fn[:-4]
     a = np.asarray(Image.open(os.path.join(src, fn)).convert('RGBA')).copy()
@@ -27,6 +28,7 @@ for fn in sorted(os.listdir(src)):
     op = a[..., 3] > 0
     ys, xs = np.nonzero(op)
     a = a[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+    trim_x = int(xs.min())
     op = a[..., 3] > 0
     h, w = op.shape
     # feet center: middle of the opaque pixels in the bottom tenth, ignoring a long staff or bow
@@ -34,12 +36,22 @@ for fn in sorted(os.listdir(src)):
     cols = np.nonzero(rows.any(0))[0]
     weights = rows.sum(0)
     fx = float((np.arange(w) * weights).sum() / max(1, weights.sum()))
+    if name in OVR:
+        fx = OVR[name] - trim_x
     im = Image.fromarray(a, 'RGBA')
     im.save(os.path.join(dst, fn))
     buf = io.BytesIO(); im.save(buf, 'PNG', optimize=True)
     meta = {'w': w, 'h': h, 'fx': round(fx, 1), 'src': 'data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode()}
     if name in LANTERN:
         meta['lx'], meta['ly'] = LANTERN[name]
+    elif '-walk-' in name and name.split('-walk-')[0] in LANTERN:  # find the lantern flame in this frame
+        pts = [(x, y) for y in range(h) for x in range(w) if a[y, x, 3] and (lambda c: c[2] > .9 and c[1] > .45 and .05 < c[0] < .17)(colorsys.rgb_to_hsv(*(a[y, x, :3] / 255)))]
+        if pts:
+            # the cluster farthest from the body center is the lantern
+            pts.sort(key=lambda q: -abs(q[0] - fx))
+            px0, py0 = pts[0]
+            near = [q for q in pts if abs(q[0] - px0) < 5 and abs(q[1] - py0) < 6]
+            meta['lx'] = round(sum(q[0] for q in near) / len(near)); meta['ly'] = round(sum(q[1] for q in near) / len(near))
     art[name] = meta
     print(name, w, h, 'feet x', round(fx, 1), len(buf.getvalue()), 'bytes')
 

@@ -61,8 +61,8 @@ def grid(axis):
         sub = sub.transpose(1, 0, 2)
     n = sub.shape[1]
     best = None
-    for bs in np.arange(5, 14.01, .05):
-        for ox in np.arange(0, bs, .5):
+    for bs in np.arange(2.5, 14.01, .05):
+        for ox in np.arange(0, bs, .25):
             cols = np.clip(((np.arange(n) - ox) // bs * bs + ox + bs / 2).astype(int), 0, n - 1)
             err = np.abs(sub - sub[:, cols]).mean()
             if best is None or err < best[0]:
