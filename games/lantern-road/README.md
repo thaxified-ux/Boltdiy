@@ -36,3 +36,10 @@ Thornveil Woods, Ashen Citadel and The Hollow Sky (endless after Stage 50). Each
 - **Stage complete:** clearing all 15 waves shows a "Stage N complete" notice; the first clear of each stage pays a gold bonus.
 - **Tips:** the "Show me" button on a tip opens the menu it points to.
 - **Saving:** progress saves to `localStorage` in this browser only. Saves from the first version upgrade automatically.
+
+## Credits
+
+- Glacierbreaker Knight, Young Swordswoman, Elven Bow Scout and Plague Doctor art by **elie automata**, used under their
+  license: commercial use allowed with credit, shipped only inside the game. The original packs are not in this repository
+  and must not be shared on their own. The game shows this credit in the Hero tab, the Shop and the Journal.
+- The hooded Wanderer was made with Gemini; the rest of the art is drawn in code.

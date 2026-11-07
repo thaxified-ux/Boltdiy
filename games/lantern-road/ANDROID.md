@@ -44,6 +44,7 @@ window.LanternBilling = {
 | `outfit_ember`, `outfit_frost` | One-time, non-consumable | €1.99 each | Hero outfits |
 | `outfit_royal` | One-time, non-consumable | €3.99 | Hero outfit |
 | `company_banners` | One-time, non-consumable | €2.99 | Follower outfits |
+| `char_glacier`, `char_swordswoman`, `char_scout`, `char_plague` | One-time, non-consumable | €1.99 each | Playable heroes with their own animations: the Glacierbreaker and the Swordswoman (Sword path), the Elven Scout (Bow path), the Plague Doctor (Lantern Staff path). Players can try each one for 5 minutes first. |
 | `company_slot_1`, `company_slot_2`, `company_slot_3` | One-time, non-consumable | €1.99 each | One more follower walking with you per slot. The game sells them in order. |
 | `stash_page_1`, `stash_page_2`, `stash_page_3` | One-time, non-consumable | €0.99 / $0.99 each | Stash pages of 30 slots each; page 1 unlocks the stash. Sold in order. |
 
@@ -86,6 +87,7 @@ document.addEventListener('deviceready', async () => {
   const { store, ProductType, Platform } = CdvPurchase;
   const once = ['starter_bundle', 'supporter_pack', 'lantern_blue', 'lantern_green', 'lantern_red', 'lantern_violet',
     'outfit_ember', 'outfit_frost', 'outfit_royal', 'company_banners',
+    'char_glacier', 'char_swordswoman', 'char_scout', 'char_plague',
     'company_slot_1', 'company_slot_2', 'company_slot_3',
     'stash_page_1', 'stash_page_2', 'stash_page_3'];
   const repeat = ['road_pass', 'ember_charm', 'embers_5', 'embers_20', 'hourglass_3'];
