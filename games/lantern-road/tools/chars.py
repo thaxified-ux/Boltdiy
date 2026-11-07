@@ -83,9 +83,31 @@ for name, cfg in CHARS.items():
         al = np.asarray(f)[..., 3] > 0; ys, xs = np.nonzero(al); bot = ys.max()
         low = xs[ys >= bot - 8]; return float((low.min() + low.max()) / 2), int(bot)
     shift = {}
+    # idle is placed by its feet; every other animation is lined up to idle by matching the shape of its first frame
+    # (the character's body) against idle's, so a wide fighting stance does not make the hero jump sideways
+    def mask(f):
+        return np.asarray(f)[..., 3] > 0
+    def best_offset(m, ref):
+        # start from the canvas centers (the art is centered on each canvas), then search around that guess
+        gx, gy = round((ref.shape[1] - m.shape[1]) / 2), round((ref.shape[0] - m.shape[0]) / 2)
+        pad = 60; H = max(m.shape[0], ref.shape[0]) + 2 * pad + abs(gy); Wd = max(m.shape[1], ref.shape[1]) + 2 * pad + abs(gx)
+        R = np.zeros((H + m.shape[0], Wd + m.shape[1]), bool); oy, ox = pad + m.shape[0], pad + m.shape[1]
+        R[oy:oy + ref.shape[0], ox:ox + ref.shape[1]] = ref
+        best = (-1, 0, 0)
+        for dy in range(gy - 28, gy + 29):
+            for dx in range(gx - 36, gx + 37):
+                y0, x0 = oy + dy, ox + dx
+                if y0 < 0 or x0 < 0 or y0 + m.shape[0] > R.shape[0] or x0 + m.shape[1] > R.shape[1]: continue
+                sc = np.logical_and(R[y0:y0 + m.shape[0], x0:x0 + m.shape[1]], m).sum()
+                if sc > best[0]: best = (sc, dx, dy)
+        return best[1], best[2]
+    fx0, _ = feet(frames['idle'][0]); bot = max(f.getbbox()[3] for f in frames['idle'] if f.getbbox())
+    shift['idle'] = (round(400 - fx0), 400 - bot)
+    ref = mask(frames['idle'][0])
     for an, fr in frames.items():
-        fx0, _ = feet(fr[0]); bot = max(f.getbbox()[3] for f in fr if f.getbbox())
-        shift[an] = (round(400 - fx0), 400 - bot)
+        if an == 'idle': continue
+        dx, dy = best_offset(mask(fr[0]), ref)
+        shift[an] = (shift['idle'][0] + dx, shift['idle'][1] + dy)
     boxes = []
     for an, fr in frames.items():
         dx, dy = shift[an]
