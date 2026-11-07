@@ -28,8 +28,8 @@ CHARS = {
     'glacier': {'anims': {
         'idle': f'{P}/glacier/Animations/Idle/east',
         'walk': f'{P}/glacier/Animations/Walk/east',
-        'atk1': f'{P}/glacier/Animations/Glacial_Hammerfall/east',
-        'skill': f'{P}/glacier/Animations/Frozen_Cyclone/east',
+        'skill': f'{P}/glacier/Animations/Glacial_Hammerfall/east',
+        'skill2': f'{P}/glacier/Animations/Frozen_Cyclone/east',
         'death': f'{P}/glacier/Animations/Death/east'}},
     'plague': {'anims': {
         'idle': f'{P}/plague/Animations/Idle/east',
