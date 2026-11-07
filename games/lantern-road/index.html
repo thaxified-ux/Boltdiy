@@ -1366,11 +1366,21 @@ function castSkill(id, manual) {
   // skills on herself work any time in a fight; the attacks need a foe on the road
   const foes = G.enemies.filter(e => !e.dead && e.x < W - 6 && e.x <= HX + 120);
   if (G.phase !== 'fight' || (!sk.self && !foes.length)) { if (manual) fx(HX, GY - 34, 'no foe near', '#97a39d', .7, 4); return false; }
-  G.skillCd[id] = sk.cd; useHeroSkill(k, foes, st, id); return true;
+  G.skillCd[id] = sk.cd; castAnim(sk.anim || 'skill', sk.n, sk.col);
+  const delay = (HIT_AT[k] || [0, 0])[1];
+  if (delay > 0) G.pendingSkill = { at: G.t + delay, k, id }; else applySkill(k, id);
+  return true;
 }
 function castAnim(an, name, col) { const h = G.hero; h.skillAnim = an; h.skillStart = G.t; fx(HX, GY - 38, name, col, 1.3, 6); }
+/* When each hero's weapon connects: [share of the basic attack animation, seconds into the skill animation]. */
+const HIT_AT = { swordswoman: [.67, .35], scout: [.5, 0], glacier: [.4, .3], plague: [.4, .8] };
+function applySkill(k, id) {
+  const foes = G.enemies.filter(e => !e.dead && e.x < W - 6 && e.x <= HX + 120), sk = SKILLSETS[k][id];
+  if (!foes.length && !sk.self) return;
+  useHeroSkill(k, foes, stats(), id);
+}
 function useHeroSkill(k, foes, st, id) {
-  id = id || 'skill'; const sk = SKILLSETS[k][id], h = G.hero; castAnim(sk.anim || 'skill', sk.n, sk.col);
+  id = id || 'skill'; const sk = SKILLSETS[k][id], h = G.hero;
   const front = foes.slice().sort((a, b) => a.x - b.x)[0];
   if (k === 'glacier') { for (const e of foes) { damage(e, st.dmg * 2.2, 'frost', false); e.chill = 3; } burst(HX + 12, GY - 8, ['#9fdcff', '#ffffff', '#5ab0ff'], 22, 90); shake(2); }
   if (k === 'swordswoman') { damage(front, st.dmg * 3, st.elem, true); if (!front.dead) { front.stun = 1; front.kb = 8; } burst(front.x - 4, GY - 12, ['#ffffff', '#dfe6ea'], 16, 70); shake(1.5); }
@@ -1544,7 +1554,7 @@ function enemyHit(e, mult, sure) {
   if (h.hp <= 0) heroDie(e);
 }
 function heroDie(killer) {
-  const h = G.hero; h.hp = 0; h.dead = 2; h.deadT = 0; S.deaths++; G.proj = []; G.combo = 0; G.comboT = 0;
+  const h = G.hero; h.hp = 0; h.dead = 2; h.deadT = 0; h.pending = null; G.pendingSkill = null; S.deaths++; G.proj = []; G.combo = 0; G.comboT = 0;
   // Falling to a guardian: offer to rise again on the spot for a few seconds instead of losing the stage.
   G.revive = S.wave === WAVES ? { stage: S.stage, foes: G.enemies.filter(e => !e.dead).map(e => Object.assign({}, e)), until: G.t + 6 } : null;
   if (G.revive) h.dead = 6;
@@ -1643,8 +1653,14 @@ function update(dt) {
   });
   if (h.dead > 0) return;
   const front = alive.find(e => !e.dead);
+  if (h.pending && G.t >= h.pending.at) { // the weapon connects now, on the impact frame of the animation
+    const pd = h.pending; h.pending = null;
+    const tgt = pd.front && !pd.front.dead ? pd.front : G.enemies.find(e => !e.dead && e.x <= HX + st.range + (e.boss ? 10 : 0));
+    if (tgt) { heroAttack(tgt); heroProc(); }
+  }
+  if (G.pendingSkill && G.t >= G.pendingSkill.at) { const ps = G.pendingSkill; G.pendingSkill = null; if (activeChar() === ps.k) applySkill(ps.k, ps.id); }
   if (!(h.stun > 0)) h.atkT -= dt * (h.chill > 0 ? .6 : 1);
-  if (front && !(h.stun > 0) && front.x <= HX + st.range + (front.boss ? 10 : 0) && h.atkT <= 0 && h.dead <= 0) { h.atkT = 1 / st.aspd; h.swing = .16; h.atkStart = G.t; h.atkN = (h.atkN || 0) + 1; heroAttack(front); heroProc(); }
+  if (front && !(h.stun > 0) && front.x <= HX + st.range + (front.boss ? 10 : 0) && h.atkT <= 0 && h.dead <= 0) { h.atkT = 1 / st.aspd; h.swing = .16; h.atkStart = G.t; h.atkN = (h.atkN || 0) + 1; h.pending = { at: G.t + Math.min(.6, .95 / st.aspd) * (HIT_AT[activeChar()] || [0])[0], front }; }
   // company
   partyMembers().forEach((f, i) => {
     const K = KINDS[f.kind]; if (!K.atk) return;
