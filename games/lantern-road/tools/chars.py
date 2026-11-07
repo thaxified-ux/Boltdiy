@@ -16,7 +16,6 @@ CHARS = {
         'idle': f'{P}/sword/Animations/Idle/east',
         'walk': f'{P}/sword/Animations/Walk/east',
         'atk1': f'{P}/sword/Animations/Downward_Sword_Slash/east',
-        'atk2': f'{P}/sword/Animations/Overhead_Slash/east',
         'skill': f'{P}/sword/Animations/Rising_Sword_Slash/east',
         'skill2': f'{P}/sword/Animations/Spell_Chant/east'}, 'ascale': {'atk1': 0.89, 'skill': 0.89}, 'steady': True},
     'scout': {'anims': {
