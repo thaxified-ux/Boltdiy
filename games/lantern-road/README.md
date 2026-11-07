@@ -39,12 +39,21 @@ Thornveil Woods, Ashen Citadel and The Hollow Sky (endless after Stage 50). Each
 
 ## Heroes and skills
 
-Every hero stands the same height and has a skill (with its own animation) plus a passive. Skill buttons on the road cast them by hand; with the AUTO switch on (the default), skills also cast by themselves, but only when a foe is in the hero's reach. The Swordswoman and the Elven Scout have two skill buttons each (the first two skills of their pack art, each with its own animation and icon); the Glacierbreaker too (Frozen Cyclone and the original Glacial Hammerfall). All hero animations use only the east-facing frames. The Plague Doctor's pack has no skill art, so Miasma is his one skill.
+Every hero stands the same height and follows one setup taken from the pack's skill art: the first card is the
+**basic attack**, the second is the hero's **one skill** (a button on the road with its animation and icon), and the
+rest are **passives**. Passives show as small badges next to the skill button; a badge lights up while the passive is
+working, and tapping it shows exactly what it gives. The Hero tab lists the basic attack, the skill and the passives
+with their stats, and the stat list shows what the passives add. With AUTO on, the skill casts by itself only when a
+foe is in reach. All hero animations use only the east-facing frames.
 
-- **Swordswoman** (free, Sword): skill 1 *Rising Sword Slash* every 8 s deals 300% to the foe in front and knocks it off its feet for 1 s; skill 2 *Spell Chant* every 14 s heals 25% HP and gives +40% damage for 6 s. Passive *Quick Blade*: +8% crit. Icons from her Character Actions sheet.
-- **Glacierbreaker** (€1.99, Sword): skill 1 *Frozen Cyclone* every 10 s deals 220% frost damage to every foe, which attack 40% slower for 3 s; skill 2 *Glacial Hammerfall* (the original animation with its ice) every 8 s deals 400% frost damage to the foe in front and freezes it for 1.5 s. His normal attack is the same Hammerfall swing with the ice effects removed. Passives *Permafrost* (foes next to him attack 20% slower) and *Rime Bastion* (+15% block).
-- **Elven Scout** (€1.99, unlocks Bow): skill 1 *Piercing Arrow* every 9 s pierces every foe in line for 250%; skill 2 *Wind Dash* every 20 s: no damage for 1.5 s (cast by itself below 40% HP). Passives *Leaf Vortex* (every 6th arrow hits every foe for 120% and poisons them) and *Keen Sight* (+10% crit). Icons from her skill sheet.
-- **Plague Doctor** (€1.99, unlocks Lantern Staff): *Miasma* every 11 s poisons every foe for 300% over 4 s. Passive *Remedies*: regenerates 1% of max HP per second.
+| Hero | Basic attack | Skill | Passives |
+|---|---|---|---|
+| Swordswoman (free, Sword) | Downward Sword Slash | Rising Sword Slash: every 8 s, 300% to the foe in front, knocked down for 1 s | Spell Chant (below 50% HP: heals 25% and +40% damage for 6 s, every 20 s), Quick Blade (+8% crit) |
+| Glacierbreaker (€1.99, Sword) | Glacial Hammerfall (ice effects removed) | Frozen Cyclone: every 10 s, 220% frost to every foe, 40% slower attacks for 3 s | Permafrost (foes next to him attack 20% slower), Rime Bastion (+15% block) |
+| Elven Scout (€1.99, unlocks Bow) | Piercing Arrow | Wind Dash: every 20 s, no damage for 1.5 s (by itself below 40% HP) | Leaf Vortex (every 6th arrow: 120% to every foe plus poison), Keen Sight (+10% crit) |
+| Plague Doctor (€1.99, unlocks Lantern Staff) | Lantern Flame | Miasma: every 11 s, 300% poison to every foe over 4 s | Remedies (1% of max HP regenerated per second) |
+
+The Plague Doctor's pack has no Art folder, so his skill and passive have no pack icons.
 
 ## Credits
 

@@ -31,7 +31,6 @@ CHARS = {
         'walk': f'{P}/glacier/Animations/Walk/east',
         'atk1': f'{P}/hf/east2',  # Glacial_Hammerfall/east with the ice effects removed: a plain hammer swing
         'skill': f'{P}/glacier/Animations/Frozen_Cyclone/east',
-        'skill2': f'{P}/glacier/Animations/Glacial_Hammerfall/east',  # the original, ice effects and all
         'death': f'{P}/glacier/Animations/Death/east'}},
     'plague': {'anims': {
         'idle': f'{P}/plague/Animations/Idle/east',
