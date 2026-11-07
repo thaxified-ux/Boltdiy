@@ -38,13 +38,11 @@ window.LanternBilling = {
 | `hourglass_3` | One-time, **consumable** | €1.99 | 3 Hourglasses: each collects 2 hours of rewards instantly |
 | `starter_bundle` | One-time, non-consumable | €2.99 | Unlocks `stash_page_1`, `company_slot_1` and `lantern_blue` together. Only offered while the player owns none of the three. |
 | `supporter_pack` | One-time, non-consumable | €4.99 | +10 bag slots, +1 company slot, 24 h offline rewards, Supporter Gold lantern |
-| `road_pass` | One-time, **consumable** | €3.99 | 30 days of +25% gold and XP, plus the Pathfinder outfit (buying again adds 30 days) |
+| `road_pass` | One-time, **consumable** | €3.99 | 30 days of +25% gold and XP (buying again adds 30 days) |
 | `ember_charm` | One-time, **consumable** | €1.49 | 7 days of +50% gold (buying again adds 7 days) |
 | `lantern_blue`, `lantern_green`, `lantern_red`, `lantern_violet` | One-time, non-consumable | €1.99 each | Lantern colors |
-| `outfit_ember`, `outfit_frost` | One-time, non-consumable | €1.99 each | Hero outfits |
-| `outfit_royal` | One-time, non-consumable | €3.99 | Hero outfit |
 | `company_banners` | One-time, non-consumable | €2.99 | Follower outfits |
-| `char_glacier`, `char_swordswoman`, `char_scout`, `char_plague` | One-time, non-consumable | €1.99 each | Playable heroes with their own animations: the Glacierbreaker and the Swordswoman (Sword path), the Elven Scout (Bow path), the Plague Doctor (Lantern Staff path). Players can try each one for 5 minutes first. |
+| `char_glacier`, `char_scout`, `char_plague` | One-time, non-consumable | €1.99 each | Playable heroes with their own animations. The Swordswoman is free and not a product. `char_glacier`: a second Sword hero. `char_scout` unlocks the Bow path and `char_plague` the Lantern Staff path. Players can try each one for 5 minutes first. |
 | `company_slot_1`, `company_slot_2`, `company_slot_3` | One-time, non-consumable | €1.99 each | One more follower walking with you per slot. The game sells them in order. |
 | `stash_page_1`, `stash_page_2`, `stash_page_3` | One-time, non-consumable | €0.99 / $0.99 each | Stash pages of 30 slots each; page 1 unlocks the stash. Sold in order. |
 
@@ -86,8 +84,8 @@ Add this as `www/billing.js` and load it before the game's script in `index.html
 document.addEventListener('deviceready', async () => {
   const { store, ProductType, Platform } = CdvPurchase;
   const once = ['starter_bundle', 'supporter_pack', 'lantern_blue', 'lantern_green', 'lantern_red', 'lantern_violet',
-    'outfit_ember', 'outfit_frost', 'outfit_royal', 'company_banners',
-    'char_glacier', 'char_swordswoman', 'char_scout', 'char_plague',
+    'company_banners',
+    'char_glacier', 'char_scout', 'char_plague',
     'company_slot_1', 'company_slot_2', 'company_slot_3',
     'stash_page_1', 'stash_page_2', 'stash_page_3'];
   const repeat = ['road_pass', 'ember_charm', 'embers_5', 'embers_20', 'hourglass_3'];
