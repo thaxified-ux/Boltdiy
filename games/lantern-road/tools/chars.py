@@ -18,7 +18,7 @@ CHARS = {
         'atk1': f'{P}/sword/Animations/Downward_Sword_Slash/east',
         'atk2': f'{P}/sword/Animations/Overhead_Slash/east',
         'skill': f'{P}/sword/Animations/Rising_Sword_Slash/east',
-        'skill2': f'{P}/sword/Animations/Spell_Chant/east'}, 'ascale': {'atk1': 0.89, 'skill': 0.89}},
+        'skill2': f'{P}/sword/Animations/Spell_Chant/east'}, 'ascale': {'atk1': 0.89, 'skill': 0.89}, 'steady': True},
     'scout': {'anims': {
         'idle': f'{P}/bow/Animations/Idle/east',
         'walk': f'{P}/bow/Animations/Walk/east',
@@ -108,12 +108,28 @@ for name, cfg in CHARS.items():
         if an == 'idle': continue
         dx, dy = best_offset(mask(fr[0]), ref)
         shift[an] = (shift['idle'][0] + dx, shift['idle'][1] + dy)
+    # keep the body in one place through every attack and skill: each frame is moved sideways so the center of its
+    # thick parts (the body, not the thin sword or swoosh) stays where it is in frame 1
+    def body_cx(f):
+        m = np.asarray(f)[..., 3] > 0
+        for _ in range(3):  # erode: thin weapons and trails disappear, the body stays
+            e = m.copy(); e[1:] &= m[:-1]; e[:-1] &= m[1:]; e[:, 1:] &= m[:, :-1]; e[:, :-1] &= m[:, 1:]; m = e
+        xs = np.nonzero(m)[1]
+        return float(xs.mean()) if len(xs) else None
+    fdx = {}
+    for an, fr in frames.items():
+        fdx[an] = [0] * len(fr)
+        if an in ('idle', 'walk', 'death') or not cfg.get('steady'): continue  # only where it is checked to help
+        c0 = body_cx(fr[0])
+        for i, f in enumerate(fr):
+            c = body_cx(f)
+            if c0 is not None and c is not None: fdx[an][i] = int(round(c0 - c))
     boxes = []
     for an, fr in frames.items():
         dx, dy = shift[an]
-        for f in fr:
-            bb = f.getbbox()
-            if bb: boxes.append((bb[0] + dx, bb[1] + dy, bb[2] + dx, bb[3] + dy))
+        for i, f in enumerate(fr):
+            bb = f.getbbox(); ddx = dx + fdx[an][i]
+            if bb: boxes.append((bb[0] + ddx, bb[1] + dy, bb[2] + ddx, bb[3] + dy))
     x0 = min(b[0] for b in boxes); y0 = min(b[1] for b in boxes); x1 = max(b[2] for b in boxes); y1 = max(b[3] for b in boxes)
     fw, fh = x1 - x0, y1 - y0
     ib = frames['idle'][0].getbbox(); idx, idy = shift['idle']
@@ -123,11 +139,11 @@ for name, cfg in CHARS.items():
         clip = Image.new('RGBA', (fw * len(fr), fh), (0, 0, 0, 0))
         dx, dy = shift[an]
         for i, f in enumerate(fr):
-            strip.alpha_composite(f, (i * fw + dx - x0, dy - y0))
+            strip.alpha_composite(f, (i * fw + dx + fdx[an][i] - x0, dy - y0))
         buf = io.BytesIO(); strip.save(buf, 'PNG', optimize=True)
         strip.save(f'{prev}/{name}-{an}.png')
         entry[an] = {'frames': len(fr), 'src': 'data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode()}
-        print(name, an, len(fr), 'frames', fw, 'x', fh, len(buf.getvalue()) // 1024, 'KB')
+        print(name, an, len(fr), 'frames', fw, 'x', fh, len(buf.getvalue()) // 1024, 'KB', 'steady' if an not in ('idle', 'walk', 'death') else '', fdx[an] if an not in ('idle', 'walk', 'death') else '')
     entry.update({'fw': fw, 'fh': fh, 'ax': 400 - x0, 'ay': 400 - y0, 'top': ib[1] + idy - y0})
     result[name] = entry
 
