@@ -60,4 +60,5 @@ The Plague Doctor's pack has no Art folder, so his skill and passive have no pac
 - Glacierbreaker Knight, Young Swordswoman, Elven Bow Scout and Plague Doctor art by **elie automata**, used under their
   license: commercial use allowed with credit, shipped only inside the game. The original packs are not in this repository
   and must not be shared on their own. The game shows this credit in the Hero tab, the Shop and the Journal.
-- Monsters, crew, backgrounds and icons are drawn in code.
+- Thornveil Woods monsters (Blightbloat, Thorncap, Bloodstalker, Lanterncap and the Ironcap guardian) come from the Fungal Horde pack, used under its license (commercial use allowed, not redistributed on its own; only the west-facing frames the game uses are embedded).
+- The other monsters, the crew, backgrounds and icons are drawn in code.
