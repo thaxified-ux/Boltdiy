@@ -313,6 +313,21 @@ select,textarea{background:var(--wood-deep)!important;border:2px solid #000!impo
 .pop .item{background:#120d0a;box-shadow:0 0 0 2px #000,0 8px 24px rgba(0,0,0,.6)}
 .pop .closepop{align-self:flex-end}
 body.strip .console{display:none}
+/* skill buttons stand on the ground in the scene */
+.skills{position:absolute;right:6px;bottom:6px;display:flex;gap:6px;z-index:3;align-items:flex-end}
+.sk{position:relative;width:52px;height:52px;padding:0;display:grid;place-items:center;border:2px solid #000;background:#2a1f17;box-shadow:inset 2px 2px 0 #5a4230,inset -2px -2px 0 #22180f;cursor:pointer;touch-action:manipulation;overflow:hidden}
+.sk img{width:48px;height:48px;image-rendering:pixelated}
+.sk::after{content:"";position:absolute;inset:0;background:conic-gradient(rgba(0,0,0,.7) var(--p,0%),transparent 0);pointer-events:none}
+.sk .cdt{position:absolute;inset:0;display:grid;place-items:center;font:700 1.05rem/1 var(--display);color:#fff;text-shadow:0 2px 0 #000;z-index:2}
+.sk .skn2{position:absolute;left:0;right:0;bottom:0;font:500 .42rem/1.1 var(--display);color:#f3d27a;background:rgba(0,0,0,.6);text-align:center;z-index:1;white-space:nowrap;overflow:hidden}
+.sk.ready{border-color:#f3d27a;animation:skready 1.4s ease-in-out infinite}
+.sk.no{transform:translateX(2px)}
+.sk.auto{width:40px;height:40px;font:700 .5rem/1.2 var(--display);color:#97a39d}
+.sk.auto.on{color:#2a1c06;background:#d89a2e;box-shadow:inset 2px 2px 0 #ffd27a,inset -2px -2px 0 #9a6a1a}
+.sk.auto::after{display:none}
+@keyframes skready{50%{box-shadow:inset 2px 2px 0 #5a4230,inset -2px -2px 0 #22180f,0 0 8px 1px rgba(243,180,74,.7)}}
+@media (prefers-reduced-motion:reduce){.sk.ready{animation:none}}
+body.strip .skills{display:none}
 .road canvas{touch-action:manipulation;cursor:pointer}
 .seg{gap:4px}
 .seg .btn{flex:1}
@@ -334,6 +349,7 @@ body.strip .console{display:none}
     <div class="roadhud"><span id="hudStage">Stage 1 · Wave 1/10</span><span class="zone" id="hudZone">Mossbarrow Lane</span></div>
     <button class="btn primary revive" id="reviveBtn" type="button" hidden></button>
     <button class="btn small exitstrip" id="exitStrip" type="button">Show menus</button>
+    <div class="skills" id="skills" aria-label="Skills"></div>
   </section>
 
   <section class="hud" aria-label="Hero status">
@@ -653,7 +669,7 @@ function fresh() {
   return { v: 3, level: 1, xp: 0, gold: 0, points: 0, attrs: { mig: 0, vit: 0, agi: 0, for: 0 },
     equip: emptyEquip(), bag: [], talents: { hearth: true }, path: 'blade', starters: { blade: true },
     roster: [], party: [], recruited: 0, feats: {}, bestR: 0,
-    stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: false, autoEquip: false, autoStones: false, autoCompany: false, autoClaim: false, autoForge: false, manualV1: true, shards: 0, glass: 0, tempered: 0, crafted: 0, kills: 0, deaths: 0, best: null,
+    stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: false, autoEquip: false, autoStones: false, autoCompany: false, autoClaim: false, autoForge: false, autoSkill: true, manualV1: true, shards: 0, glass: 0, tempered: 0, crafted: 0, kills: 0, deaths: 0, best: null,
     played: 0, lastSeen: Date.now(), log: [], tab: 'hero', created: Date.now(),
     owned: {}, passUntil: 0, charmUntil: 0, look: { lantern: 'amber', outfit: 'wanderer', company: 'plain', char: 'swordswoman' }, testShop: false, shopNoted: false,
     seen: {}, tips: {}, featSeen: {}, stash: [], bagView: 'bag', nudges: {}, soldFull: 0, embers: 1, hourglass: 0, trial: null, daily: { last: '', streak: 0 }, gfx: { numbers: true, weather: true, shake: true, fps30: false, big: false } };
@@ -1281,9 +1297,26 @@ function heroSkills(dt) {
   G.buff = Math.max(0, (G.buff || 0) - dt); h.invuln = Math.max(0, (h.invuln || 0) - dt);
   if (!set || h.dead > 0 || G.phase !== 'fight') return;
   if (G.skillCd.skill === undefined) G.skillCd.skill = 3;
-  const st = stats(), foes = G.enemies.filter(e => !e.dead && e.x < HX + 110);
-  if (set.react && !G.skillCd.react && h.hp < st.hp * .4) { G.skillCd.react = set.react.cd; h.invuln = 1.5; castAnim('dash', set.react.n, '#a8f0a0'); }
-  if (!G.skillCd.skill && foes.length && !(h.stun > 0)) { G.skillCd.skill = set.skill.cd; useHeroSkill(k, foes, st); }
+  if (S.autoSkill === false) return; // manual: only the buttons cast
+  const st = stats(), near = foesInReach();
+  if (!near.length) return; // automatic casting waits until a foe is in reach
+  if (set.react && !G.skillCd.react && h.hp < st.hp * .4) castSkill('react');
+  if (!G.skillCd.skill && !(h.stun > 0)) castSkill('skill');
+}
+/* Foes the hero can actually hit right now (melee reach, or bow and staff range). */
+function foesInReach() { const st = stats(); return G.enemies.filter(e => !e.dead && e.x <= HX + st.range + (e.boss ? 18 : 8)); }
+/* Cast a skill now, from a button or automatically. Returns false (and says why) when it cannot. */
+function castSkill(id, manual) {
+  const h = G.hero, k = activeChar(), set = SKILLSETS[k], sk = set && set[id];
+  if (!sk || h.dead > 0) return false;
+  if (G.skillCd[id] > 0) return false;
+  if (h.stun > 0 && id === 'skill') { if (manual) fx(HX, GY - 34, 'stunned', '#f3e04a', .7, 4); return false; }
+  const st = stats();
+  if (id === 'react') { G.skillCd.react = sk.cd; h.invuln = 1.5; castAnim('dash', sk.n, '#a8f0a0'); return true; }
+  // the Swordswoman's chant works any time in a fight; the attacks need a foe on the road
+  const foes = G.enemies.filter(e => !e.dead && e.x < W - 6 && e.x <= HX + 120);
+  if (G.phase !== 'fight' || (k !== 'swordswoman' && !foes.length)) { if (manual) fx(HX, GY - 34, 'no foe near', '#97a39d', .7, 4); return false; }
+  G.skillCd.skill = sk.cd; useHeroSkill(k, foes, st); return true;
 }
 function castAnim(an, name, col) { const h = G.hero; h.skillAnim = an; h.skillStart = G.t; fx(HX, GY - 38, name, col, 1.3, 6); }
 function useHeroSkill(k, foes, st) {
@@ -3409,7 +3442,7 @@ window.addEventListener('resize', sizeCanvas);
 function frame(now) {
   let dt = Math.min(.1, (now - last) / 1000); last = now;
   if (G.stop > 0) { G.stop -= dt; dt *= .15; }
-  update(dt);
+  update(dt); updateSkillBar();
   G.drawT = (G.drawT || 0) + dt;
   if (!S.gfx.fps30 || G.drawT >= 1 / 31) { G.drawT = 0; draw(); }
   G.hudT += dt; if (G.hudT > .2) { G.hudT = 0; updateHud(); if (dirtyPanel && $('#overlay').hidden) renderPanel(); }
@@ -3494,6 +3527,45 @@ function popWrap(html) { return `<div class="popwrap" data-act="closepop"><div c
 cv.addEventListener('pointerdown', e => {
   const r = cv.getBoundingClientRect();
   roadTap((e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H);
+});
+
+/* Skill buttons: one per skill of the current hero, with the cooldown drawn over a frame of its skill animation. */
+function skillIcon(k, an) {
+  const c = document.createElement('canvas'); c.width = 64; c.height = 64; const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
+  const A = CHAR_ART[k], im = CHAR_IMG[k] && CHAR_IMG[k][an];
+  if (A && A[an] && im && im.naturalWidth) {
+    const n = A[an].frames, fi = Math.floor(n * .55), k2 = Math.min(64 / A.fh, 64 / A.fw) * 1.25;
+    x.drawImage(im, fi * A.fw, 0, A.fw, A.fh, 32 - A.ax * k2, 60 - A.ay * k2 + (A.ay - A.top) * k2 * .12, A.fw * k2, A.fh * k2);
+  }
+  return c.toDataURL();
+}
+function buildSkillBar() {
+  const box = $('#skills'), k = activeChar(), set = SKILLSETS[k]; if (!box || !set) return;
+  const ready = CHAR_IMG[k] && CHAR_IMG[k].skill && CHAR_IMG[k].skill.naturalWidth;
+  box.dataset.k = k + (ready ? '' : '?');
+  const ids = ['skill'].concat(set.react ? ['react'] : []);
+  box.innerHTML = ids.map(id => { const sk = set[id];
+    return `<button class="sk" type="button" data-sk="${id}" title="${sk.n}: ${sk.d}" aria-label="${sk.n}: ${sk.d}"><img alt="" src="${skillIcon(k, id === 'react' ? 'dash' : 'skill')}"><span class="skn2">${sk.n}</span><span class="cdt"></span></button>`; }).join('')
+    + `<button class="sk auto ${S.autoSkill === false ? '' : 'on'}" type="button" data-sk="auto" title="Cast skills by themselves when a foe is in reach">AUTO<br>${S.autoSkill === false ? 'off' : 'on'}</button>`;
+}
+function updateSkillBar() {
+  const box = $('#skills'); if (!box) return;
+  const k = activeChar(), set = SKILLSETS[k];
+  const ready = CHAR_IMG[k] && CHAR_IMG[k].skill && CHAR_IMG[k].skill.naturalWidth;
+  if (box.dataset.k !== k + (ready ? '' : '?')) buildSkillBar();
+  for (const b of box.querySelectorAll('.sk[data-sk]')) {
+    const id = b.dataset.sk; if (id === 'auto') continue;
+    const sk = set[id], cd = (G.skillCd && G.skillCd[id]) || 0, total = sk.cd;
+    b.style.setProperty('--p', (cd > 0 ? cd / total * 100 : 0).toFixed(1) + '%');
+    b.classList.toggle('ready', cd <= 0 && G.hero.dead <= 0);
+    const t = b.querySelector('.cdt'), txt = cd > 0 ? String(Math.ceil(cd)) : '';
+    if (t.textContent !== txt) t.textContent = txt;
+  }
+}
+$('#skills').addEventListener('click', e => {
+  const b = e.target.closest('.sk'); if (!b) return; e.stopPropagation();
+  if (b.dataset.sk === 'auto') { S.autoSkill = S.autoSkill === false; log(S.autoSkill ? 'Skills cast by themselves when a foe is in reach.' : 'Skills only cast when you tap them.', '#97a39d'); buildSkillBar(); save(); return; }
+  if (!castSkill(b.dataset.sk, true)) { b.classList.add('no'); setTimeout(() => b.classList.remove('no'), 200); }
 });
 
 function start(data) {
