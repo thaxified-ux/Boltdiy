@@ -39,11 +39,11 @@ Thornveil Woods, Ashen Citadel and The Hollow Sky (endless after Stage 50). Each
 
 ## Heroes and skills
 
-Every hero stands the same height and has a skill (with its own animation) plus a passive. Skill buttons on the road cast them by hand; with the AUTO switch on (the default), skills also cast by themselves, but only when a foe is in the hero's reach. The Glacierbreaker and the Elven Scout have two skill buttons each, with the skill icons from their packs.
+Every hero stands the same height and has a skill (with its own animation) plus a passive. Skill buttons on the road cast them by hand; with the AUTO switch on (the default), skills also cast by themselves, but only when a foe is in the hero's reach. Every hero's skills follow the same rule: the first two skills of the pack's skill art are the two buttons (each with its own animation and icon), the rest are passives. The Plague Doctor's pack has no skill art, so Miasma is his one skill.
 
-- **Swordswoman** (free, Sword): *Spell Chant* every 14 s heals 25% HP and gives +40% damage for 6 s. Passive *Quick Blade*: +8% crit.
+- **Swordswoman** (free, Sword): skill 1 *Rising Sword Slash* every 8 s deals 300% to the foe in front and knocks it off its feet for 1 s; skill 2 *Spell Chant* every 14 s heals 25% HP and gives +40% damage for 6 s. Passive *Quick Blade*: +8% crit. Icons from her Character Actions sheet.
 - **Glacierbreaker** (€1.99, Sword): skill 1 *Glacial Hammerfall* every 8 s deals 400% frost damage to the foe in front and freezes it for 1.5 s; skill 2 *Frozen Cyclone* every 12 s deals 220% frost damage to every foe and slows their attacks by 40% for 3 s. Passives *Permafrost* (foes next to him attack 20% slower) and *Rime Bastion* (+15% block).
-- **Elven Scout** (€1.99, unlocks Bow): *Leaf Vortex* every 12 s deals 160% to every foe and poisons them for 150% more. *Wind Dash*: she takes no damage for 1.5 s (cast by itself below 40% HP), every 20 s. Passive *Keen Sight*: +10% crit.
+- **Elven Scout** (€1.99, unlocks Bow): skill 1 *Piercing Arrow* every 9 s pierces every foe in line for 250%; skill 2 *Wind Dash* every 20 s: no damage for 1.5 s (cast by itself below 40% HP). Passives *Leaf Vortex* (every 6th arrow hits every foe for 120% and poisons them) and *Keen Sight* (+10% crit). Icons from her skill sheet.
 - **Plague Doctor** (€1.99, unlocks Lantern Staff): *Miasma* every 11 s poisons every foe for 300% over 4 s. Passive *Remedies*: regenerates 1% of max HP per second.
 
 ## Credits
