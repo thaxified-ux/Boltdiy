@@ -10,34 +10,41 @@ from PIL import Image
 
 game, P, prev = sys.argv[1:]
 os.makedirs(prev, exist_ok=True)
+TARGET = 100  # every hero stands this many art pixels tall (idle pose), so they all match on the road
 CHARS = {
-    'swordswoman': {'scale': 1.0, 'anims': {
+    'swordswoman': {'anims': {
         'idle': f'{P}/sword/Animations/Idle/east',
         'walk': f'{P}/sword/Animations/Walk/east',
         'atk1': f'{P}/sword/Animations/Downward_Sword_Slash/east',
-        'atk2': f'{P}/sword/Animations/Overhead_Slash/east'}, 'ascale': {'atk1': 0.89}},
-    'scout': {'scale': 1.0, 'anims': {
+        'atk2': f'{P}/sword/Animations/Overhead_Slash/east',
+        'skill': f'{P}/sword/Animations/Spell_Chant/east'}, 'ascale': {'atk1': 0.89}},
+    'scout': {'anims': {
         'idle': f'{P}/bow/Animations/Idle/east',
         'walk': f'{P}/bow/Animations/Walk/east',
         'atk1': f'{P}/bow/Animations/Shoot_Arrow/east',
+        'skill': f'{P}/bow/Animations/Leaf_Vortex/east',
+        'dash': f'{P}/bow/Animations/Wind_Dash/east',
         'death': f'{P}/bow/Animations/Death/east'}},
-    'glacier': {'scale': 1.0, 'anims': {
+    'glacier': {'anims': {
         'idle': f'{P}/glacier/Animations/Idle/east',
         'walk': f'{P}/glacier/Animations/Walk/east',
         'atk1': f'{P}/glacier/Animations/Glacial_Hammerfall/east',
-        'atk2': f'{P}/glacier/Animations/Frozen_Cyclone/east',
+        'skill': f'{P}/glacier/Animations/Frozen_Cyclone/east',
         'death': f'{P}/glacier/Animations/Death/east'}},
-    'plague': {'scale': 1.0, 'anims': {
+    'plague': {'anims': {
         'idle': f'{P}/plague/Animations/Idle/east',
         'walk': f'{P}/plague/Animations/Walk/east',
-        'atk1': f'{P}/plague/Animations/Basic_Attack/east'}},
+        'atk1': f'{P}/plague/Animations/Basic_Attack/east',
+        'skill': f'{P}/plague/Animations/Jump/east'}},
 }
 
 
 def resize_snap(im, scale, pal):
-    if scale == 1:
+    if abs(scale - 1) < 1e-3:
         return im
     W, H = round(im.width * scale), round(im.height * scale)
+    if scale > 1:
+        return im.resize((W, H), Image.NEAREST)
     a = np.asarray(im).astype(np.int32)
     # premultiply so transparent pixels do not bleed dark edges
     rgb = Image.fromarray((a[..., :3] * (a[..., 3:] / 255)).astype(np.uint8), 'RGB').resize((W, H), Image.LANCZOS)
@@ -60,12 +67,16 @@ for name, cfg in CHARS.items():
         assert fs, d
         frames[an] = [Image.open(f).convert('RGBA') for f in fs]
         raw_all += frames[an]
-    if cfg['scale'] != 1 or cfg.get('ascale'):
-        px = np.concatenate([np.asarray(f)[np.asarray(f)[..., 3] > 0][:, :3] for f in raw_all[:20]])
-        pal = np.unique(px, axis=0).astype(np.int32)
-        if len(pal) > 96:  # keep the palette small so snapping stays fast
-            idx = np.random.default_rng(1).choice(len(pal), 96, replace=False); pal = pal[idx]
-        frames = {an: [resize_snap(f, cfg['scale'] * cfg.get('ascale', {}).get(an, 1), pal) for f in fr] for an, fr in frames.items()}
+    ib0 = frames['idle'][0].getbbox(); base = TARGET / (ib0[3] - ib0[1])
+    # the most common colors of this hero, for snapping shrunk frames back to crisp pixels
+    cnt = {}
+    for f in raw_all[::3]:
+        px = np.asarray(f); px = px[px[..., 3] > 0][:, :3]
+        u, c = np.unique(px, axis=0, return_counts=True)
+        for col, n in zip(map(tuple, u), c): cnt[col] = cnt.get(col, 0) + n
+    pal = np.array(sorted(cnt, key=lambda k: -cnt[k])[:160], np.int32)
+    frames = {an: [resize_snap(f, base * cfg.get('ascale', {}).get(an, 1), pal) for f in fr] for an, fr in frames.items()}
+    print(name, 'scale', round(base, 3))
     # line every animation up on the feet of its first frame (canvas sizes differ between animations)
     def feet(f):
         al = np.asarray(f)[..., 3] > 0; ys, xs = np.nonzero(al); bot = ys.max()

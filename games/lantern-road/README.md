@@ -37,6 +37,15 @@ Thornveil Woods, Ashen Citadel and The Hollow Sky (endless after Stage 50). Each
 - **Tips:** the "Show me" button on a tip opens the menu it points to.
 - **Saving:** progress saves to `localStorage` in this browser only. Saves from the first version upgrade automatically.
 
+## Heroes and skills
+
+Every hero stands the same height and has a skill that fires by itself on a cooldown (with its own animation) plus a passive:
+
+- **Swordswoman** (free, Sword): *Spell Chant* every 14 s heals 25% HP and gives +40% damage for 6 s. Passive *Quick Blade*: +8% crit.
+- **Glacierbreaker** (€1.99, Sword): *Frozen Cyclone* every 10 s deals 220% frost damage to every foe and slows their attacks by 40% for 3 s. Passive *Rime Bastion*: +15% block.
+- **Elven Scout** (€1.99, unlocks Bow): *Leaf Vortex* every 12 s deals 160% to every foe and poisons them for 150% more. Reaction *Wind Dash*: below 40% HP she takes no damage for 1.5 s (every 20 s).
+- **Plague Doctor** (€1.99, unlocks Lantern Staff): *Miasma* every 11 s poisons every foe for 300% over 4 s. Passive *Remedies*: regenerates 1% of max HP per second.
+
 ## Credits
 
 - Glacierbreaker Knight, Young Swordswoman, Elven Bow Scout and Plague Doctor art by **elie automata**, used under their
