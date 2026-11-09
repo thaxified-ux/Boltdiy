@@ -61,4 +61,5 @@ The Plague Doctor's pack has no Art folder, so his skill and passive have no pac
   license: commercial use allowed with credit, shipped only inside the game. The original packs are not in this repository
   and must not be shared on their own. The game shows this credit in the Hero tab, the Shop and the Journal.
 - Thornveil Woods monsters (Blightbloat, Thorncap, Bloodstalker, Lanterncap and the Ironcap guardian) come from the Fungal Horde pack, used under its license (commercial use allowed, not redistributed on its own; only the west-facing frames the game uses are embedded).
-- The other monsters, the crew, backgrounds and icons are drawn in code.
+- The monsters of the other zones (1-7, 9, 10) were generated with Replit in a 16-bit style and converted to game sprites with tools/convert_mon.py; they move with the game's code animation.
+- The crew, backgrounds and icons are drawn in code.
