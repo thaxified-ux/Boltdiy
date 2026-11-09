@@ -39,7 +39,13 @@ Thornveil Woods, Ashen Citadel and The Hollow Sky (endless after Stage 50). Each
 
 ## Sound
 
-All sound is synthesized in the game with Web Audio, so there are no audio files. Effects: hits and crits, getting hurt, kills, loot by rarity, level up, skills, parries, special attacks, guardians, stage clears, moths and the hero falling. Each zone has its own soft looping tune (key, scale, tempo and instrument), faster and darker on guardian waves and on blood-moon nights. Sound effects and music each have an on/off switch in Log -> Settings. Audio starts on the first tap, as browsers require.
+- **Sound effects** are short recorded samples (29 of them, about 210 KB) embedded in `index.html`: a different hit sound per weapon (sword slash, hammer thud, bow twang and arrow thunk, fire cast and burn), swings, getting hurt, monster deaths, guardian roars, loot, coins, skills and parries. Each sound has several takes and is pitched slightly at random so it does not get repetitive. Level-up and stage-clear jingles are synthesized.
+- **Music** is streamed from `audio/`: one track per zone and a boss theme on guardian waves, with a crossfade between them. It gets quieter while the hero is down and pauses when the tab is hidden. If a music file is missing, a synthesized tune plays instead, so `index.html` still works on its own.
+- Sound effects and music each have an on/off switch in Log -> Settings. Audio starts on the first tap, as browsers require.
+
+All audio is CC0 (public domain), from OpenGameArt:
+- Music: JRPG Music Packs 1-3 (Exploration, Towns, Evil) and Epic Boss Battle by Juhani Junkala (SubspaceAudio).
+- Sound effects: 80 CC0 RPG SFX (rubberduck), RPG Sound Pack (artisticdude), 50 RPG sound effects (Kenney), Battle Sound Effects, 3 Melee sounds (remaxim) and Metal Impact Sounds (BMacZero).
 
 ## Heroes and skills
 
