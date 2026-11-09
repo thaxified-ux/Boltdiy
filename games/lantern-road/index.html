@@ -241,6 +241,7 @@ html.big{font-size:112.5%}
 .bundle{border-color:#7ff0ff;background:linear-gradient(135deg,#10282e,var(--panel) 60%)}
 .bundle h2{color:#7ff0ff}
 .slot{background-image:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--rc,transparent) 38%,transparent) 0,transparent 70%)!important}
+.btn.helpbtn{position:absolute;left:50%;top:30px;transform:translateX(-50%);z-index:3;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis;background:#d89a2e!important;color:#2a1c06;box-shadow:inset 2px 2px 0 #ffd27a,inset -2px -2px 0 #9a6a1a,0 0 0 2px #000,0 0 12px rgba(243,180,74,.7);animation:pulse 1.2s ease-in-out infinite}
 .revive{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);z-index:3;white-space:nowrap;animation:pulse 1s steps(2) infinite;box-shadow:0 0 0 3px #000,0 0 16px rgba(243,180,74,.7)}
 .log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:320px;overflow:auto;font-size:.9rem}
 .log li{display:flex;gap:8px;border-bottom:1px solid #1e2a30;padding:4px 0}
@@ -359,6 +360,7 @@ body.strip .skills{display:none}
     <div class="toasts" id="toasts" aria-live="polite"></div>
     <div class="roadhud"><span id="hudStage">Stage 1 · Wave 1/10</span><span class="zone" id="hudZone">Mossbarrow Lane</span></div>
     <button class="btn primary revive" id="reviveBtn" type="button" hidden></button>
+    <button class="btn small helpbtn" id="helpBtn" type="button" hidden></button>
     <button class="btn small exitstrip" id="exitStrip" type="button">Show menus</button>
     <div class="skills" id="skills" aria-label="Skills"></div>
   </section>
@@ -727,6 +729,7 @@ function migrate(d) {
   s.farm = false; s.v = 3;
   s.gfx = Object.assign({ numbers: true, weather: true, shake: true, fps30: false, big: false }, s.gfx || {});
   if (!d.manualV1) { for (const k of ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge']) s[k] = false; s.manualV1 = true; }
+  if (s.firstEquip === undefined) s.firstEquip = s.maxStage > 2;
   if (s.autoForge === undefined) s.autoForge = false; delete s.autoSkills; s.parries = s.parries || 0; s.moths = s.moths || 0; s.bestCombo = s.bestCombo || 0; s.shards = s.shards || 0; s.glass = s.glass || 0; s.tempered = s.tempered || 0; s.crafted = s.crafted || 0;
   if (s.embers === undefined) s.embers = 1; if (s.hourglass === undefined) s.hourglass = 0;
   s.nudges = s.nudges || {}; s.soldFull = s.soldFull || 0; s.daily = s.daily || { last: '', streak: 0 };
@@ -1114,6 +1117,12 @@ function gainItem(it, quiet) {
     }
   }
   S.bag.push(it);
+  if (!quiet && !S.autoEquip && !S.firstEquip && isUpgrade(it)) { // teach gear once: equip the first upgrade for the player
+    S.firstEquip = true; equip(it);
+    toast('New gear equipped!', it.name + '. Better gear drops all the time: open the Bag and tap Equip best.');
+    log(`Equipped your first upgrade: ${it.name}. Open the Bag and tap Equip best whenever ▲ upgrades drop.`, '#f3b44a');
+    return 'kept';
+  }
   if (!quiet) tip('bag');
   if (!quiet && it.r >= 3) log(`Found ${RAR[it.r].n}: ${it.name} (GS ${it.gs})`, RAR[it.r].col);
   if (S.tab === 'bag') dirtyPanel = true;
@@ -2929,9 +2938,32 @@ function updateHud() {
   hud.power.textContent = `Power ${fmt(rating(st))}`;
   hud.pts.hidden = !S.points;
   { const rb = document.getElementById('reviveBtn'), on = !!(G.revive && G.hero.dead > 0 && G.t < G.revive.until);
+    { const hb = $('#helpBtn'), hh = on ? null : stuckHelp(); hb.hidden = !hh; if (hh && hb.textContent !== hh.t) hb.textContent = hh.t; }
     rb.hidden = !on; if (on) rb.textContent = S.embers > 0 ? `Rise again · 1 Ember (${S.embers} left) · ${Math.ceil(G.revive.until - G.t)}s` : `Rise again? Get Lantern Embers · ${Math.ceil(G.revive.until - G.t)}s`; }
   hud.pts.textContent = `${S.points} point${S.points === 1 ? '' : 's'} to spend`;
   document.title = `Lantern Road (Claude) · Stage ${S.stage} ${S.wave}/${WAVES}`;
+}
+/* Stuck on a stage? After two falls near the furthest stage, one button on the road offers the fix that helps most. */
+const IDLE_KEYS = ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge'];
+function stuckHelp() {
+  const w = S.wall; if (!w || w.n < 2 || w.stage < S.maxStage - 1 || G.hero.dead > 0) return null;
+  const ups = S.bag.filter(isUpgrade).length;
+  if (ups) return { k: 'equip', t: `▲ Equip ${ups} upgrade${ups > 1 ? 's' : ''}` };
+  if (S.points > 0) return { k: 'points', t: `Spend ${S.points} point${S.points > 1 ? 's' : ''}` };
+  if (TALENTS.some(t => !S.talents[t.id] && talAvail(t)) && S.gold >= talCost()) return { k: 'stone', t: `Buy a waystone · ${fmt(talCost())} gold` };
+  if (w.n >= 3 && !S.idleOffered && !IDLE_KEYS.every(k => S[k])) return { k: 'idle', t: 'Stuck? Let the game manage gear (Idle mode)' };
+  return null;
+}
+function useHelp() {
+  const h = stuckHelp(); if (!h) return;
+  if (h.k === 'equip') { const n = autoEquip(); S.bag.forEach(i => { i.isNew = false; }); toast('Gear upgraded', `Equipped ${n} upgrade${n > 1 ? 's' : ''}. Try the stage again!`); }
+  if (h.k === 'points') { const n = S.points; autoSpend(); toast('Stronger', `Spent ${n} attribute point${n > 1 ? 's' : ''}.`); }
+  if (h.k === 'stone') { // the first open waystone, damage and HP first
+    const open = TALENTS.filter(t => !S.talents[t.id] && talAvail(t)), pick = open.find(t => /dmg|hp/.test(t.k)) || open[0];
+    S.gold -= talCost(); S.talents[pick.id] = true; dirtyStats = true; toast('Waystone unlocked', pick.n); log(`Unlocked the ${pick.n} waystone.`, '#f3b44a');
+  }
+  if (h.k === 'idle') { S.idleOffered = true; for (const k of IDLE_KEYS) S[k] = true; autoPlay(); toast('Idle mode on', 'The game now equips, spends and upgrades for you. Turn it off any time in Log → Settings.'); log('Idle mode on. Turn it off in Log → Settings to choose every upgrade yourself.', '#97a39d'); }
+  dirtyStats = true; dirtyPanel = true; updateHud(); save();
 }
 function featDone(f) { return f.cur() >= f.goal; }
 function markTabs() {
@@ -3445,6 +3477,7 @@ panel.addEventListener('click', e => {
 $('#nudgeGo').addEventListener('click', () => { const k = $('#nudge').dataset.kind; if (S.nudges[k]) S.nudges[k].no = 0; $('#nudge').hidden = true; S.tab = 'shop'; renderPanel(); });
 $('#nudgeNo').addEventListener('click', () => { const k = $('#nudge').dataset.kind; if (S.nudges[k]) S.nudges[k].no = (S.nudges[k].no || 0) + 1; $('#nudge').hidden = true; });
 $('#coachOk').addEventListener('click', () => { const id = tipQueue[0]; if (!id) return; S.tab = TIPS[id].tab; selBag = selEq = null; renderPanel(); doneTip(id); });
+$('#helpBtn').addEventListener('click', e => { e.stopPropagation(); useHelp(); });
 $('#reviveBtn').addEventListener('click', () => {
   const R = G.revive; if (!R) return;
   if (S.embers <= 0) { S.tab = 'shop'; renderPanel(); return; }
