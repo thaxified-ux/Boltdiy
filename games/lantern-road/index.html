@@ -1377,7 +1377,7 @@ function castSkill(id, manual) {
   // skills on herself work any time in a fight; the attacks need a foe on the road
   const foes = G.enemies.filter(e => !e.dead && e.x < W - 6 && e.x <= HX + 120);
   if (G.phase !== 'fight' || (!sk.self && !foes.length)) { if (manual) fx(HX, GY - 34, 'no foe near', '#97a39d', .7, 4); return false; }
-  G.skillCd[id] = sk.cd; castAnim(sk.anim || 'skill', sk.n, sk.col);
+  G.skillCd[id] = sk.cd; S.casts = (S.casts || 0) + 1; castAnim(sk.anim || 'skill', sk.n, sk.col);
   const delay = (HIT_AT[k] || [0, 0])[1];
   if (delay > 0) G.pendingSkill = { at: G.t + delay, k, id }; else applySkill(k, id);
   return true;
@@ -1501,7 +1501,7 @@ function kill(e) {
   const em = e.elite ? 3 : e.minion ? .3 : 1;
   G.combo = (G.comboT > 0 ? G.combo : 0) + 1; G.comboT = 4; if (G.combo > (S.bestCombo || 0)) S.bestCombo = G.combo;
   const g = goldPer(S.stage, e.boss) * (1 + st.gold / 100) * rnd(.85, 1.15) * em * boostGold() * comboMult();
-  SFX.play(e.boss ? 'stage' : 'kill'); S.gold += g; S.kills++; if (e.elite) S.elites = (S.elites || 0) + 1;
+  SFX.play(e.boss ? 'stage' : 'kill'); S.gold += g; S.kills++; if (e.elite) S.elites = (S.elites || 0) + 1; if (e.boss) S.guardians = (S.guardians || 0) + 1;
   addXp(xpPer(S.stage, e.boss) * (1 + st.xp / 100) * em * boostXp());
   fx(e.x, GY - 8, '+' + fmt(g), '#f3b44a', 1, 4);
   const chance = (e.boss ? 1 : e.elite ? .45 : e.minion ? .04 : .16) * (1 + st.drop / 100);
@@ -1593,7 +1593,7 @@ function nextWave() {
     {
       const bonus = first ? Math.round(goldPer(cleared) * 15 * boostGold()) : 0;
       S.gold += bonus;
-      SFX.play('stage'); toast(`Stage ${cleared} complete`, bonus ? `All ${WAVES} waves cleared · +${fmt(bonus)} gold` : `All ${WAVES} waves cleared`);
+      S.clears = (S.clears || 0) + 1; SFX.play('stage'); toast(`Stage ${cleared} complete`, bonus ? `All ${WAVES} waves cleared · +${fmt(bonus)} gold` : `All ${WAVES} waves cleared`);
       log(`Stage ${cleared} complete: all ${WAVES} waves cleared${bonus ? `, +${fmt(bonus)} gold for the first clear` : ''}.`, '#f3b44a');
       if (S.gfx.weather) burst(HX, GY - 20, ['#f3b44a', '#fff2c0', '#7fd38b'], 18, 80);
       S.stage++;
@@ -3104,13 +3104,56 @@ function useHelp() {
   dirtyStats = true; dirtyPanel = true; updateHud(); save();
 }
 function featDone(f) { return f.cur() >= f.goal; }
+/* ---------- Daily quests ----------
+   Three a day, picked from the date. Progress is counted from where each lifetime counter stood when the day began. */
+const QUESTS = [
+  { id: 'kills', n: 'Clear the Road', d: 'Defeat 150 enemies', goal: 150, cur: () => S.kills },
+  { id: 'elites', n: 'Elite Hunter', d: 'Defeat 3 elite foes', goal: 3, cur: () => S.elites || 0 },
+  { id: 'parries', n: 'Perfect Timing', d: 'Parry 10 special attacks (tap the road when a foe glows)', goal: 10, cur: () => S.parries || 0 },
+  { id: 'moths', n: 'Moth Catcher', d: 'Catch 2 Gilded Moths', goal: 2, cur: () => S.moths || 0 },
+  { id: 'clears', n: 'Keep Walking', d: 'Complete 3 stages', goal: 3, cur: () => S.clears || 0 },
+  { id: 'guardians', n: 'Guardian Slayer', d: 'Defeat 2 guardians', goal: 2, cur: () => S.guardians || 0 },
+  { id: 'casts', n: 'Show Your Skill', d: 'Use your skill 15 times', goal: 15, cur: () => S.casts || 0 },
+];
+function questDay() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function ensureQuests() {
+  const day = questDay(); if (S.dq && S.dq.day === day) return S.dq;
+  let h = 0; for (const c of day) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const pool = QUESTS.map(q => q.id), ids = [];
+  while (ids.length < 3) { h = (h * 1664525 + 1013904223) >>> 0; ids.push(pool.splice(h % pool.length, 1)[0]); }
+  const base = {}; for (const id of ids) base[id] = QUESTS.find(q => q.id === id).cur();
+  S.dq = { day, ids, base, claimed: {}, bonus: false }; return S.dq;
+}
+function questList() { const q = ensureQuests(); return q.ids.map(id => { const x = QUESTS.find(d => d.id === id), cur = Math.max(0, x.cur() - (q.base[id] || 0)); return { x, cur: Math.min(cur, x.goal), done: cur >= x.goal, claimed: !!q.claimed[id] }; }); }
+function questReward() { return { gold: Math.round(goldPer(S.maxStage) * 20), shards: 5 + Math.floor(S.maxStage / 3) }; }
+function questBonus() { return { gold: Math.round(goldPer(S.maxStage) * 50), glass: 3 }; }
+function questClaimable() { const l = questList(); return l.some(q => q.done && !q.claimed) || (l.every(q => q.claimed) && !S.dq.bonus); }
+function claimQuest(id, quiet) {
+  const q = ensureQuests();
+  if (id === 'bonus') { if (q.bonus || !questList().every(x => x.claimed)) return false; const b = questBonus(); q.bonus = true; S.gold += b.gold; S.glass += b.glass;
+    if (!quiet) { SFX.play('level'); toast('All daily quests done', `+${fmt(b.gold)} gold · +${b.glass} Starglass`); } log(`All daily quests done: +${fmt(b.gold)} gold, +${b.glass} Starglass.`, '#f3b44a'); return true; }
+  const it = questList().find(x => x.x.id === id); if (!it || !it.done || it.claimed) return false;
+  const r = questReward(); q.claimed[id] = true; S.gold += r.gold; S.shards = (S.shards || 0) + r.shards; if (!quiet) SFX.play('coin');
+  log(`Daily quest done: ${it.x.n}. +${fmt(r.gold)} gold, +${r.shards} Lantern Shards.`, '#f3b44a'); return true;
+}
+function questHtml() {
+  const l = questList(), r = questReward(), b = questBonus(), all = l.every(q => q.claimed);
+  const n = new Date(), left = Math.max(0, (new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1) - n) / 36e5), lt = left >= 1 ? Math.floor(left) + ' h' : Math.ceil(left * 60) + ' min';
+  const cards = l.map(q => `<article class="feat ${q.done ? 'done' : ''} ${q.claimed ? 'claimed' : ''}"><b>${q.x.n}</b><span class="sub">${q.x.d}</span>
+      <div class="prog"><i style="width:${(q.cur / q.x.goal * 100).toFixed(0)}%"></i></div>
+      <div class="row between"><span class="sub">${q.cur} / ${q.x.goal}</span>${q.claimed ? '<span class="tagpill">Claimed</span>' : q.done ? `<button class="btn small primary" data-act="dclaim" data-id="${q.x.id}">Claim</button>` : ''}</div></article>`).join('');
+  return `<div class="card"><h2>Daily quests · ${l.filter(q => q.claimed).length}/3</h2>
+    <p class="sub">Three new quests every day (new ones in ${lt}). Each pays ${fmt(r.gold)} gold and ${r.shards} Lantern Shards. Finish all three for ${fmt(b.gold)} gold and ${b.glass} Starglass.</p>
+    ${all ? (S.dq.bonus ? '<p class="sub"><span class="tagpill">Bonus claimed</span> Come back tomorrow for new quests.</p>' : '<button class="btn primary" data-act="dclaim" data-id="bonus">Claim the bonus</button>') : ''}</div>
+    <div class="feats">${cards}</div>`;
+}
 function markTabs() {
   const set = (id, on) => { const b = document.getElementById(id); if (!b) return; let d = b.querySelector('.dot'); if (on && !d) { d = document.createElement('span'); d.className = 'dot'; b.appendChild(d); } if (!on && d) d.remove(); };
   set('tab-hero', S.points > 0);
   set('tab-bag', S.bag.some(i => i.isNew));
   set('tab-company', S.roster.some(f => f.isNew));
   set('tab-talents', TALENTS.some(t => !S.talents[t.id] && talAvail(t) && S.gold >= talCost()));
-  set('tab-feats', FEATS.some(f => !S.feats[f.id] && featDone(f)));
+  set('tab-feats', FEATS.some(f => !S.feats[f.id] && featDone(f)) || questClaimable());
   set('tab-shop', (S.maxStage >= 2 && !S.shopNoted) || (S.maxStage >= 2 && dailyReady()));
 }
 
@@ -3339,7 +3382,7 @@ function renderFeats() {
       <div class="prog"><i style="width:${(prog * 100).toFixed(0)}%"></i></div>
       <div class="row between"><span class="sub">${ptxt}</span>${claimed ? '<span class="tagpill">Claimed</span>' : done ? `<button class="btn small primary" data-act="claim" data-id="${f.id}">Claim</button>` : ''}</div></article>`;
   }).join('');
-  panel.innerHTML = `<div class="card"><h2>Feats · ${renown()}/${FEATS.length} claimed</h2>
+  panel.innerHTML = questHtml() + `<div class="card"><h2>Feats · ${renown()}/${FEATS.length} claimed</h2>
     <p class="sub">Each claimed feat adds 1 renown: +2% damage and +2% gold for good, plus ${fmt(reward)} gold now (the gold grows with your furthest stage).</p></div>
     <div class="feats">${cards}</div>`;
 }
@@ -3594,6 +3637,7 @@ panel.addEventListener('click', e => {
   if (a === 'train') { const f = S.roster.find(x => x.id === id), c = f && trainCost(f); if (f && S.gold >= c) { S.gold -= c; f.lvl++; dirtyStats = true; } }
   if (a === 'dismiss1') confirmDismiss = id;
   if (a === 'dismiss2') { const f = S.roster.find(x => x.id === id); if (f) { S.roster = S.roster.filter(x => x.id !== id); S.party = S.party.filter(x => x !== id); dirtyStats = true; log(`${f.name} went their own way.`); } confirmDismiss = null; }
+  if (a === 'dclaim') { if (claimQuest(id)) dirtyStats = true; }
   if (a === 'claim') { const f = FEATS.find(x => x.id === id); if (f && !S.feats[id] && featDone(f)) { const g = Math.round(goldPer(S.maxStage) * 25); S.feats[id] = true; S.gold += g; dirtyStats = true; log(`Feat claimed: ${f.n}. +1 renown, +${fmt(g)} gold.`, '#f3b44a'); } }
   if (a === 'toshop') { S.tab = 'shop'; renderPanel(); return; }
   if (a === 'buy') { buy(id); return; }
@@ -3660,6 +3704,7 @@ function autoPlay(quiet) {
       if (k) { S.gold += g; changed = true; if (!quiet) log(`Bag nearly full: cleared ${k} items you don't need (+${fmt(g)} gold${sh ? `, +${fmt(sh)} shards${gl ? `, +${gl} starglass` : ''}` : ''}). Kept upgrades and the best Mythic-or-better spare for each slot.`); }
     }
   }
+  if (S.autoClaim) { for (const q of questList()) if (q.done && !q.claimed && claimQuest(q.x.id, quiet)) changed = true; if (claimQuest('bonus', quiet)) changed = true; }
   if (S.autoClaim) for (const f of FEATS) if (!S.feats[f.id] && featDone(f)) {
     const g = Math.round(goldPer(S.maxStage) * 25); S.feats[f.id] = true; S.gold += g; dirtyStats = true; changed = true;
     if (!quiet) log(`Feat claimed: ${f.n}. +1 renown, +${fmt(g)} gold.`, '#f3b44a');
