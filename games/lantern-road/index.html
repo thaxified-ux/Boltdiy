@@ -1744,13 +1744,18 @@ const SFX = (() => {
   let ac = null, master = null, sfxBus = null, musBus = null, noiseBuf = null, seqT = null, nextT = 0, step = 0, cur = null;
   const ok = () => ac && ac.state === 'running';
   function init() {
-    if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
+    if (ac) { if (ac.state !== 'running') { const r = ac.resume(); if (r && r.catch) r.catch(() => {}); }
+      if (mus.el && (mus.blocked || mus.el.paused)) { mus.blocked = false; const pr = mus.el.play(); if (pr && pr.catch) pr.catch(() => {}); } else if (!mus.el) musicTick();
+      return; }
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
     ac = new AC(); master = ac.createGain(); master.gain.value = 1; master.connect(ac.destination);
     sfxBus = ac.createGain(); sfxBus.gain.value = .9; sfxBus.connect(master);
     musBus = ac.createGain(); musBus.gain.value = .7; musBus.connect(master);
     noiseBuf = ac.createBuffer(1, ac.sampleRate * .5, ac.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     loadSamples(); seqT = setInterval(tick, 60); applyPrefs();
+    try { const b = ac.createBuffer(1, 1, 22050), u = ac.createBufferSource(); u.buffer = b; u.connect(ac.destination); u.start(0); } catch (e) {}   // unlocks audio on iPhones
+    if (ac.state !== 'running') { const r = ac.resume(); if (r && r.catch) r.catch(() => {}); }
+    musicTick();   // start the music inside the tap, which phones require
   }
   function applyPrefs() { if (!ac) return; sfxBus.gain.value = S.gfx.sound === false ? 0 : .9; musBus.gain.setTargetAtTime(S.gfx.music === false ? 0 : .7, ac.currentTime, .3); }
   // recorded samples (SND, embedded above): several takes per sound, picked at random and pitched a little for variety
@@ -1777,7 +1782,7 @@ const SFX = (() => {
       if (mus.el) mus.old.push(mus.el); mus.el = null; mus.key = want; mus.vol = 0;
       if (want) { const el = new Audio('audio/' + want + '.mp3'); el.loop = true; el.volume = 0; el.preload = 'auto';
         el.addEventListener('error', () => { if (mus.el === el) { mus.failed[want] = true; mus.el = null; mus.key = null; } });
-        const pr = el.play(); if (pr && pr.catch) pr.catch(() => { if (mus.el === el) { mus.failed[want] = true; mus.el = null; mus.key = null; } });
+        const pr = el.play(); if (pr && pr.catch) pr.catch(err => { if (mus.el !== el) return; if (err && err.name === 'NotAllowedError') mus.blocked = true; else { mus.failed[want] = true; mus.el = null; mus.key = null; } });
         mus.el = el; }
     } else if (want && mus.failed[want] && mus.key) { if (mus.el) mus.old.push(mus.el); mus.el = null; mus.key = null; }
     const target = mus.el ? (G && G.hero.dead > 0 ? .12 : .42) : 0;
@@ -1860,7 +1865,7 @@ const SFX = (() => {
   }
   return { init, applyPrefs, fx, play: (k, a) => { if (fx[k]) fx[k](a); } };
 })();
-['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, () => SFX.init(), { passive: true }));
+['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'].forEach(ev => window.addEventListener(ev, () => SFX.init(), { passive: true, capture: true }));
 
 
 /* ---------- Drawing ---------- */
