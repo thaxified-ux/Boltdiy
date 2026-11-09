@@ -37,6 +37,10 @@ Thornveil Woods, Ashen Citadel and The Hollow Sky (endless after Stage 50). Each
 - **Tips:** the "Show me" button on a tip opens the menu it points to.
 - **Saving:** progress saves to `localStorage` in this browser only. Saves from the first version upgrade automatically.
 
+## Sound
+
+All sound is synthesized in the game with Web Audio, so there are no audio files. Effects: hits and crits, getting hurt, kills, loot by rarity, level up, skills, parries, special attacks, guardians, stage clears, moths and the hero falling. Each zone has its own soft looping tune (key, scale, tempo and instrument), faster and darker on guardian waves and on blood-moon nights. Sound effects and music each have an on/off switch in Log -> Settings. Audio starts on the first tap, as browsers require.
+
 ## Heroes and skills
 
 Every hero stands the same height and follows one setup taken from the pack's skill art: the first card is the

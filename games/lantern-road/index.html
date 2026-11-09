@@ -685,7 +685,7 @@ function fresh() {
     stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: false, autoEquip: false, autoStones: false, autoCompany: false, autoClaim: false, autoForge: false, autoSkill: true, manualV1: true, shards: 0, glass: 0, tempered: 0, crafted: 0, kills: 0, deaths: 0, best: null,
     played: 0, lastSeen: Date.now(), log: [], tab: 'hero', created: Date.now(),
     owned: {}, passUntil: 0, charmUntil: 0, look: { lantern: 'amber', outfit: 'wanderer', company: 'plain', char: 'swordswoman' }, testShop: false, shopNoted: false,
-    seen: {}, tips: {}, featSeen: {}, stash: [], bagView: 'bag', nudges: {}, soldFull: 0, embers: 1, hourglass: 0, trial: null, daily: { last: '', streak: 0 }, gfx: { numbers: true, weather: true, shake: true, fps30: false, big: false } };
+    seen: {}, tips: {}, featSeen: {}, stash: [], bagView: 'bag', nudges: {}, soldFull: 0, embers: 1, hourglass: 0, trial: null, daily: { last: '', streak: 0 }, gfx: { numbers: true, weather: true, shake: true, fps30: false, big: false, sound: true, music: true } };
 }
 let S = fresh();
 let G, ST;
@@ -727,7 +727,7 @@ function migrate(d) {
   if (d.v === 1) { s.bestR = d.best ? d.best.r : 0; }
   if (d.v < 3) Object.assign(s, { autoSpend: true, autoEquip: true, autoStones: true, autoCompany: true, autoClaim: true });
   s.farm = false; s.v = 3;
-  s.gfx = Object.assign({ numbers: true, weather: true, shake: true, fps30: false, big: false }, s.gfx || {});
+  s.gfx = Object.assign({ numbers: true, weather: true, shake: true, fps30: false, big: false, sound: true, music: true }, s.gfx || {});
   if (!d.manualV1) { for (const k of ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge']) s[k] = false; s.manualV1 = true; }
   if (s.firstEquip === undefined) s.firstEquip = s.maxStage > 2;
   if (s.autoForge === undefined) s.autoForge = false; delete s.autoSkills; s.parries = s.parries || 0; s.moths = s.moths || 0; s.bestCombo = s.bestCombo || 0; s.shards = s.shards || 0; s.glass = s.glass || 0; s.tempered = s.tempered || 0; s.crafted = s.crafted || 0;
@@ -1204,7 +1204,7 @@ function addXp(x) {
   while (S.xp >= need(S.level)) {
     S.xp -= need(S.level); S.level++; S.points += 3; dirtyStats = true;
     log(`Reached level ${S.level}. +3 attribute points.`, '#f3b44a');
-    if (G) { G.hero.hop = .35; fx(HX, GY - 26, 'LEVEL UP', '#f3b44a', 1.4, 6); burst(HX, GY - 10, ['#f3b44a', '#fff2c0'], 14, 70); }
+    if (G) { SFX.play('level'); G.hero.hop = .35; fx(HX, GY - 26, 'LEVEL UP', '#f3b44a', 1.4, 6); burst(HX, GY - 10, ['#f3b44a', '#fff2c0'], 14, 70); }
   }
   if (S.autoSpend) autoSpend();
   markTabs();
@@ -1298,7 +1298,7 @@ function roadTap(x, y) {
   e.fuse = 0; e.leech = 0; e.stun = 1.6; e.t = Math.max(e.t, .6);
   damage(e, st.dmg * 1.5, st.elem, true);
   h.hp = Math.min(st.hp, h.hp + st.hp * .05);
-  fx(e.x, GY - (e.boss ? 58 : 42), 'PARRY!', '#8fd8ff', 1.1, 7); shake(1.5); G.stop = Math.max(G.stop || 0, .09);
+  SFX.play('parry'); fx(e.x, GY - (e.boss ? 58 : 42), 'PARRY!', '#8fd8ff', 1.1, 7); shake(1.5); G.stop = Math.max(G.stop || 0, .09);
   burst(e.x - 6, GY - 12, ['#8fd8ff', '#ffffff'], 14, 70);
   S.parries = (S.parries || 0) + 1;
   if (S.parries === 1) log('Parry! Tap the road while a foe glows purple to cancel its special attack and stun it.', '#8fd8ff');
@@ -1306,6 +1306,7 @@ function roadTap(x, y) {
 function comboMult() { return 1 + Math.min(50, G.combo || 0) / 100; }
 function spawnMoth() { G.moth = { x: W + 8, y: 34 + Math.random() * 30, t: 0, base: 0 }; G.moth.base = G.moth.y; }
 function catchMoth() {
+  SFX.play('moth');
   const m = G.moth; G.moth = null;
   const g = goldPer(S.stage) * 20 * (1 + stats().gold / 100) * boostGold(), sh = 2 + Math.floor(S.stage / 4);
   S.gold += g; S.shards = (S.shards || 0) + sh; S.moths = (S.moths || 0) + 1;
@@ -1381,7 +1382,7 @@ function castSkill(id, manual) {
   if (delay > 0) G.pendingSkill = { at: G.t + delay, k, id }; else applySkill(k, id);
   return true;
 }
-function castAnim(an, name, col) { const h = G.hero; h.skillAnim = an; h.skillStart = G.t; fx(HX, GY - 38, name, col, 1.3, 6); }
+function castAnim(an, name, col) { SFX.play('skill'); const h = G.hero; h.skillAnim = an; h.skillStart = G.t; fx(HX, GY - 38, name, col, 1.3, 6); }
 /* When each hero's weapon connects: [share of the basic attack animation, seconds into the skill animation]. */
 const HIT_AT = { swordswoman: [.67, .35], scout: [.5, 0], glacier: [.4, .3], plague: [.4, .8] };
 function applySkill(k, id) {
@@ -1439,10 +1440,11 @@ function spawnWave() {
     G.enemies.push(makeFoe(f, b, boss, W + 10 + i * 26, !boss && Math.random() < eliteChance));
   }
   G.phase = 'fight';
-  if (boss) banner(`Guardian: ${z.boss.n}`, '#ff8070');
+  if (boss) { banner(`Guardian: ${z.boss.n}`, '#ff8070'); SFX.play('guardian'); }
 }
 function damage(e, raw, el, crit, small) {
   if (e.dead) return 0;
+  if (!small) SFX.play('hit', crit);
   if (e.evade > 0 && Math.random() < .75) { fx(e.x, GY - 20, 'miss', '#97a39d', .6, 4); return 0; }
   const m = resMult(e, el), d = raw * m * (e.shell > 0 ? e.shellM : 1);
   e.hp -= d; e.flash = .09; e.kb = Math.min(5, (e.kb || 0) + (crit ? 4 : 2)); e.sq = .1;
@@ -1499,13 +1501,14 @@ function kill(e) {
   const em = e.elite ? 3 : e.minion ? .3 : 1;
   G.combo = (G.comboT > 0 ? G.combo : 0) + 1; G.comboT = 4; if (G.combo > (S.bestCombo || 0)) S.bestCombo = G.combo;
   const g = goldPer(S.stage, e.boss) * (1 + st.gold / 100) * rnd(.85, 1.15) * em * boostGold() * comboMult();
-  S.gold += g; S.kills++; if (e.elite) S.elites = (S.elites || 0) + 1;
+  SFX.play(e.boss ? 'stage' : 'kill'); S.gold += g; S.kills++; if (e.elite) S.elites = (S.elites || 0) + 1;
   addXp(xpPer(S.stage, e.boss) * (1 + st.xp / 100) * em * boostXp());
   fx(e.x, GY - 8, '+' + fmt(g), '#f3b44a', 1, 4);
   const chance = (e.boss ? 1 : e.elite ? .45 : e.minion ? .04 : .16) * (1 + st.drop / 100);
   if (Math.random() < chance) {
     const it = makeItem(S.stage, rollRarity(st.luck + (e.boss ? 1.5 : e.elite ? 1 : 0)));
     const res = gainItem(it);
+    if (res === 'kept' && it.r >= 2) SFX.play('loot', it.r);
     if (res === 'kept' && it.r >= 2) fx(e.x, GY - 36, RAR[it.r].n.toUpperCase(), RAR[it.r].col, 1.4, 5);
     G.parts.push({ k: 'loot', x: e.x, y: GY - 6, vx: (HX - e.x) / .6, vy: -60, t: 0, life: .6, c: RAR[it.r].col });
   }
@@ -1558,12 +1561,13 @@ function enemyHit(e, mult, sure) {
   const k = armorK(S.stage);
   d *= e.el === 'phys' ? k / (k + def) : (1 - st.res[e.el] / 100) * k / (k + def * .3);
   if (!sure && Math.random() * 100 < st.block) { d *= .5; blocked = true; }
-  h.hp -= d; h.hurt = .14; h.kb = Math.min(3, (h.kb || 0) + 1.5);
+  h.hp -= d; h.hurt = .14; SFX.play('hurt'); h.kb = Math.min(3, (h.kb || 0) + 1.5);
   if (d > stats().hp * .15) shake(1.5);
   if (S.gfx.numbers) fx(HX - 2, GY - 22, (blocked ? 'block ' : '') + fmt(d), e.el === 'phys' ? '#ff8070' : ELEM[e.el].col, .8, 4);
   if (h.hp <= 0) heroDie(e);
 }
 function heroDie(killer) {
+  SFX.play('death');
   const h = G.hero; h.hp = 0; h.dead = 2; h.deadT = 0; h.pending = null; G.pendingSkill = null; S.deaths++; G.proj = []; G.combo = 0; G.comboT = 0;
   // Falling to a guardian: offer to rise again on the spot for a few seconds instead of losing the stage.
   G.revive = S.wave === WAVES ? { stage: S.stage, foes: G.enemies.filter(e => !e.dead).map(e => Object.assign({}, e)), until: G.t + 6 } : null;
@@ -1589,7 +1593,7 @@ function nextWave() {
     {
       const bonus = first ? Math.round(goldPer(cleared) * 15 * boostGold()) : 0;
       S.gold += bonus;
-      toast(`Stage ${cleared} complete`, bonus ? `All ${WAVES} waves cleared · +${fmt(bonus)} gold` : `All ${WAVES} waves cleared`);
+      SFX.play('stage'); toast(`Stage ${cleared} complete`, bonus ? `All ${WAVES} waves cleared · +${fmt(bonus)} gold` : `All ${WAVES} waves cleared`);
       log(`Stage ${cleared} complete: all ${WAVES} waves cleared${bonus ? `, +${fmt(bonus)} gold for the first clear` : ''}.`, '#f3b44a');
       if (S.gfx.weather) burst(HX, GY - 20, ['#f3b44a', '#fff2c0', '#7fd38b'], 18, 80);
       S.stage++;
@@ -1729,6 +1733,84 @@ function updateParts(dt) {
   }
   G.parts = G.parts.filter(p => p.t < p.life && p.x > -30 && p.y < H + 2);
 }
+
+/* ---------- Sound ----------
+   Everything is made on the fly with Web Audio: short synth blips for effects, and a soft looping tune per zone
+   (its own key, scale, tempo and instrument; faster and darker on guardian waves). No audio files. */
+const SFX = (() => {
+  let ac = null, master = null, sfxBus = null, musBus = null, noiseBuf = null, seqT = null, nextT = 0, step = 0, cur = null;
+  const ok = () => ac && ac.state === 'running';
+  function init() {
+    if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    ac = new AC(); master = ac.createGain(); master.gain.value = 1; master.connect(ac.destination);
+    sfxBus = ac.createGain(); sfxBus.gain.value = .9; sfxBus.connect(master);
+    musBus = ac.createGain(); musBus.gain.value = .7; musBus.connect(master);
+    noiseBuf = ac.createBuffer(1, ac.sampleRate * .5, ac.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    seqT = setInterval(tick, 60); applyPrefs();
+  }
+  function applyPrefs() { if (!ac) return; sfxBus.gain.value = S.gfx.sound === false ? 0 : .9; musBus.gain.setTargetAtTime(S.gfx.music === false ? 0 : .7, ac.currentTime, .3); }
+  function tone(f, dur, type, vol, opts) {
+    if (!ok() || S.gfx.sound === false) return; opts = opts || {};
+    const t = ac.currentTime + (opts.at || 0), o = ac.createOscillator(), g = ac.createGain();
+    o.type = type || 'square'; o.frequency.setValueAtTime(f, t); if (opts.to) o.frequency.exponentialRampToValueAtTime(Math.max(20, opts.to), t + dur);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol || .2, t + .005); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    o.connect(g); g.connect(opts.bus || sfxBus); o.start(t); o.stop(t + dur + .02);
+  }
+  function noise(dur, vol, freq, opts) {
+    if (!ok()) return; opts = opts || {};
+    if (!opts.bus && S.gfx.sound === false) return;
+    const t = ac.currentTime + (opts.at || 0), src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+    src.buffer = noiseBuf; f.type = opts.type || 'bandpass'; f.frequency.value = freq || 1200; f.Q.value = opts.q || 1;
+    g.gain.setValueAtTime(vol || .2, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    src.connect(f); f.connect(g); g.connect(opts.bus || sfxBus); src.start(t); src.stop(t + dur + .02);
+  }
+  let lastHit = 0;
+  const fx = {
+    hit(crit) { if (!ok()) return; const n = ac.currentTime; if (n - lastHit < .045) return; lastHit = n; noise(.07, crit ? .35 : .2, crit ? 2600 : 1600); tone(crit ? 220 : 160, .08, 'square', crit ? .12 : .07, { to: 70 }); },
+    hurt() { noise(.12, .22, 500, { type: 'lowpass' }); tone(120, .12, 'sawtooth', .1, { to: 60 }); },
+    kill() { tone(330, .07, 'square', .08); tone(220, .12, 'square', .07, { at: .05, to: 110 }); },
+    coin() { tone(988, .06, 'square', .06); tone(1319, .12, 'square', .06, { at: .06 }); },
+    loot(r) { [784, 988, 1175, 1568].slice(0, 2 + Math.min(2, r)).forEach((f, i) => tone(f, .14, 'triangle', .1, { at: i * .07 })); },
+    level() { [523, 659, 784, 1047].forEach((f, i) => tone(f, .22, 'square', .09, { at: i * .09 })); },
+    skill() { noise(.35, .18, 900, { type: 'bandpass', q: .7 }); tone(392, .3, 'triangle', .14, { to: 784 }); },
+    parry() { tone(1760, .16, 'square', .12); tone(2349, .22, 'triangle', .1, { at: .03 }); noise(.05, .25, 4000); },
+    special() { tone(440, .18, 'sawtooth', .07, { to: 880 }); },
+    death() { [392, 330, 262, 196].forEach((f, i) => tone(f, .3, 'triangle', .12, { at: i * .16 })); },
+    guardian() { tone(98, .9, 'sawtooth', .12, { to: 82 }); tone(147, .9, 'sawtooth', .08); noise(.6, .12, 300, { type: 'lowpass' }); },
+    stage() { [523, 659, 784].forEach((f, i) => tone(f, .18, 'triangle', .1, { at: i * .1 })); tone(1047, .4, 'triangle', .1, { at: .3 }); },
+    moth() { [1319, 1568, 1976].forEach((f, i) => tone(f, .1, 'sine', .1, { at: i * .05 })); },
+    click() { tone(660, .03, 'square', .04); },
+  };
+  // music: per zone [root Hz, scale, bpm, lead wave]
+  const SCALES = { minor: [0, 2, 3, 5, 7, 8, 10], major: [0, 2, 4, 5, 7, 9, 11], dorian: [0, 2, 3, 5, 7, 9, 10], phryg: [0, 1, 3, 5, 7, 8, 10] };
+  const ZMUS = [[196, 'major', 84, 'triangle'], [174.6, 'dorian', 76, 'triangle'], [164.8, 'phryg', 96, 'square'], [185, 'dorian', 88, 'triangle'], [155.6, 'minor', 70, 'sine'],
+    [207.7, 'minor', 80, 'triangle'], [146.8, 'dorian', 66, 'sine'], [164.8, 'minor', 90, 'triangle'], [138.6, 'phryg', 100, 'square'], [123.5, 'minor', 72, 'sine']];
+  const PROG = [0, 5, 3, 4];  // chord roots as scale degrees: i - VI - iv - v
+  const note = (root, sc, deg) => root * Math.pow(2, (SCALES[sc][((deg % 7) + 7) % 7] + 12 * Math.floor(deg / 7)) / 12);
+  function tick() {
+    if (!ok() || !G || S.gfx.music === false) { if (ac) nextT = ac.currentTime + .1; return; }
+    const z = ZONES[zoneOf(S.stage)] ? zoneOf(S.stage) : 0, boss = S.wave === WAVES, dead = G.hero.dead > 0;
+    const [root0, sc0, bpm0, wave] = ZMUS[z % ZMUS.length], sc = boss ? 'phryg' : sc0, root = root0 * (variantOf(S.stage) >= 3 ? .944 : 1);
+    const spb = 60 / (bpm0 * (boss ? 1.18 : 1)) / 2;  // eighth notes
+    if (nextT < ac.currentTime) nextT = ac.currentTime + .05;
+    while (nextT < ac.currentTime + .25) {
+      const bar = Math.floor(step / 8) % 4, beat = step % 8, chord = PROG[bar], t0 = nextT - ac.currentTime;
+      if (!dead) {
+        if (beat % 4 === 0) tone(note(root / 2, sc, chord), spb * 3.6, 'triangle', .5, { at: t0, bus: musBus });
+        const arp = [0, 2, 4, 7, 4, 2, 0, 2][beat];
+        if (step % 32 < 24 || beat % 2 === 0) tone(note(root, sc, chord + arp), spb * 1.6, wave, .22, { at: t0, bus: musBus });
+        if (beat === 4 && (step >> 3) % 2) tone(note(root * 2, sc, chord + 4), spb * 3, 'sine', .14, { at: t0, bus: musBus });
+        if (boss && beat % 2 === 0) noise(.05, .25, 6000, { at: t0, bus: musBus, type: 'highpass' });
+        else if (beat % 4 === 2) noise(.04, .12, 7000, { at: t0, bus: musBus, type: 'highpass' });
+      } else if (beat === 0) tone(note(root / 2, 'minor', 0), spb * 7, 'sine', .3, { at: t0, bus: musBus });
+      nextT += spb; step++;
+    }
+  }
+  return { init, applyPrefs, fx, play: (k, a) => { if (fx[k]) fx[k](a); } };
+})();
+['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, () => SFX.init(), { passive: true }));
+document.addEventListener('visibilitychange', () => { /* the browser pauses audio in hidden tabs on its own */ });
 
 /* ---------- Drawing ---------- */
 const cv = $('#cv'), D = cv.getContext('2d');
@@ -3235,6 +3317,8 @@ function renderJournal() {
       <div class="row"><button class="btn small" data-act="importcode">Load this save</button>${saveCodeMsg ? `<span class="sub">${esc(saveCodeMsg)}</span>` : ''}</div>
       <div class="row"><button class="btn small" data-act="strip">Strip mode: show only the road</button></div>
       <h2>Graphics</h2>
+      <label class="chk"><input type="checkbox" id="gfx-sound" ${S.gfx.sound !== false ? 'checked' : ''}> Sound effects</label>
+      <label class="chk"><input type="checkbox" id="gfx-music" ${S.gfx.music !== false ? 'checked' : ''}> Music</label>
       <label class="chk"><input type="checkbox" id="gfx-numbers" ${S.gfx.numbers ? 'checked' : ''}> Damage numbers</label>
       <label class="chk"><input type="checkbox" id="gfx-weather" ${S.gfx.weather ? 'checked' : ''}> Weather, fireflies and bursts</label>
       <label class="chk"><input type="checkbox" id="gfx-shake" ${S.gfx.shake ? 'checked' : ''}> Screen shake on big hits</label>
@@ -3410,7 +3494,7 @@ document.querySelector('.tabs').addEventListener('click', e => {
 panel.addEventListener('change', e => {
   if (e.target.id === 'autoSell') S.autoSell = +e.target.value;
   if (e.target.id === 'reforgePick') { forgeSel = e.target.value || null; renderPanel(); return; }
-  if (e.target.id.startsWith('gfx-')) { S.gfx[e.target.id.slice(4)] = e.target.checked; document.documentElement.classList.toggle('big', !!S.gfx.big); }
+  if (e.target.id.startsWith('gfx-')) { S.gfx[e.target.id.slice(4)] = e.target.checked; SFX.applyPrefs(); document.documentElement.classList.toggle('big', !!S.gfx.big); }
   if (e.target.id === 'testShop') { S.testShop = e.target.checked; log(S.testShop ? 'Shop test mode on: purchases are fake.' : 'Shop test mode off.'); }
   if (e.target.id === 'idleAll') { for (const k of ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge']) S[k] = e.target.checked; log(e.target.checked ? 'Idle mode on: the game spends, equips and upgrades for you.' : 'Idle mode off: you choose every upgrade.'); autoPlay(); updateHud(); renderPanel(); }
   if (['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge'].includes(e.target.id)) { S[e.target.id] = e.target.checked; autoPlay(); updateHud(); renderPanel(); }
