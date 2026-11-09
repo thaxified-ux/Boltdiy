@@ -1465,7 +1465,7 @@ function heroAttack(front) {
     const d = damage(front, raw, st.elem, crit);
     if (st.ls) G.hero.hp = Math.min(st.hp, G.hero.hp + d * st.ls / 100);
   } else {
-    G.proj.push({ x: HX + 10, y: GY - 11, tgt: front, sp: S.path === 'bow' ? 220 : 160, kind: S.path === 'bow' ? 'arrow' : 'bolt', el: st.elem, raw, crit, splash: S.path === 'lamp' ? .4 : 0, hero: true });
+    SFX.play('shoot'); G.proj.push({ x: HX + 10, y: GY - 11, tgt: front, sp: S.path === 'bow' ? 220 : 160, kind: S.path === 'bow' ? 'arrow' : 'bolt', el: st.elem, raw, crit, splash: S.path === 'lamp' ? .4 : 0, hero: true });
   }
 }
 function updateProj(dt) {
@@ -1767,7 +1767,19 @@ const SFX = (() => {
   }
   let lastHit = 0;
   const fx = {
-    hit(crit) { if (!ok()) return; const n = ac.currentTime; if (n - lastHit < .045) return; lastHit = n; noise(.07, crit ? .35 : .2, crit ? 2600 : 1600); tone(crit ? 220 : 160, .08, 'square', crit ? .12 : .07, { to: 70 }); },
+    hit(crit) { // each hero's weapon sounds different when it lands
+      if (!ok()) return; const n = ac.currentTime; if (n - lastHit < .045) return; lastHit = n;
+      const k = activeChar(), c = crit ? 1.5 : 1;
+      if (k === 'glacier') { tone(90, .22, 'sine', .3 * c, { to: 40 }); noise(.12, .22 * c, 300, { type: 'lowpass' }); tone(2400, .12, 'triangle', .05 * c, { at: .02, to: 3200 }); noise(.08, .1 * c, 5200, { at: .02, type: 'highpass' }); }
+      else if (k === 'scout') { noise(.05, .22 * c, 900, { q: 2 }); tone(240, .06, 'square', .07 * c, { to: 120 }); }
+      else if (k === 'plague') { noise(.25, .2 * c, 700, { type: 'lowpass', q: .5 }); for (let i = 0; i < 4; i++) noise(.02, .1 * c, 3000 + i * 600, { at: .03 + i * .04, type: 'highpass' }); }
+      else { noise(.06, .2 * c, 3200, { q: 1.5 }); tone(crit ? 1480 : 1180, .14, 'triangle', .07 * c, { to: crit ? 1320 : 1050 }); tone(150, .06, 'square', .06 * c, { to: 70 }); } // sword: a slash with a metal ring
+    },
+    shoot() { // the moment a ranged hero lets go
+      if (!ok()) return; const k = activeChar();
+      if (k === 'plague') { noise(.3, .16, 500, { type: 'bandpass', q: .6 }); tone(180, .25, 'sawtooth', .04, { to: 420 }); }
+      else { tone(520, .09, 'triangle', .1, { to: 300 }); noise(.04, .1, 2400, { q: 3 }); }   // bowstring twang
+    },
     hurt() { noise(.12, .22, 500, { type: 'lowpass' }); tone(120, .12, 'sawtooth', .1, { to: 60 }); },
     kill() { tone(330, .07, 'square', .08); tone(220, .12, 'square', .07, { at: .05, to: 110 }); },
     coin() { tone(988, .06, 'square', .06); tone(1319, .12, 'square', .06, { at: .06 }); },
