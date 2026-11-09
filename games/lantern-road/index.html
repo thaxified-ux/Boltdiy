@@ -2859,7 +2859,7 @@ function draw() {
   L.fillStyle = wg; L.fillRect(0, 0, W, H); L.globalCompositeOperation = 'source-over';
   drawMoth();
   if (G.pierce && G.pierce.t > 0) { G.pierce.t -= 1 / 60; L.globalAlpha = G.pierce.t * 3; px(HX + 8, GY - 12, W - HX - 8, 1, '#e8ffd0'); px(HX + 8, GY - 11, W - HX - 8, 1, '#9fe05a'); L.globalAlpha = 1; }
-  const boss = G.enemies.find(e => e.boss && !e.dead);
+  const boss = G.hero.dead > 0 ? null : G.enemies.find(e => e.boss && !e.dead); // no guardian bar while the hero is down
   if (boss) { px(W / 2 - 50, 14, 100, 3, '#2a0f0f'); px(W / 2 - 50, 14, 100 * boss.hp / boss.max, 3, '#ff6050'); }
 
   D.imageSmoothingEnabled = false;
