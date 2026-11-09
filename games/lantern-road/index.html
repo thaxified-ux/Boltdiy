@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>body{margin:0}img{max-width:100%}</style>
-<title>Lantern Road</title>
+<title>Lantern Road (Cloud)</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2916,7 +2916,7 @@ function updateHud() {
   { const rb = document.getElementById('reviveBtn'), on = !!(G.revive && G.hero.dead > 0 && G.t < G.revive.until);
     rb.hidden = !on; if (on) rb.textContent = S.embers > 0 ? `Rise again · 1 Ember (${S.embers} left) · ${Math.ceil(G.revive.until - G.t)}s` : `Rise again? Get Lantern Embers · ${Math.ceil(G.revive.until - G.t)}s`; }
   hud.pts.textContent = `${S.points} point${S.points === 1 ? '' : 's'} to spend`;
-  document.title = `Lantern Road · Stage ${S.stage} ${S.wave}/${WAVES}`;
+  document.title = `Lantern Road (Cloud) · Stage ${S.stage} ${S.wave}/${WAVES}`;
 }
 function featDone(f) { return f.cur() >= f.goal; }
 function markTabs() {
