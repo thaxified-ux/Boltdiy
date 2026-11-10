@@ -618,19 +618,32 @@ function simplifySave() {
   if (!['hero', 'bag', 'company', 'map', 'feats', 'journal', 'shop'].includes(S.tab)) S.tab = 'hero';
   dirtyStats = true;
 }
+/* ---------- Rekindle (prestige) ---------- */
+const REK_FROM = 10, FLAME_PCT = 3;
+const bestStage = () => Math.max(S.bestStage || 0, S.maxStage);
+function flamesFor(m) { return m < REK_FROM ? 0 : Math.floor(Math.pow(m - 8, 1.6)); }
+function rekindle() {
+  const gain = flamesFor(S.maxStage); if (!gain) return false;
+  S.bestStage = bestStage(); S.flames = (S.flames || 0) + gain; S.rekindles = (S.rekindles || 0) + 1;
+  S.stage = 1; S.wave = 1; S.maxStage = 1; S.level = 1; S.xp = 0; S.gold = 0; S.up = {}; S.gate = 0; S.wall = null;
+  dirtyStats = true; resetRuntime(); SFX.play('level');
+  banner(`Rekindled · +${gain} Lantern Flames`, '#f3b44a'); toast('Rekindled', `+${gain} Lantern Flames: +${gain * FLAME_PCT}% damage, health and gold for good.`);
+  log(`Rekindled the lantern: +${gain} Lantern Flames (${S.flames} in all, +${S.flames * FLAME_PCT}% damage, health and gold). Back to Stage 1 with your gear, heroes and followers.`, '#f3b44a');
+  save(); updateHud(); return true;
+}
 const FEATS = [
   { id: 'k100', n: 'First Hundred', d: 'Defeat 100 enemies', goal: 100, cur: () => S.kills },
   { id: 'k1k', n: 'Road Warden', d: 'Defeat 1,000 enemies', goal: 1000, cur: () => S.kills },
   { id: 'k10k', n: 'Legend of the Lane', d: 'Defeat 10,000 enemies', goal: 10000, cur: () => S.kills },
-  { id: 's6', n: 'Salt in the Air', d: 'Reach Stage 6', goal: 6, cur: () => S.maxStage },
-  { id: 's11', n: 'Through the Ash', d: 'Reach Stage 11', goal: 11, cur: () => S.maxStage },
-  { id: 's16', n: 'Glass Underfoot', d: 'Reach Stage 16', goal: 16, cur: () => S.maxStage },
-  { id: 's21', n: 'Under Fallen Stars', d: 'Reach Stage 21', goal: 21, cur: () => S.maxStage },
-  { id: 's26', n: 'Into the Cold', d: 'Reach Stage 26', goal: 26, cur: () => S.maxStage },
-  { id: 's30', n: 'Past the Map’s Edge', d: 'Reach Stage 30', goal: 30, cur: () => S.maxStage },
-  { id: 's36', n: 'Among the Thorns', d: 'Reach Stage 36', goal: 36, cur: () => S.maxStage },
-  { id: 's46', n: 'The Hollow Sky', d: 'Reach Stage 46', goal: 46, cur: () => S.maxStage },
-  { id: 's50', n: 'The Long Road', d: 'Reach Stage 50', goal: 50, cur: () => S.maxStage },
+  { id: 's6', n: 'Salt in the Air', d: 'Reach Stage 6', goal: 6, cur: () => bestStage() },
+  { id: 's11', n: 'Through the Ash', d: 'Reach Stage 11', goal: 11, cur: () => bestStage() },
+  { id: 's16', n: 'Glass Underfoot', d: 'Reach Stage 16', goal: 16, cur: () => bestStage() },
+  { id: 's21', n: 'Under Fallen Stars', d: 'Reach Stage 21', goal: 21, cur: () => bestStage() },
+  { id: 's26', n: 'Into the Cold', d: 'Reach Stage 26', goal: 26, cur: () => bestStage() },
+  { id: 's30', n: 'Past the Map’s Edge', d: 'Reach Stage 30', goal: 30, cur: () => bestStage() },
+  { id: 's36', n: 'Among the Thorns', d: 'Reach Stage 36', goal: 36, cur: () => bestStage() },
+  { id: 's46', n: 'The Hollow Sky', d: 'Reach Stage 46', goal: 46, cur: () => bestStage() },
+  { id: 's50', n: 'The Long Road', d: 'Reach Stage 50', goal: 50, cur: () => bestStage() },
   { id: 'r3', n: 'A Blue Glint', d: 'Find a Rare item', goal: 3, cur: () => S.bestR, rar: 1 },
   { id: 'r4', n: 'Violet Luck', d: 'Find an Epic item', goal: 4, cur: () => S.bestR, rar: 1 },
   { id: 'r5', n: 'Embers of Legend', d: 'Find a Mythic item', goal: 5, cur: () => S.bestR, rar: 1 },
@@ -711,7 +724,7 @@ function fresh() {
 let S = fresh();
 let G, ST;
 let dirtyStats = true, dirtyPanel = true;
-let selBag = null, selEq = null, selTal = null, confirmReset = false, confirmDismiss = null, confirmSellAll = false;
+let selBag = null, selEq = null, selTal = null, confirmReset = false, confirmDismiss = null, confirmSellAll = false, confirmRek = false;
 
 function save() {
   S.lastSeen = Date.now();
@@ -1058,19 +1071,19 @@ function heroStats(eq) {
     if (f.kind === 'lamp') { fGold += 10 + f.r * 5; fDrop += 5 + f.r * 3; }
   }
   const ren = renown();
-  const hp = (100 + a.vit * 14 + (S.level - 1) * 16 + G0('hp')) * (1 + t.hp) * (1 + U('hp') * .06) * (S.path === 'blade' ? 1.2 : 1);
+  const hp = (100 + a.vit * 14 + (S.level - 1) * 16 + G0('hp')) * (1 + t.hp) * (1 + U('hp') * .06) * (1 + (S.flames || 0) * FLAME_PCT / 100) * (S.path === 'blade' ? 1.2 : 1);
   const w = eq.weapon;
   const elem = (w && w.path === S.path && w.elem) || P.elem;
   const rAll = G0('rAll') + t.rAll;
   const pc = activeChar();
   return {
     hp, elem, cp,
-    dmg: (10 + a.mig * 2.4 + (S.level - 1) * 2.5 + G0('dmg')) * (1 + t.dmg) * (1 + U('dmg') * .06) * P.mult * (1 + ren * .02) * (elem !== 'phys' ? 1 + (G0('elem') + t.elem) / 100 : 1),
+    dmg: (10 + a.mig * 2.4 + (S.level - 1) * 2.5 + G0('dmg')) * (1 + t.dmg) * (1 + U('dmg') * .06) * (1 + (S.flames || 0) * FLAME_PCT / 100) * P.mult * (1 + ren * .02) * (elem !== 'phys' ? 1 + (G0('elem') + t.elem) / 100 : 1),
     aspd: Math.min(4, (1 + a.agi * .012 + G0('aspd') / 100 + t.aspd + U('aspd') * .015) * (S.path === 'bow' ? 1.15 : 1)),
     crit: Math.min(75, 5 + a.for * .4 + G0('crit') + t.crit + U('crit') * .5 + (pc === 'swordswoman' ? 8 : pc === 'scout' ? 10 : 0)), critd: 150 + G0('critd') + t.critd + U('crit') * 4,
     def: ((G0('def') + a.vit * .5 + (S.level - 1) * .5) * (1 + t.def) * (1 + U('hp') * .04) + fDef) * (S.path === 'blade' ? 1.15 : 1),
     block: Math.min(60, a.agi * .25 + G0('block') + t.block + fBlock + (pc === 'glacier' ? 15 : 0)), regen: hp * .004 + G0('regen') + hp * t.regen + fHeal + (pc === 'plague' ? hp * .01 : 0),
-    ls: G0('ls') + t.ls, gold: G0('gold') + t.gold * 100 + a.for + fGold + ren * 2 + U('gold') * 4, xp: G0('xp') + t.xp * 100, drop: G0('drop') + t.drop * 100 + fDrop, luck: t.luck,
+    ls: G0('ls') + t.ls, gold: G0('gold') + t.gold * 100 + a.for + fGold + ren * 2 + U('gold') * 4 + (S.flames || 0) * FLAME_PCT, xp: G0('xp') + t.xp * 100, drop: G0('drop') + t.drop * 100 + fDrop, luck: t.luck,
     res: { phys: 0, fire: Math.min(75, G0('rFire') + rAll + t.rFire), frost: Math.min(75, G0('rFrost') + rAll + t.rFrost), shadow: Math.min(75, G0('rShadow') + rAll + t.rShadow) },
     range: P.range,
   };
@@ -1623,7 +1636,7 @@ function nextWave() {
   const wasBoss = S.wave === WAVES;
   if (Math.random() < (wasBoss ? .35 : .02)) recruit();
   S.wave++;
-  if (S.wave === WAVES && S.stage >= S.maxStage && (S.gate === S.stage || !(G.tapT !== undefined && G.t - G.tapT < 60))) {
+  if (S.wave === WAVES && S.stage >= S.maxStage && (S.gate === S.stage || (S.stage >= (S.bestStage || 0) && !(G.tapT !== undefined && G.t - G.tapT < 60)))) {
     // nobody is watching, or the guardian already won once: keep farming until the player starts the fight
     if (S.gate !== S.stage) { S.gate = S.stage; log(`The guardian of Stage ${S.stage} is waiting. Press "Fight the guardian" when you are ready: you get ${GATE_TIME} seconds.`, '#f3b44a'); }
     S.wave = WAVES - 1;
@@ -1639,7 +1652,7 @@ function nextWave() {
       log(`Stage ${cleared} complete: all ${WAVES} waves cleared${bonus ? `, +${fmt(bonus)} gold for the first clear` : ''}.`, '#f3b44a');
       if (S.gfx.weather) burst(HX, GY - 20, ['#f3b44a', '#fff2c0', '#7fd38b'], 18, 80);
       S.stage++;
-      if (S.stage > S.maxStage) { S.maxStage = S.stage; log(`New record: reached Stage ${S.stage}.`); dirtyStats = true; if (S.maxStage === 2 && !S.shopNoted) log('The Shop is open: heroes, lantern colors and a supporter pack. Nothing in it is needed to play.', '#97a39d'); }
+      if (S.stage > S.maxStage) { S.maxStage = S.stage; S.bestStage = bestStage(); log(`New record: reached Stage ${S.stage}.`); dirtyStats = true; if (S.maxStage === 2 && !S.shopNoted) log('The Shop is open: heroes, lantern colors and a supporter pack. Nothing in it is needed to play.', '#97a39d'); }
       const z1 = zoneOf(S.stage);
       if (z1 !== z0) { banner(`New road: ${ZONES[z1].name}`, '#f3b44a'); log(`Entered ${ZONES[z1].name}.`, '#f3b44a'); toast('New zone', ZONES[z1].name); tip('map'); }
       else banner(`Stage ${cleared} complete! On to Stage ${S.stage}`, '#f3b44a');
@@ -3149,6 +3162,7 @@ function stuckHelp() {
   const ups = S.bag.filter(isUpgrade).length;
   if (ups) return { k: 'equip', t: `▲ Equip ${ups} upgrade${ups > 1 ? 's' : ''}` };
   if (S.gold >= Math.min(upCost('dmg'), upCost('hp'))) return { k: 'up', t: `Buy upgrades · ${fmt(Math.floor(S.gold))} gold` };
+  if (w.n >= 4 && flamesFor(S.maxStage) > 0) return { k: 'rek', t: `Stuck? Rekindle for +${flamesFor(S.maxStage)} Flames` };
   if (w.n >= 3 && !S.idleOffered && !IDLE_KEYS.every(k => S[k])) return { k: 'idle', t: 'Stuck? Let the game manage gear (Idle mode)' };
   return null;
 }
@@ -3156,6 +3170,7 @@ function useHelp() {
   const h = stuckHelp(); if (!h) return;
   if (h.k === 'equip') { const n = autoEquip(); S.bag.forEach(i => { i.isNew = false; }); toast('Gear upgraded', `Equipped ${n} upgrade${n > 1 ? 's' : ''}. Try the stage again!`); }
   if (h.k === 'up') { let n = 0; while (n < 200 && buyUp(upCost('dmg') <= upCost('hp') ? 'dmg' : 'hp')) n++; toast('Stronger', `Bought ${n} Damage and Health upgrade${n > 1 ? 's' : ''}.`); }
+  if (h.k === 'rek') { S.tab = 'hero'; confirmRek = true; renderPanel(); const pn = document.getElementById('panel'); if (pn) pn.scrollTop = 0; return; }
   if (h.k === 'idle') { S.idleOffered = true; for (const k of IDLE_KEYS) S[k] = true; autoPlay(); toast('Idle mode on', 'The game now equips gear and claims rewards for you. Turn it off any time in the Menu tab.'); log('Idle mode on. Turn it off in the Menu tab.', '#97a39d'); }
   dirtyStats = true; dirtyPanel = true; updateHud(); save();
 }
@@ -3291,7 +3306,14 @@ function renderHero() {
   const ups = UPG.map(u => { const l = upLvl(u.k), c = upCost(u.k), mx = upMaxed(u);
     return `<div class="attr"><div><b>${u.n}</b><small>${u.per} per level</small></div><span class="val">${l}</span>
       <button class="btn small ${!mx && S.gold >= c ? 'primary' : ''}" data-act="up" data-k="${u.k}" ${mx || S.gold < c ? 'disabled' : ''} aria-label="Upgrade ${u.n} for ${fmt(c)} gold">${mx ? 'Max' : fmt(c)}</button></div>`; }).join('');
+  const fl = S.flames || 0, gain = flamesFor(S.maxStage);
+  const rek = `<div class="card"><div class="row between"><h2>Rekindle</h2><span class="pill ${fl ? 'pts' : ''}">${fl} Lantern Flame${fl === 1 ? '' : 's'} · +${fl * FLAME_PCT}%</span></div>
+    <p class="sub">Start again from Stage 1 and earn Lantern Flames. Each Flame gives +${FLAME_PCT}% damage, health and gold for good. You keep your gear, heroes, followers, feats and everything you bought. Level, gold and upgrades start over.</p>
+    ${gain ? (confirmRek ? `<div class="row"><span class="verdict">Start again from Stage 1 for +${gain} Flames (+${gain * FLAME_PCT}%)?</span><button class="btn small primary" data-act="rek2">Rekindle</button><button class="btn small" data-act="rek0">Not yet</button></div>`
+      : `<div class="row"><button class="btn primary" data-act="rek1">Rekindle now · +${gain} Flame${gain === 1 ? '' : 's'}</button><span class="sub">Going further first earns more: Stage ${S.maxStage + 1} would give ${flamesFor(S.maxStage + 1)}.</span></div>`)
+      : `<p class="sub">Opens when you reach Stage ${REK_FROM}. You are at Stage ${S.maxStage}.</p>`}</div>`;
   panel.innerHTML = `<div class="card"><div class="row between"><h2>Upgrades</h2><span class="pill pts">${fmt(Math.floor(S.gold))} gold</span></div><p class="sub">Spend gold to grow stronger. Every level costs a little more.</p>${ups}</div>
+  ${rek}
   <div class="card"><div class="row between"><h2>Hero</h2><span class="sub">The Swordswoman is free.</span></div><div class="shop chars">${charCards()}</div><div class="skillbox"><h3>${CHARS[activeChar()].n}: skills</h3>${skillLine(activeChar())}</div><p class="sub credit">Glacierbreaker, Swordswoman, Elven Scout and Plague Doctor art by elie automata.</p></div>
   <div class="card"><h2>${CHARS[activeChar()].n} · Lv ${S.level}</h2><p class="sub">Power rating ${fmt(rating(st))} · Renown ${renown()} (+${renown() * 2}% damage and gold)</p><dl class="stats">${rows}</dl></div>`;
   panel.querySelectorAll('[data-prev]').forEach(d => { const [k, key] = d.dataset.prev.split(':'); d.appendChild(previewCanvas(k, key)); });
@@ -3455,7 +3477,7 @@ function renderJournal() {
       <label class="chk"><input type="checkbox" id="autoClaim" ${S.autoClaim ? 'checked' : ''}> Claim quests and feats</label>
       <h2>Records</h2><dl class="stats">
         <dt>Enemies defeated</dt><dd>${fmt(S.kills)}</dd><dt>Times fallen</dt><dd>${fmt(S.deaths)}</dd>
-        <dt>Furthest stage</dt><dd>${S.maxStage}</dd><dt>Travellers recruited</dt><dd>${S.recruited}</dd><dt>Time on the road</dt><dd>${dur(S.played)}</dd>
+        <dt>Furthest stage</dt><dd>${bestStage()}</dd><dt>Times rekindled</dt><dd>${S.rekindles || 0}</dd><dt>Travellers recruited</dt><dd>${S.recruited}</dd><dt>Time on the road</dt><dd>${dur(S.played)}</dd>
         <dt>Best find</dt><dd ${S.best ? `style="color:${RAR[S.best.r].col}"` : ''}>${S.best ? esc(S.best.name) + ' · GS ' + S.best.gs : '–'}</dd></dl>
       <h2>Save code</h2>
       <p class="sub">Your whole game as one line of text. Copy it to move your game to another device, or to share it. Loading a code replaces the game in this browser.</p>
@@ -3602,7 +3624,7 @@ function dailyCard() {
 const NUDGES = {
   stash: () => !stashMax() && S.soldFull >= 5 ? `Your bag was full, so ${S.soldFull} items were sold. A stash keeps the ones you care about, safe from every sell.` : null,
   slot: () => nextSlotProduct() && S.roster.length > partySlots() ? `${S.roster.filter(f => !S.party.includes(f.id))[0].name} is waiting at camp. A company slot lets another follower fight beside you.` : null,
-  wall: () => (S.wall && S.wall.n >= 3 && S.maxStage <= S.wall.stage) ? `Stuck on Stage ${S.wall.stage}? Free ways forward: buy upgrades in the Hero tab and equip better gear. Faster: the Ember Charm gives +50% gold for 7 days.` : null,
+  wall: () => (S.wall && S.wall.n >= 3 && S.maxStage <= S.wall.stage) ? `Stuck on Stage ${S.wall.stage}? Free ways forward: buy upgrades in the Hero tab, equip better gear${S.maxStage >= REK_FROM ? ', or Rekindle for a permanent bonus' : ''}. Faster: the Ember Charm gives +50% gold for 7 days.` : null,
 };
 let offeredThisVisit = false;
 function nudge(kind) {
@@ -3637,7 +3659,7 @@ function renderPanel() {
 
 document.querySelector('.tabs').addEventListener('click', e => {
   const b = e.target.closest('.tab'); if (!b) return;
-  S.tab = b.dataset.tab; confirmReset = false; confirmDismiss = null; renderPanel();
+  S.tab = b.dataset.tab; confirmReset = false; confirmRek = false; confirmDismiss = null; renderPanel();
   if (tipQueue[0] && TIPS[tipQueue[0]].tab === S.tab) doneTip(tipQueue[0]);
 });
 panel.addEventListener('change', e => {
@@ -3677,6 +3699,9 @@ panel.addEventListener('click', e => {
   if (a === 'seleq') selEq = selEq === b.dataset.slot ? null : b.dataset.slot;
   if (a === 'tobag') S.tab = 'bag';
   if (a === 'unequip') { const s = b.dataset.slot; if (S.bag.length < bagMax() && S.equip[s]) { S.bag.push(S.equip[s]); S.equip[s] = null; dirtyStats = true; selEq = null; } else log('Bag is full. Sell something first.'); }
+  if (a === 'rek1') confirmRek = true;
+  if (a === 'rek0') confirmRek = false;
+  if (a === 'rek2') { confirmRek = false; rekindle(); }
   if (a === 'up') { if (buyUp(b.dataset.k)) SFX.play('coin'); }
   if (a === 'attr' && S.points > 0) { S.attrs[b.dataset.k]++; S.points--; dirtyStats = true; }
   if (a === 'path') setPath(b.dataset.p);
