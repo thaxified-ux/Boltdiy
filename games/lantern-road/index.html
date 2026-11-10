@@ -242,6 +242,8 @@ html.big{font-size:112.5%}
 .bundle h2{color:#7ff0ff}
 .slot{background-image:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--rc,transparent) 38%,transparent) 0,transparent 70%)!important}
 .btn.helpbtn{position:absolute;left:50%;top:30px;transform:translateX(-50%);z-index:3;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis;background:#d89a2e!important;color:#2a1c06;box-shadow:inset 2px 2px 0 #ffd27a,inset -2px -2px 0 #9a6a1a,0 0 0 2px #000,0 0 12px rgba(243,180,74,.7);animation:pulse 1.2s ease-in-out infinite}
+.hurry{color:#ff6050!important;animation:pulse .5s steps(2) infinite}
+.revive.gate{bottom:auto;top:54px}
 .revive{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);z-index:3;white-space:nowrap;animation:pulse 1s steps(2) infinite;box-shadow:0 0 0 3px #000,0 0 16px rgba(243,180,74,.7)}
 .log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:320px;overflow:auto;font-size:.9rem}
 .log li{display:flex;gap:8px;border-bottom:1px solid #1e2a30;padding:4px 0}
@@ -361,6 +363,7 @@ body.strip .skills{display:none}
     <div class="roadhud"><span id="hudStage">Stage 1 · Wave 1/10</span><span class="zone" id="hudZone">Mossbarrow Lane</span></div>
     <button class="btn primary revive" id="reviveBtn" type="button" hidden></button>
     <button class="btn small helpbtn" id="helpBtn" type="button" hidden></button>
+    <button class="btn primary revive gate" id="gateBtn" type="button" hidden>⚔ Fight the guardian</button>
     <button class="btn small exitstrip" id="exitStrip" type="button">Show menus</button>
     <div class="skills" id="skills" aria-label="Skills"></div>
   </section>
@@ -1429,6 +1432,14 @@ function makeFoe(f, b, boss, x, elite) {
   return { tier, title: (elite ? 'Elite ' : '') + TIER_TITLE[tier] + f.n, n: f.n, s: f.s, c: f.c, el: f.el, res: f.res, hp: b.hp * m, max: b.hp * m, dmg: b.dmg * (elite ? 1.4 : 1), aspd: boss ? .7 : .8, boss, elite, x, t: rnd(.2, .7),
     split: f.split, flash: 0, dead: false, die: 0, ph: Math.random() * 6, sp: SPECIALS[f.n] || [], spT: (SPECIALS[f.n] || []).map(sp => sp.cd * rnd(.4, .9)), shell: 0, shellM: 1, haste: 0, evade: 0, reflect: 0 };
 }
+const GATE_TIME = 30;
+/* The guardian of a stage not beaten yet: a timed fight the player has to be there for. */
+function recordGuardian() { return S.wave === WAVES && S.stage >= S.maxStage; }
+function gateWaiting() { return S.gate === S.stage && S.wave < WAVES && S.stage >= S.maxStage; }
+function challengeGuardian() {
+  if (!gateWaiting() || G.hero.dead > 0) return;
+  S.wave = WAVES; G.enemies = []; G.proj = []; G.phase = 'walk'; G.walkT = .7; G.tapT = G.t; SFX.play('guardian');
+}
 function spawnWave() {
   const boss = S.wave === WAVES, z = ZONES[zoneOf(S.stage)];
   const extra = Math.min(3, (Math.random() < .7) + (Math.random() < .25 + S.stage * .015) + (S.stage > 6 && Math.random() < .3));
@@ -1441,6 +1452,7 @@ function spawnWave() {
   }
   G.phase = 'fight';
   if (boss) { banner(`Guardian: ${z.boss.n}`, '#ff8070'); SFX.play('guardian'); }
+  G.bossT = boss && recordGuardian() ? GATE_TIME : 0;
 }
 function damage(e, raw, el, crit, small) {
   if (e.dead) return 0;
@@ -1574,10 +1586,15 @@ function heroDie(killer) {
   if (G.revive) h.dead = 6;
   S.wall = S.wall && S.wall.stage === S.stage ? { stage: S.stage, n: S.wall.n + 1 } : { stage: S.stage, n: 1 };
   if (S.wall.n >= 3) setTimeout(() => nudge('wall'), 6000);
-  const from = S.stage;
+  const from = S.stage, who = killer ? (killer.title || killer.n) : 'The road';
+  if (recordGuardian()) {
+    S.gate = S.stage; S.wave = WAVES - 1; const late = G.timeUp; G.timeUp = false; G.bossT = 0;
+    log(late ? `Out of time: ${who} still holds Stage ${from}. You keep the stage. Grow stronger, then press "Fight the guardian".` : `${who} beat you on Stage ${from}. You keep the stage. Grow stronger, then press "Fight the guardian".`, '#ff8070');
+    banner(late ? 'Out of time!' : `${who} beat you`, '#ff8070'); G.fallBanner = 'The guardian waits · fight again when ready';
+    return;
+  }
   if (S.stage > 1) S.stage--;
   S.wave = 1;
-  const who = killer ? (killer.title || killer.n) : 'The road';
   log(from > 1 ? `${who} beat you on Stage ${from}. Regrouping at Stage ${S.stage}, wave 1.` : `${who} beat you. Starting Stage 1 again from wave 1.`, '#ff8070');
   if (S.points || S.bag.some(isUpgrade)) log(`Tip: ${S.points ? `spend your ${S.points} attribute points (Hero tab)` : ''}${S.points && S.bag.some(isUpgrade) ? ' and ' : ''}${S.bag.some(isUpgrade) ? 'equip the ▲ upgrades in your Bag' : ''} before the next try.`, '#f3b44a');
   banner(`${who} beat you`, '#ff8070');
@@ -1587,7 +1604,13 @@ function nextWave() {
   const wasBoss = S.wave === WAVES;
   if (Math.random() < (wasBoss ? .35 : .02)) recruit();
   S.wave++;
+  if (S.wave === WAVES && S.stage >= S.maxStage && (S.gate === S.stage || !(G.tapT !== undefined && G.t - G.tapT < 60))) {
+    // nobody is watching, or the guardian already won once: keep farming until the player starts the fight
+    if (S.gate !== S.stage) { S.gate = S.stage; log(`The guardian of Stage ${S.stage} is waiting. Press "Fight the guardian" when you are ready: you get ${GATE_TIME} seconds.`, '#f3b44a'); }
+    S.wave = WAVES - 1;
+  }
   if (S.wave > WAVES) {
+    S.gate = 0; G.bossT = 0;
     const z0 = zoneOf(S.stage), cleared = S.stage, first = cleared >= S.maxStage;
     S.wave = 1;
     {
@@ -1657,6 +1680,7 @@ function update(dt) {
     if (poisonTick(e, dt)) return;
     if (e.fuse > 0 && !e.dead) { e.fuse -= dt; if (e.fuse <= 0) { e.fuse = 0; fx(e.x, GY - 36, 'BOOM', '#ff6030', 1, 7); burst(e.x, GY - 8, ['#ff8a3d', '#ffd060', '#5a3428'], 24, 90); shake(2.5); enemyHit(e, 3.2, true); e.boom = true; kill(e); return; } }
     if (e.leech > 0 && !e.dead && !(e.stun > 0)) { e.leech -= dt; const dr = st.hp * .035 * dt; h.hp -= dr; e.hp = Math.min(e.max, e.hp + e.max * .03 * dt); }
+    if (e.boss && !e.dead && G.bossT > 0) { G.bossT -= dt; if (G.bossT <= 0) { G.bossT = 0; G.timeUp = true; heroDie(e); return; } }
     if (e.boss && !e.dead) { e.age = (e.age || 0) + dt; if (e.age > 18 && !e.enraged) { e.enraged = true; e.dmg *= 1.5; e.aspd *= 1.3; banner(`${e.title || e.n} is enraged!`, '#ff6050'); shake(2); } }
     e.engaged = e.x <= target + .5 && i < 3;
     if (e.stun > 0) { e.stun -= dt; return; }
@@ -3087,6 +3111,11 @@ function updateHud() {
   hud.hpt.textContent = `${fmt(Math.max(0, G.hero.hp))}/${fmt(st.hp)}`;
   hud.power.textContent = `Power ${fmt(rating(st))}`;
   hud.pts.hidden = !S.points;
+  { const gb = $('#gateBtn'), wait = gateWaiting() && G.hero.dead <= 0; gb.hidden = !wait;
+    const fighting = G.bossT > 0 && S.wave === WAVES && G.hero.dead <= 0 && G.phase === 'fight';
+    const txt = fighting ? `Stage ${S.stage} · Guardian · ${Math.ceil(G.bossT)} s` : wait ? `Stage ${S.stage} · guardian waiting` : null;
+    if (txt && hud.stage.textContent !== txt) hud.stage.textContent = txt; else if (!txt && /Guardian ·|waiting/.test(hud.stage.textContent)) updateHud();
+    hud.stage.classList.toggle('hurry', fighting && G.bossT < 10); }
   { const rb = document.getElementById('reviveBtn'), on = !!(G.revive && G.hero.dead > 0 && G.t < G.revive.until);
     { const hb = $('#helpBtn'), hh = on ? null : stuckHelp(); hb.hidden = !hh; if (hh && hb.textContent !== hh.t) hb.textContent = hh.t; }
     rb.hidden = !on; if (on) rb.textContent = S.embers > 0 ? `Rise again · 1 Ember (${S.embers} left) · ${Math.ceil(G.revive.until - G.t)}s` : `Rise again? Get Lantern Embers · ${Math.ceil(G.revive.until - G.t)}s`; }
@@ -3674,11 +3703,13 @@ $('#nudgeGo').addEventListener('click', () => { const k = $('#nudge').dataset.ki
 $('#nudgeNo').addEventListener('click', () => { const k = $('#nudge').dataset.kind; if (S.nudges[k]) S.nudges[k].no = (S.nudges[k].no || 0) + 1; $('#nudge').hidden = true; });
 $('#coachOk').addEventListener('click', () => { const id = tipQueue[0]; if (!id) return; S.tab = TIPS[id].tab; selBag = selEq = null; renderPanel(); doneTip(id); });
 $('#helpBtn').addEventListener('click', e => { e.stopPropagation(); useHelp(); });
+$('#gateBtn').addEventListener('click', e => { e.stopPropagation(); challengeGuardian(); });
+window.addEventListener('pointerdown', () => { if (G) G.tapT = G.t; }, { passive: true, capture: true });
 $('#reviveBtn').addEventListener('click', () => {
   const R = G.revive; if (!R) return;
   if (S.embers <= 0) { S.tab = 'shop'; renderPanel(); return; }
   S.embers--; S.deaths = Math.max(0, S.deaths - 1);
-  S.stage = R.stage; S.wave = WAVES; S.wall = null;
+  S.stage = R.stage; S.wave = WAVES; S.wall = null; G.bossT = S.stage >= S.maxStage ? 20 : 0;
   const h = G.hero; h.dead = 0; h.hp = stats().hp; h.stun = h.blind = h.chill = 0; h.dots = [];
   G.enemies = R.foes.map((e, i) => Object.assign(e, { x: W + 10 + i * 26, t: 1, enraged: false, age: 0 })); G.phase = 'fight'; G.revive = null; G.fallBanner = null;
   banner('You rise again!', '#f3b44a'); burst(HX, GY - 12, ['#f3b44a', '#fff2c0'], 20, 70); log(`Used a Lantern Ember to rise again against ${R.foes[0] ? (R.foes[0].title || R.foes[0].n) : 'the guardian'}.`, '#f3b44a');
