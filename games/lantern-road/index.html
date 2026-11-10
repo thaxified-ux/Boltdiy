@@ -279,7 +279,7 @@ html,body{height:100%;overflow:hidden;background:#07090b}
 .console > *{flex:none}
 .console .hud{border:0;border-radius:0;background:transparent;padding:6px 8px 4px;gap:6px 10px}
 .console .coach,.console .nudge{margin:2px 6px;border-radius:0;border:2px solid var(--lamp);background:#1b140f}
-.console .tabs{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:2px;padding:4px 6px;border:0;border-top:2px solid #000;border-bottom:2px solid #000;box-shadow:inset 0 2px 0 var(--wood-hi);overflow:visible;background:rgba(0,0,0,.25)}
+.console .tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) 44px;gap:2px;padding:4px 6px;border:0;border-top:2px solid #000;border-bottom:2px solid #000;box-shadow:inset 0 2px 0 var(--wood-hi);overflow:visible;background:rgba(0,0,0,.25)}
 .console .panel{flex:1;min-height:0;overflow:auto;padding:8px 6px 16px;gap:8px}
 .tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0 3px;border:2px solid #000;border-radius:0;background:#3a2a1d;box-shadow:inset 2px 2px 0 #5a4230,inset -2px -2px 0 #22180f;font:500 .52rem/1 var(--display);color:#cbbd9f;min-width:0;overflow:hidden}
 .tab .ti{width:24px;height:24px;image-rendering:pixelated}
@@ -383,14 +383,10 @@ body.strip .skills{display:none}
   <div class="coach" id="coach" hidden><span class="hand" aria-hidden="true"></span><span id="coachText"></span><button class="btn small primary" id="coachOk" type="button">Show me</button></div>
   <nav class="tabs" role="tablist" aria-label="Menus">
     <button class="tab" role="tab" data-tab="hero" id="tab-hero">Hero</button>
-    <button class="tab" role="tab" data-tab="bag" id="tab-bag">Bag</button>
-    <button class="tab" role="tab" data-tab="forge" id="tab-forge">Forge</button>
-    <button class="tab" role="tab" data-tab="company" id="tab-company">Company</button>
-    <button class="tab" role="tab" data-tab="talents" id="tab-talents">Waystones</button>
-    <button class="tab" role="tab" data-tab="map" id="tab-map">Map</button>
-    <button class="tab" role="tab" data-tab="feats" id="tab-feats">Feats</button>
-    <button class="tab" role="tab" data-tab="journal" id="tab-journal">Journal</button>
+    <button class="tab" role="tab" data-tab="bag" id="tab-bag">Gear</button>
+    <button class="tab" role="tab" data-tab="feats" id="tab-feats">Quests</button>
     <button class="tab" role="tab" data-tab="shop" id="tab-shop">Shop</button>
+    <button class="tab" role="tab" data-tab="journal" id="tab-journal">Settings</button>
   </nav>
   <section class="panel" id="panel" role="tabpanel"></section>
 </div>
@@ -593,6 +589,33 @@ const KINDS = {
 };
 const NAMES = ['Ada', 'Bram', 'Cass', 'Dov', 'Edda', 'Fenn', 'Ilse', 'Jory', 'Kit', 'Lune', 'Mara', 'Nils', 'Odo', 'Pim', 'Quill', 'Rook', 'Sefa', 'Tamsin', 'Ula', 'Vesk', 'Wren', 'Yara', 'Hob', 'Greta'];
 
+/* ---------- Upgrades ----------
+   One list, paid with gold. Each level costs 15% more than the last. */
+const UPG = [
+  { k: 'dmg', n: 'Damage', per: '+6% damage', base: 10 },
+  { k: 'hp', n: 'Health', per: '+6% max HP, +4% defense', base: 10 },
+  { k: 'aspd', n: 'Attack speed', per: '+1.5% attacks per second', base: 25, max: 40 },
+  { k: 'crit', n: 'Critical hits', per: '+0.5% crit chance, +4% crit damage', base: 25, max: 40 },
+  { k: 'gold', n: 'Gold find', per: '+4% gold', base: 20 },
+  { k: 'boss', n: 'Guardian slayer', per: '+3% damage to guardians', base: 30 },
+];
+const upLvl = k => (S.up && S.up[k]) || 0;
+function upCost(k) { const u = UPG.find(x => x.k === k); return Math.round(u.base * Math.pow(1.15, upLvl(k))); }
+const upMaxed = u => u.max && upLvl(u.k) >= u.max;
+function buyUp(k) { const u = UPG.find(x => x.k === k), c = u && upCost(k); if (!u || upMaxed(u) || S.gold < c) return false; S.gold -= c; S.up[k] = upLvl(k) + 1; dirtyStats = true; return true; }
+/* Old saves: attribute points, Waystones, Forge and Company are gone. Their bonuses become upgrade levels,
+   added until the power rating is at least what it was. */
+function simplifySave() {
+  if (S.simpleV1) return; S.simpleV1 = true; S.up = S.up || {};
+  const old = (S.level > 1 || S.kills > 0) ? rating(heroStats()) : 0;
+  for (const k in S.attrs) S.attrs[k] = 0;
+  S.points = 0; S.talents = {}; S.party = []; for (const k of ['autoSpend', 'autoStones', 'autoCompany', 'autoForge']) S[k] = false;
+  let n = 0; const order = ['dmg', 'hp', 'dmg', 'hp', 'aspd', 'crit'];
+  while (old && n < 600 && rating(heroStats()) < old) { const k = order[n % order.length], u = UPG.find(x => x.k === k); S.up[upMaxed(u) ? 'dmg' : k] = upLvl(upMaxed(u) ? 'dmg' : k) + 1; n++; }
+  if (n) log(`The game got simpler: attribute points, Waystones, Forge and Company became ${n} free levels in the new Upgrades list (Hero tab).`, '#f3b44a');
+  if (!['hero', 'bag', 'feats', 'journal', 'shop'].includes(S.tab)) S.tab = 'hero';
+  dirtyStats = true;
+}
 const FEATS = [
   { id: 'k100', n: 'First Hundred', d: 'Defeat 100 enemies', goal: 100, cur: () => S.kills },
   { id: 'k1k', n: 'Road Warden', d: 'Defeat 1,000 enemies', goal: 1000, cur: () => S.kills },
@@ -611,16 +634,7 @@ const FEATS = [
   { id: 'r5', n: 'Embers of Legend', d: 'Find a Mythic item', goal: 5, cur: () => S.bestR, rar: 1 },
   { id: 'r6', n: 'Family Silver', d: 'Find an Heirloom item', goal: 6, cur: () => S.bestR, rar: 1 },
   { id: 'r7', n: 'Fallen From the Sky', d: 'Find a Starborn item', goal: 7, cur: () => S.bestR, rar: 1 },
-  { id: 'f1', n: 'Not Alone', d: 'Recruit a follower', goal: 1, cur: () => S.recruited },
-  { id: 'f5', n: 'A Proper Company', d: 'Recruit 5 followers', goal: 5, cur: () => S.recruited },
-  { id: 'w10', n: 'Stonereader', d: 'Own 10 waystones', goal: 10, cur: () => ownedCount() },
-  { id: 'w25', n: 'Waykeeper', d: 'Own 25 waystones', goal: 25, cur: () => ownedCount() },
-  { id: 'w50', n: 'Stonewise', d: 'Own 50 waystones', goal: 50, cur: () => ownedCount() },
-  { id: 'w81', n: 'Every Stone Lit', d: 'Own all 81 waystones', goal: 81, cur: () => ownedCount() },
   { id: 'e25', n: 'Elite Hunter', d: 'Defeat 25 elite foes', goal: 25, cur: () => S.elites || 0 },
-  { id: 'forge1', n: 'Spark and Anvil', d: 'Temper an item', goal: 1, cur: () => S.tempered || 0 },
-  { id: 'forge10', n: 'Masterwork', d: 'Temper an item to +10', goal: 10, cur: () => Math.max(0, ...SLOTS.map(s => (S.equip[s] && S.equip[s].up) || 0)) },
-  { id: 'craft1', n: 'Smith\u2019s Hand', d: 'Craft an item in the Forge', goal: 1, cur: () => S.crafted || 0 },
   { id: 'e250', n: 'Bane of Champions', d: 'Defeat 250 elite foes', goal: 250, cur: () => S.elites || 0 },
   { id: 'l10', n: 'Seasoned', d: 'Reach level 10', goal: 10, cur: () => S.level },
   { id: 'l25', n: 'Veteran', d: 'Reach level 25', goal: 25, cur: () => S.level },
@@ -685,7 +699,7 @@ function fresh() {
   return { v: 3, level: 1, xp: 0, gold: 0, points: 0, attrs: { mig: 0, vit: 0, agi: 0, for: 0 },
     equip: emptyEquip(), bag: [], talents: { hearth: true }, path: 'blade', starters: { blade: true },
     roster: [], party: [], recruited: 0, feats: {}, bestR: 0,
-    stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: false, autoEquip: false, autoStones: false, autoCompany: false, autoClaim: false, autoForge: false, autoSkill: true, manualV1: true, shards: 0, glass: 0, tempered: 0, crafted: 0, kills: 0, deaths: 0, best: null,
+    stage: 1, wave: 1, maxStage: 1, farm: false, autoSell: 0, autoSpend: false, autoEquip: false, autoStones: false, autoCompany: false, autoClaim: false, autoForge: false, autoSkill: true, manualV1: true, up: {}, shards: 0, glass: 0, tempered: 0, crafted: 0, kills: 0, deaths: 0, best: null,
     played: 0, lastSeen: Date.now(), log: [], tab: 'hero', created: Date.now(),
     owned: {}, passUntil: 0, charmUntil: 0, look: { lantern: 'amber', outfit: 'wanderer', company: 'plain', char: 'swordswoman' }, testShop: false, shopNoted: false,
     seen: {}, tips: {}, featSeen: {}, stash: [], bagView: 'bag', nudges: {}, soldFull: 0, embers: 1, hourglass: 0, trial: null, daily: { last: '', streak: 0 }, gfx: { numbers: true, weather: true, shake: true, fps30: false, big: false, sound: true, music: true } };
@@ -828,9 +842,9 @@ const PRODUCTS = [
   { id: 'embers_5', kind: 'consumable', price: '€0.99', give: { embers: 5 }, n: '5 Lantern Embers', d: 'Rise again on the spot when a guardian beats you, without losing the stage.' },
   { id: 'embers_20', kind: 'consumable', price: '€2.99', give: { embers: 20 }, n: '20 Lantern Embers', d: 'Twenty second chances against guardians. The best value.' },
   { id: 'hourglass_3', kind: 'consumable', price: '€1.99', give: { hourglass: 3 }, n: '3 Hourglasses', d: 'Each one collects 2 hours of rewards instantly: gold, XP, gear and travellers.' },
-  { id: 'starter_bundle', kind: 'bundle', price: '€2.99', n: 'Starter Bundle', gives: ['stash_page_1', 'company_slot_1', 'lantern_blue'], d: 'The stash, a second company slot and the Moonwater Blue lantern. €4.97 if bought separately. One time only, for players who own none of the three.' },
+  { id: 'starter_bundle', kind: 'bundle', price: '€2.99', n: 'Starter Bundle', gives: ['stash_page_1', 'lantern_blue'], d: 'The stash and the Moonwater Blue lantern, plus 5 Lantern Embers. One time only.' },
   { id: 'supporter_pack', kind: 'once', price: '€4.99', n: 'Wayfarer’s Supporter Pack', d: 'Thank you for supporting the game.',
-    perks: ['+10 bag slots', '+1 company slot', 'Offline rewards for 24 hours instead of 6', 'Supporter Gold lantern'] },
+    perks: ['+10 bag slots', 'Offline rewards for 24 hours instead of 6', 'Supporter Gold lantern'] },
   { id: 'road_pass', kind: 'pass', price: '€3.99', days: 30, n: 'Road Pass', d: '30 days of +25% gold and +25% XP, offline rewards for 12 hours instead of 6 and a bigger daily chest.' },
   { id: 'ember_charm', kind: 'charm', price: '€1.49', days: 7, n: 'Ember Charm', d: '7 days of +50% gold. Buying another adds 7 more days.' },
   { id: 'lantern_blue', kind: 'once', price: '€1.99', look: ['lantern', 'blue'], n: 'Moonwater Blue lantern', d: 'Your lantern and the road around you glow blue.' },
@@ -902,7 +916,7 @@ function store() {
 const priceOf = x => { const st = store(); return (st && st.prices && st.prices[x.id]) || x.price; };
 function grant(id) {
   const x = PROD[id]; if (!x) return;
-  if (x.kind === 'bundle') { S.owned[id] = true; for (const g of x.gives) S.owned[g] = true; S.look.lantern = 'blue'; }
+  if (x.kind === 'bundle') { S.owned[id] = true; for (const g of x.gives) S.owned[g] = true; S.look.lantern = 'blue'; S.embers += 5; }
   if (x.kind === 'once') { S.owned[id] = true; if (x.look) { S.look[x.look[0]] = x.look[1]; if (S.trial && S.trial.slot === x.look[0]) S.trial = null; } if (x.look && x.look[0] === 'char') chooseChar(x.look[1]); if (id === 'supporter_pack') S.look.lantern = 'gold'; }
   if (x.kind === 'pass') { S.passUntil = Math.max(now(), S.passUntil) + x.days * 864e5; S.look.outfit = 'pathfinder'; }
   if (x.kind === 'consumable') { S.embers += x.give.embers || 0; S.hourglass += x.give.hourglass || 0; }
@@ -934,14 +948,11 @@ function toast(title, text) {
 }
 /* One-time tips that point at the tab to open next. They appear in order and never repeat. */
 const TIPS = {
-  bag: { tab: 'bag', text: 'New gear dropped. Open the Bag to compare it with what you wear.' },
-  company: { tab: 'company', text: 'A traveller follows your light. Open Company to meet them.' },
-  talents: { tab: 'talents', text: 'You unlocked a waystone. Each one is a permanent bonus.' },
-  map: { tab: 'map', text: 'New zone. The Map shows what every foe is weak to.' },
+  bag: { tab: 'bag', text: 'New gear dropped. Open Gear to compare it with what you wear.' },
   feats: { tab: 'feats', text: 'Feat complete. Each one adds permanent damage and gold.' },
 };
 let tipQueue = [];
-function tip(id) { if (S.tips[id] || tipQueue.includes(id)) return; tipQueue.push(id); showTip(); }
+function tip(id) { if (!TIPS[id] || S.tips[id] || tipQueue.includes(id)) return; tipQueue.push(id); showTip(); }
 function showTip() {
   const box = document.getElementById('coach'); if (!box) return;
   document.querySelectorAll('.tab.pulse').forEach(b => b.classList.remove('pulse'));
@@ -1021,7 +1032,7 @@ function folPower(f, cp) { return 5 * Math.pow(1.13, f.lvl - 1) * RAR[f.r].m * c
 
 function heroStats(eq) {
   eq = eq || S.equip;
-  const a = S.attrs, t = talentBonus(), g = {}, P = PATHS[S.path];
+  const a = S.attrs, t = talentBonus(), g = {}, P = PATHS[S.path], U = k => (S.up && S.up[k]) || 0;
   for (const s of SLOTS) {
     const it = eq[s]; if (!it) continue;
     const ist = itemStats(it);
@@ -1041,19 +1052,19 @@ function heroStats(eq) {
     if (f.kind === 'lamp') { fGold += 10 + f.r * 5; fDrop += 5 + f.r * 3; }
   }
   const ren = renown();
-  const hp = (100 + a.vit * 14 + (S.level - 1) * 6 + G0('hp')) * (1 + t.hp) * (S.path === 'blade' ? 1.2 : 1);
+  const hp = (100 + a.vit * 14 + (S.level - 1) * 16 + G0('hp')) * (1 + t.hp) * (1 + U('hp') * .06) * (S.path === 'blade' ? 1.2 : 1);
   const w = eq.weapon;
   const elem = (w && w.path === S.path && w.elem) || P.elem;
   const rAll = G0('rAll') + t.rAll;
   const pc = activeChar();
   return {
     hp, elem, cp,
-    dmg: (10 + a.mig * 2.4 + (S.level - 1) + G0('dmg')) * (1 + t.dmg) * P.mult * (1 + ren * .02) * (elem !== 'phys' ? 1 + (G0('elem') + t.elem) / 100 : 1),
-    aspd: Math.min(4, (1 + a.agi * .012 + G0('aspd') / 100 + t.aspd) * (S.path === 'bow' ? 1.15 : 1)),
-    crit: Math.min(75, 5 + a.for * .4 + G0('crit') + t.crit + (pc === 'swordswoman' ? 8 : pc === 'scout' ? 10 : 0)), critd: 150 + G0('critd') + t.critd,
-    def: ((G0('def') + a.vit * .5) * (1 + t.def) + fDef) * (S.path === 'blade' ? 1.15 : 1),
+    dmg: (10 + a.mig * 2.4 + (S.level - 1) * 2.5 + G0('dmg')) * (1 + t.dmg) * (1 + U('dmg') * .06) * P.mult * (1 + ren * .02) * (elem !== 'phys' ? 1 + (G0('elem') + t.elem) / 100 : 1),
+    aspd: Math.min(4, (1 + a.agi * .012 + G0('aspd') / 100 + t.aspd + U('aspd') * .015) * (S.path === 'bow' ? 1.15 : 1)),
+    crit: Math.min(75, 5 + a.for * .4 + G0('crit') + t.crit + U('crit') * .5 + (pc === 'swordswoman' ? 8 : pc === 'scout' ? 10 : 0)), critd: 150 + G0('critd') + t.critd + U('crit') * 4,
+    def: ((G0('def') + a.vit * .5 + (S.level - 1) * .5) * (1 + t.def) * (1 + U('hp') * .04) + fDef) * (S.path === 'blade' ? 1.15 : 1),
     block: Math.min(60, a.agi * .25 + G0('block') + t.block + fBlock + (pc === 'glacier' ? 15 : 0)), regen: hp * .004 + G0('regen') + hp * t.regen + fHeal + (pc === 'plague' ? hp * .01 : 0),
-    ls: G0('ls') + t.ls, gold: G0('gold') + t.gold * 100 + a.for + fGold + ren * 2, xp: G0('xp') + t.xp * 100, drop: G0('drop') + t.drop * 100 + fDrop, luck: t.luck,
+    ls: G0('ls') + t.ls, gold: G0('gold') + t.gold * 100 + a.for + fGold + ren * 2 + U('gold') * 4, xp: G0('xp') + t.xp * 100, drop: G0('drop') + t.drop * 100 + fDrop, luck: t.luck,
     res: { phys: 0, fire: Math.min(75, G0('rFire') + rAll + t.rFire), frost: Math.min(75, G0('rFrost') + rAll + t.rFrost), shadow: Math.min(75, G0('rShadow') + rAll + t.rShadow) },
     range: P.range,
   };
@@ -1171,6 +1182,7 @@ function setPath(p) {
 
 /* ---------- Company ---------- */
 function recruit(quiet) {
+  return null; // Company was removed in the tab cut
   const kind = pick(Object.keys(KINDS));
   const r = Math.min(7, rollRarity(stats().luck));
   const taken = new Set(S.roster.map(x => x.name)), free = NAMES.filter(n => !taken.has(n));
@@ -1205,7 +1217,7 @@ const need = l => Math.round(25 * Math.pow(1.19, l - 1));
 function addXp(x) {
   S.xp += x;
   while (S.xp >= need(S.level)) {
-    S.xp -= need(S.level); S.level++; S.points += 3; dirtyStats = true;
+    S.xp -= need(S.level); S.level++; dirtyStats = true;
     log(`Reached level ${S.level}. +3 attribute points.`, '#f3b44a');
     if (G) { SFX.play('level'); G.hero.hop = .35; fx(HX, GY - 26, 'LEVEL UP', '#f3b44a', 1.4, 6); burst(HX, GY - 10, ['#f3b44a', '#fff2c0'], 14, 70); }
   }
@@ -1228,7 +1240,7 @@ function enemyBase(stage, wave, boss) {
   const late = Math.pow(1.07, Math.max(0, stage - 24)); hp *= late; dmg *= late;
   // Harder road: +4% per stage up to +20% from Stage 6, so the very first stages stay friendly to new players.
   const harder = Math.min(1.2, 1 + (stage - 1) * .04); hp *= harder; dmg *= harder;
-  if (boss) { hp *= Math.min(16, 8 + stage * .5); dmg *= 1.15; }   // tanky more than deadly, and tankier each stage: a guardian is a race against its clock
+  if (boss) { hp *= Math.min(24, 12 + stage * .8); dmg *= 1.15; }   // tanky more than deadly, and tankier each stage: a guardian is a race against its clock
   return { hp, dmg };
 }
 /* Every foe has a special attack, shown above it when used and listed on the Map. */
@@ -1313,9 +1325,9 @@ function catchMoth() {
   const m = G.moth; G.moth = null;
   const g = goldPer(S.stage) * 20 * (1 + stats().gold / 100) * boostGold(), sh = 2 + Math.floor(S.stage / 4);
   S.gold += g; S.shards = (S.shards || 0) + sh; S.moths = (S.moths || 0) + 1;
-  fx(m.x, m.y - 6, '+' + fmt(g) + ' gold', '#f3b44a', 1.3, 5); fx(m.x, m.y + 2, '+' + sh + ' shards', '#8fd8ff', 1.3, 4);
+  fx(m.x, m.y - 6, '+' + fmt(g) + ' gold', '#f3b44a', 1.3, 5);
   burst(m.x, m.y, ['#f3b44a', '#fff2c0', '#ffe680'], 20, 70);
-  if (S.moths === 1) log('You caught a Gilded Moth. Tap them when they flutter past for gold and Forge shards.', '#f3b44a');
+  if (S.moths === 1) log('You caught a Gilded Moth. Tap them when they flutter past for gold.', '#f3b44a');
   if (S.tab === 'forge') dirtyPanel = true;
 }
 function updateAction(dt) {
@@ -1456,6 +1468,7 @@ function spawnWave() {
 }
 function damage(e, raw, el, crit, small) {
   if (e.dead) return 0;
+  if (e.boss) raw *= 1 + upLvl('boss') * .03;
   if (!small) SFX.play('hit', crit);
   if (e.evade > 0 && Math.random() < .75) { fx(e.x, GY - 20, 'miss', '#97a39d', .6, 4); return 0; }
   const m = resMult(e, el), d = raw * m * (e.shell > 0 ? e.shellM : 1);
@@ -1506,7 +1519,7 @@ function kill(e) {
   }
   if (e.split && !e.minion) fx(e.x, GY - 34, 'splits!', '#ff60c0', .9, 5);
   if (e.boom) return;
-  if (!S.seen[e.n]) { S.seen[e.n] = true; toast('New foe', e.n); log(`Discovered: ${e.n}. The Map now shows its weaknesses.`); if (S.tab === 'map') dirtyPanel = true; }
+  if (!S.seen[e.n]) { S.seen[e.n] = true; toast('New foe', e.n); log(`Discovered: ${e.n}.`); if (S.tab === 'map') dirtyPanel = true; }
   { const [, pk] = FOE_ART[e.n] || [, 'moss']; const cols = Object.values(PAL[pk] || {}).slice(0, 3); burst(e.x, GY - (e.boss ? 14 : 7), cols.length ? cols : ['#ffffff'], e.boss ? 26 : 12, e.boss ? 80 : 55); }
   if (e.boss) shake(2.5);
   const st = stats();
@@ -1597,7 +1610,7 @@ function heroDie(killer) {
   if (S.stage > 1) S.stage--;
   S.wave = 1;
   log(from > 1 ? `${who} beat you on Stage ${from}. Regrouping at Stage ${S.stage}, wave 1.` : `${who} beat you. Starting Stage 1 again from wave 1.`, '#ff8070');
-  if (S.points || S.bag.some(isUpgrade)) log(`Tip: ${S.points ? `spend your ${S.points} attribute points (Hero tab)` : ''}${S.points && S.bag.some(isUpgrade) ? ' and ' : ''}${S.bag.some(isUpgrade) ? 'equip the ▲ upgrades in your Bag' : ''} before the next try.`, '#f3b44a');
+  if (S.points || S.bag.some(isUpgrade)) log(`Tip: ${S.points ? `buy upgrades (Hero tab)` : ''}${S.points && S.bag.some(isUpgrade) ? ' and ' : ''}${S.bag.some(isUpgrade) ? 'equip the ▲ upgrades in your Bag' : ''} before the next try.`, '#f3b44a');
   banner(`${who} beat you`, '#ff8070');
   G.fallBanner = `Back to Stage ${S.stage} · Wave 1`;
 }
@@ -3125,25 +3138,20 @@ function updateHud() {
   document.title = `Lantern Road (Claude) · Stage ${S.stage} ${S.wave}/${WAVES}`;
 }
 /* Stuck on a stage? After two falls near the furthest stage, one button on the road offers the fix that helps most. */
-const IDLE_KEYS = ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge'];
+const IDLE_KEYS = ['autoEquip', 'autoClaim'];
 function stuckHelp() {
   const w = S.wall; if (!w || w.n < 2 || w.stage < S.maxStage - 1 || G.hero.dead > 0) return null;
   const ups = S.bag.filter(isUpgrade).length;
   if (ups) return { k: 'equip', t: `▲ Equip ${ups} upgrade${ups > 1 ? 's' : ''}` };
-  if (S.points > 0) return { k: 'points', t: `Spend ${S.points} point${S.points > 1 ? 's' : ''}` };
-  if (TALENTS.some(t => !S.talents[t.id] && talAvail(t)) && S.gold >= talCost()) return { k: 'stone', t: `Buy a waystone · ${fmt(talCost())} gold` };
+  if (S.gold >= Math.min(upCost('dmg'), upCost('hp'))) return { k: 'up', t: `Buy upgrades · ${fmt(Math.floor(S.gold))} gold` };
   if (w.n >= 3 && !S.idleOffered && !IDLE_KEYS.every(k => S[k])) return { k: 'idle', t: 'Stuck? Let the game manage gear (Idle mode)' };
   return null;
 }
 function useHelp() {
   const h = stuckHelp(); if (!h) return;
   if (h.k === 'equip') { const n = autoEquip(); S.bag.forEach(i => { i.isNew = false; }); toast('Gear upgraded', `Equipped ${n} upgrade${n > 1 ? 's' : ''}. Try the stage again!`); }
-  if (h.k === 'points') { const n = S.points; autoSpend(); toast('Stronger', `Spent ${n} attribute point${n > 1 ? 's' : ''}.`); }
-  if (h.k === 'stone') { // the first open waystone, damage and HP first
-    const open = TALENTS.filter(t => !S.talents[t.id] && talAvail(t)), pick = open.find(t => /dmg|hp/.test(t.k)) || open[0];
-    S.gold -= talCost(); S.talents[pick.id] = true; dirtyStats = true; toast('Waystone unlocked', pick.n); log(`Unlocked the ${pick.n} waystone.`, '#f3b44a');
-  }
-  if (h.k === 'idle') { S.idleOffered = true; for (const k of IDLE_KEYS) S[k] = true; autoPlay(); toast('Idle mode on', 'The game now equips, spends and upgrades for you. Turn it off any time in Log → Settings.'); log('Idle mode on. Turn it off in Log → Settings to choose every upgrade yourself.', '#97a39d'); }
+  if (h.k === 'up') { let n = 0; while (n < 200 && buyUp(upCost('dmg') <= upCost('hp') ? 'dmg' : 'hp')) n++; toast('Stronger', `Bought ${n} Damage and Health upgrade${n > 1 ? 's' : ''}.`); }
+  if (h.k === 'idle') { S.idleOffered = true; for (const k of IDLE_KEYS) S[k] = true; autoPlay(); toast('Idle mode on', 'The game now equips gear and claims rewards for you. Turn it off any time in the Menu tab.'); log('Idle mode on. Turn it off in the Menu tab.', '#97a39d'); }
   dirtyStats = true; dirtyPanel = true; updateHud(); save();
 }
 function featDone(f) { return f.cur() >= f.goal; }
@@ -3168,16 +3176,16 @@ function ensureQuests() {
   S.dq = { day, ids, base, claimed: {}, bonus: false }; return S.dq;
 }
 function questList() { const q = ensureQuests(); return q.ids.map(id => { const x = QUESTS.find(d => d.id === id), cur = Math.max(0, x.cur() - (q.base[id] || 0)); return { x, cur: Math.min(cur, x.goal), done: cur >= x.goal, claimed: !!q.claimed[id] }; }); }
-function questReward() { return { gold: Math.round(goldPer(S.maxStage) * 20), shards: 5 + Math.floor(S.maxStage / 3) }; }
-function questBonus() { return { gold: Math.round(goldPer(S.maxStage) * 50), glass: 3 }; }
+function questReward() { return { gold: Math.round(goldPer(S.maxStage) * 30) }; }
+function questBonus() { return { gold: Math.round(goldPer(S.maxStage) * 90) }; }
 function questClaimable() { const l = questList(); return l.some(q => q.done && !q.claimed) || (l.every(q => q.claimed) && !S.dq.bonus); }
 function claimQuest(id, quiet) {
   const q = ensureQuests();
-  if (id === 'bonus') { if (q.bonus || !questList().every(x => x.claimed)) return false; const b = questBonus(); q.bonus = true; S.gold += b.gold; S.glass += b.glass;
-    if (!quiet) { SFX.play('level'); toast('All daily quests done', `+${fmt(b.gold)} gold · +${b.glass} Starglass`); } log(`All daily quests done: +${fmt(b.gold)} gold, +${b.glass} Starglass.`, '#f3b44a'); return true; }
+  if (id === 'bonus') { if (q.bonus || !questList().every(x => x.claimed)) return false; const b = questBonus(); q.bonus = true; S.gold += b.gold;
+    if (!quiet) { SFX.play('level'); toast('All daily quests done', `+${fmt(b.gold)} gold`); } log(`All daily quests done: +${fmt(b.gold)} gold.`, '#f3b44a'); return true; }
   const it = questList().find(x => x.x.id === id); if (!it || !it.done || it.claimed) return false;
-  const r = questReward(); q.claimed[id] = true; S.gold += r.gold; S.shards = (S.shards || 0) + r.shards; if (!quiet) SFX.play('coin');
-  log(`Daily quest done: ${it.x.n}. +${fmt(r.gold)} gold, +${r.shards} Lantern Shards.`, '#f3b44a'); return true;
+  const r = questReward(); q.claimed[id] = true; S.gold += r.gold; if (!quiet) SFX.play('coin');
+  log(`Daily quest done: ${it.x.n}. +${fmt(r.gold)} gold.`, '#f3b44a'); return true;
 }
 function questHtml() {
   const l = questList(), r = questReward(), b = questBonus(), all = l.every(q => q.claimed);
@@ -3186,13 +3194,13 @@ function questHtml() {
       <div class="prog"><i style="width:${(q.cur / q.x.goal * 100).toFixed(0)}%"></i></div>
       <div class="row between"><span class="sub">${q.cur} / ${q.x.goal}</span>${q.claimed ? '<span class="tagpill">Claimed</span>' : q.done ? `<button class="btn small primary" data-act="dclaim" data-id="${q.x.id}">Claim</button>` : ''}</div></article>`).join('');
   return `<div class="card"><h2>Daily quests · ${l.filter(q => q.claimed).length}/3</h2>
-    <p class="sub">Three new quests every day (new ones in ${lt}). Each pays ${fmt(r.gold)} gold and ${r.shards} Lantern Shards. Finish all three for ${fmt(b.gold)} gold and ${b.glass} Starglass.</p>
+    <p class="sub">Three new quests every day (new ones in ${lt}). Each pays ${fmt(r.gold)} gold. Finish all three for ${fmt(b.gold)} more.</p>
     ${all ? (S.dq.bonus ? '<p class="sub"><span class="tagpill">Bonus claimed</span> Come back tomorrow for new quests.</p>' : '<button class="btn primary" data-act="dclaim" data-id="bonus">Claim the bonus</button>') : ''}</div>
     <div class="feats">${cards}</div>`;
 }
 function markTabs() {
   const set = (id, on) => { const b = document.getElementById(id); if (!b) return; let d = b.querySelector('.dot'); if (on && !d) { d = document.createElement('span'); d.className = 'dot'; b.appendChild(d); } if (!on && d) d.remove(); };
-  set('tab-hero', S.points > 0);
+  set('tab-hero', UPG.some(u => !upMaxed(u) && S.gold >= upCost(u.k)));
   set('tab-bag', S.bag.some(i => i.isNew));
   set('tab-company', S.roster.some(f => f.isNew));
   set('tab-talents', TALENTS.some(t => !S.talents[t.id] && talAvail(t) && S.gold >= talCost()));
@@ -3229,7 +3237,7 @@ function itemCard(it, mode) {
   }
   const canStore = stashMax() > 0 && S.stash.length < stashMax();
   const btns = mode === 'bag'
-    ? `<div class="row"><button class="btn primary" data-act="equip" data-id="${it.id}">Equip</button>${canStore ? `<button class="btn" data-act="store" data-id="${it.id}">Move to stash</button>` : ''}<button class="btn" data-act="sell" data-id="${it.id}">Sell for ${fmt(value(it))} gold</button><button class="btn" data-act="salvage" data-id="${it.id}">Salvage for ${matsTxt(salvageYield(it))}</button></div>`
+    ? `<div class="row"><button class="btn primary" data-act="equip" data-id="${it.id}">Equip</button>${canStore ? `<button class="btn" data-act="store" data-id="${it.id}">Move to stash</button>` : ''}<button class="btn" data-act="sell" data-id="${it.id}">Sell for ${fmt(value(it))} gold</button></div>`
     : mode === 'stash'
     ? `<div class="row"><button class="btn primary" data-act="equip" data-id="${it.id}">Equip</button><button class="btn" data-act="take" data-id="${it.id}" ${S.bag.length < bagMax() ? '' : 'disabled'}>Move to bag</button><button class="btn" data-act="sell" data-id="${it.id}">Sell for ${fmt(value(it))} gold</button><button class="btn" data-act="salvage" data-id="${it.id}">Salvage for ${matsTxt(salvageYield(it))}</button></div>${S.bag.length < bagMax() ? '' : '<p class="sub">Your bag is full.</p>'}`
     : `<div class="row"><button class="btn primary" data-act="temper" data-id="${it.id}" ${(it.up || 0) < MAX_UP && canPay(temperCost(it)) ? '' : 'disabled'}>${(it.up || 0) >= MAX_UP ? 'Fully tempered' : `Temper to +${(it.up || 0) + 1} · ${matsTxt(temperCost(it))}`}</button><button class="btn" data-act="unequip" data-slot="${it.slot}">Move to bag</button></div>`;
@@ -3262,18 +3270,11 @@ function renderHero() {
       : `<button class="slot empty" data-act="tobag" aria-label="${SLOT_LABEL[s]}: empty"><img alt="" src="${icon(s === 'weapon' ? S.path : s, 0)}" style="opacity:.25"><span class="lab">${SLOT_LABEL[s]}</span><span class="gs">empty</span></button>`;
   }).join('');
   const gsTotal = SLOTS.reduce((a, s) => a + (S.equip[s] ? gsOf(S.equip[s]) : 0), 0);
-  const rows = [['Path', PATHS[S.path].n], ['Damage type', elemTag(st.elem)], ['Max HP', fmt(st.hp)], ['Damage', fmt(st.dmg)], ['Attacks / sec', st.aspd.toFixed(2)], ['Crit chance', st.crit.toFixed(1) + '%' + ({ swordswoman: ' (+8% Quick Blade)', scout: ' (+10% Keen Sight)' }[activeChar()] || '')], ['Crit damage', Math.round(st.critd) + '%'],
+  const rows = [['Damage type', elemTag(st.elem)], ['Max HP', fmt(st.hp)], ['Damage', fmt(st.dmg)], ['Attacks / sec', st.aspd.toFixed(2)], ['Crit chance', st.crit.toFixed(1) + '%' + ({ swordswoman: ' (+8% Quick Blade)', scout: ' (+10% Keen Sight)' }[activeChar()] || '')], ['Crit damage', Math.round(st.critd) + '%'],
     ['Defense', fmt(st.def) + ` (−${Math.round(100 * st.def / (armorK(S.stage) + st.def))}% physical here)`], ['Block', st.block.toFixed(1) + '%' + (activeChar() === 'glacier' ? ' (+15% Rime Bastion)' : '')], ['Regen', fmt(st.regen) + ' / sec' + (activeChar() === 'plague' ? ' (+1% HP/s Remedies)' : '')],
     ['Fire resist', st.res.fire.toFixed(1) + '%'], ['Frost resist', st.res.frost.toFixed(1) + '%'], ['Shadow resist', st.res.shadow.toFixed(1) + '%'],
-    ['Lifesteal', st.ls.toFixed(1) + '%'], ['Gold find', '+' + Math.round(st.gold) + '%'], ['XP gain', '+' + Math.round(st.xp) + '%'], ['Drop chance', '+' + Math.round(st.drop) + '%'], ['Company power', '+' + Math.round((st.cp - 1) * 100) + '%']]
+    ['Lifesteal', st.ls.toFixed(1) + '%'], ['Gold find', '+' + Math.round(st.gold) + '%'], ['XP gain', '+' + Math.round(st.xp) + '%'], ['Drop chance', '+' + Math.round(st.drop) + '%']]
     .map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
-  const nextPt = k => {
-    S.attrs[k]++; const n = heroStats(); S.attrs[k]--;
-    const show = { mig: [['Damage', st.dmg, n.dmg, fmt]], vit: [['Max HP', st.hp, n.hp, fmt], ['Defense', st.def, n.def, fmt]], agi: [['Attacks/sec', st.aspd, n.aspd, v => v.toFixed(2)], ['Block', st.block, n.block, v => v.toFixed(1) + '%']], for: [['Crit', st.crit, n.crit, v => v.toFixed(1) + '%'], ['Gold find', st.gold, n.gold, v => '+' + Math.round(v) + '%']] }[k];
-    return show.map(([l, a, b, f]) => `${l} ${f(a)} → <span class="next">${f(b)}</span>`).join(' · ');
-  };
-  const attrs = ATTRS.map(a => `<div class="attr"><div><b>${a.n}</b><small>${nextPt(a.k)}</small></div><span class="val">${S.attrs[a.k]}</span>
-    <button class="plus" data-act="attr" data-k="${a.k}" ${S.points ? '' : 'disabled'} aria-label="Add a point to ${a.n}">+</button></div>`).join('');
   const dslot = s => {
     const it = S.equip[s];
     return it ? `<button class="slot ${selEq === s ? 'sel' : ''}" style="--rc:${RAR[it.r].col}" data-act="seleq" data-slot="${s}" aria-label="${SLOT_LABEL[s]}: ${esc(it.name)}"><img alt="" src="${itemIcon(it)}"><span class="t"><span class="lab">${SLOT_LABEL[s]}</span><span class="gs">GS ${gsOf(it)}${it.up ? ` +${it.up}` : ''}</span></span></button>`
@@ -3282,18 +3283,24 @@ function renderHero() {
   const bagCells = [];
   for (let i = 0; i < bagMax(); i++) { const it = S.bag[i]; bagCells.push(it ? `<button class="cell" style="--rc:${RAR[it.r].col}" data-act="selbag" data-id="${it.id}" aria-label="${RAR[it.r].n} ${esc(it.name)}"><img alt="" src="${itemIcon(it)}">${isUpgrade(it) ? '<span class="up">▲</span>' : ''}${it.isNew ? '<span class="new"></span>' : ''}</button>` : '<div class="cell empty" aria-hidden="true"></div>'); }
   const bagSel = S.bag.find(b => b.id === selBag);
-  panel.innerHTML = `<div class="doll"><div class="dcol">${['weapon', 'helm', 'armor', 'gloves', 'belt'].map(dslot).join('')}</div>
-      <div class="dmid"><span class="dlv">Lv ${S.level}</span><canvas id="dollCv" width="150" height="150"></canvas><span class="dgs">Gearscore ${gsTotal}</span><span class="sub" style="font-size:.72rem">${PATHS[S.path].n} · ${elemTag(st.elem)}</span></div>
-      <div class="dcol">${['boots', 'cloak', 'amulet', 'ring', 'charm'].map(dslot).join('')}</div></div>
-  <div class="card"><div class="row between"><h2>Bag · ${S.bag.length}/${bagMax()}</h2><button class="btn small primary" data-act="autoequip">Equip best</button></div><div class="bag">${bagCells.join('')}</div></div>
-  ${selEq && S.equip[selEq] ? popWrap(itemCard(S.equip[selEq], 'eq')) : bagSel ? popWrap(itemCard(bagSel, 'bag')) : ''}
-  <div class="card"><div class="row between"><h2>Hero</h2><span class="sub">Each hero fights with one path. The Swordswoman is free.</span></div><div class="shop chars">${charCards()}</div><div class="skillbox"><h3>${CHARS[activeChar()].n}: skills</h3>${skillLine(activeChar())}</div><p class="sub credit">Glacierbreaker, Swordswoman, Elven Scout and Plague Doctor art by elie automata.</p></div>
-  <div class="split">
-    <div class="card"><h2>${CHARS[activeChar()].n} · Lv ${S.level}</h2><p class="sub">Power rating ${fmt(rating(st))} · Renown ${renown()} (+${renown() * 2}% damage and gold)</p><dl class="stats">${rows}</dl></div>
-  </div>
-  <div class="card"><div class="row between"><h2>Attributes</h2><span class="pill ${S.points ? 'pts' : ''}">${S.points} unspent</span></div>${attrs}</div>`;
-  const dc = document.getElementById('dollCv'); if (dc) drawDoll(dc);
+  const ups = UPG.map(u => { const l = upLvl(u.k), c = upCost(u.k), mx = upMaxed(u);
+    return `<div class="attr"><div><b>${u.n}</b><small>${u.per} per level</small></div><span class="val">${l}</span>
+      <button class="btn small ${!mx && S.gold >= c ? 'primary' : ''}" data-act="up" data-k="${u.k}" ${mx || S.gold < c ? 'disabled' : ''} aria-label="Upgrade ${u.n} for ${fmt(c)} gold">${mx ? 'Max' : fmt(c)}</button></div>`; }).join('');
+  panel.innerHTML = `<div class="card"><div class="row between"><h2>Upgrades</h2><span class="pill pts">${fmt(Math.floor(S.gold))} gold</span></div><p class="sub">Spend gold to grow stronger. Every level costs a little more.</p>${ups}</div>
+  <div class="card"><div class="row between"><h2>Hero</h2><span class="sub">The Swordswoman is free.</span></div><div class="shop chars">${charCards()}</div><div class="skillbox"><h3>${CHARS[activeChar()].n}: skills</h3>${skillLine(activeChar())}</div><p class="sub credit">Glacierbreaker, Swordswoman, Elven Scout and Plague Doctor art by elie automata.</p></div>
+  <div class="card"><h2>${CHARS[activeChar()].n} · Lv ${S.level}</h2><p class="sub">Power rating ${fmt(rating(st))} · Renown ${renown()} (+${renown() * 2}% damage and gold)</p><dl class="stats">${rows}</dl></div>`;
   panel.querySelectorAll('[data-prev]').forEach(d => { const [k, key] = d.dataset.prev.split(':'); d.appendChild(previewCanvas(k, key)); });
+}
+function dollHtml() {
+  const st = stats(), gsTotal = SLOTS.reduce((a, s) => a + (S.equip[s] ? gsOf(S.equip[s]) : 0), 0);
+  const dslot = s => {
+    const it = S.equip[s];
+    return it ? `<button class="slot ${selEq === s ? 'sel' : ''}" style="--rc:${RAR[it.r].col}" data-act="seleq" data-slot="${s}" aria-label="${SLOT_LABEL[s]}: ${esc(it.name)}"><img alt="" src="${itemIcon(it)}"><span class="t"><span class="lab">${SLOT_LABEL[s]}</span><span class="gs">GS ${gsOf(it)}${it.up ? ` +${it.up}` : ''}</span></span></button>`
+      : `<button class="slot empty" aria-label="${SLOT_LABEL[s]}: empty"><img alt="" src="${icon(s === 'weapon' ? S.path : s, 0)}" style="opacity:.25"><span class="t"><span class="lab">${SLOT_LABEL[s]}</span><span class="gs">empty</span></span></button>`;
+  };
+  return `<div class="doll"><div class="dcol">${['weapon', 'helm', 'armor', 'gloves', 'belt'].map(dslot).join('')}</div>
+      <div class="dmid"><span class="dlv">Lv ${S.level}</span><canvas id="dollCv" width="150" height="150"></canvas><span class="dgs">Gearscore ${gsTotal}</span><span class="sub" style="font-size:.72rem">${elemTag(st.elem)}</span></div>
+      <div class="dcol">${['boots', 'cloak', 'amulet', 'ring', 'charm'].map(dslot).join('')}</div></div>`;
 }
 function itemCells(list, max) {
   const cells = [];
@@ -3335,7 +3342,7 @@ function renderBag() {
       <img alt="" src="${itemIcon(it)}">${isUpgrade(it) ? '<span class="up" title="Upgrade">▲</span>' : ''}${it.isNew ? '<span class="new"></span>' : ''}</button>`);
   }
   const sel = S.bag.find(b => b.id === selBag);
-  panel.innerHTML = `<div class="card">${bagSwitch()}
+  panel.innerHTML = dollHtml() + `<div class="card">${bagSwitch()}
     <div class="row between"><h2>Bag · ${S.bag.length}/${bagMax()}</h2>
       <div class="row"><button class="btn primary small" data-act="autoequip">Equip best</button>
       <button class="btn small" data-act="sellbelow" data-r="2">Sell Worn &amp; Common</button>
@@ -3343,10 +3350,11 @@ function renderBag() {
       <button class="btn small" data-act="sellbelow" data-r="4">Sell Rare &amp; below</button>
       ${confirmSellAll ? `<button class="btn small primary" data-act="sellall2">Sell ${S.bag.filter(it => !isUpgrade(it)).length} items for ${fmt(S.bag.filter(it => !isUpgrade(it)).reduce((a, it) => a + value(it), 0))} gold</button><button class="btn small" data-act="sellall0">Cancel</button>`
         : '<button class="btn small" data-act="sellall1" title="Sells every item that is not marked ▲. Upgrades stay.">Sell all except upgrades</button>'}
-      <button class="btn small" data-act="salvageall" title="Breaks down every item that is not marked ▲ into Forge materials.">Salvage all except upgrades</button></div></div>
+</div></div>
     <p class="sub">▲ marks an upgrade for your current build. Bulk sell skips upgrades.</p>
     <div class="bag">${cells.join('')}</div></div>
-    ${sel ? popWrap(itemCard(sel, 'bag')) : '<p class="hint">Tap an item to compare it with what you are wearing. Green numbers beat your current gear, red ones are worse.</p>'}`;
+    ${selEq && S.equip[selEq] ? popWrap(itemCard(S.equip[selEq], 'eq')) : sel ? popWrap(itemCard(sel, 'bag')) : '<p class="hint">Tap an item to compare it with what you are wearing. Green numbers beat your current gear, red ones are worse.</p>'}`;
+  const dc = document.getElementById('dollCv'); if (dc) drawDoll(dc);
 }
 function renderCompany() {
   const st = stats(), slots = partySlots(), members = partyMembers();
@@ -3436,18 +3444,13 @@ function renderJournal() {
     <div class="card"><h2>Journal</h2><ul class="log">${logs}</ul></div>
     <div class="card"><h2>Settings</h2>
       <label for="autoSell">Auto-sell drops (upgrades are always kept)</label><select id="autoSell">${opts}</select>
-      <h2>Idle mode</h2><p class="sub">The hero always walks and fights by himself. Everything else is yours to do: spend points, unlock waystones, equip gear, pick your company, claim feats and use the Forge. Turn on Idle mode to let the game do all of it for you.</p>
-      <label class="chk"><input type="checkbox" id="idleAll" ${['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge'].every(k => S[k]) ? 'checked' : ''}> <b>Idle mode: do everything automatically</b></label>
-      <p class="sub">Or choose just some of them:</p>
-      <label class="chk"><input type="checkbox" id="autoSpend" ${S.autoSpend ? 'checked' : ''}> Spend attribute points</label>
+      <h2>Idle mode</h2><p class="sub">The hero always walks and fights by himself. Idle mode also equips better gear and claims quest and feat rewards for you. Buying upgrades and fighting new guardians stay yours to do.</p>
+      <label class="chk"><input type="checkbox" id="idleAll" ${IDLE_KEYS.every(k => S[k]) ? 'checked' : ''}> <b>Idle mode</b></label>
       <label class="chk"><input type="checkbox" id="autoEquip" ${S.autoEquip ? 'checked' : ''}> Equip better gear, and when the bag fills sell what you don't need (keeps upgrades and one best Mythic-or-better spare per slot)</label>
-      <label class="chk"><input type="checkbox" id="autoStones" ${S.autoStones ? 'checked' : ''}> Unlock waystones</label>
-      <label class="chk"><input type="checkbox" id="autoCompany" ${S.autoCompany ? 'checked' : ''}> Pick the strongest company and train them</label>
-      <label class="chk"><input type="checkbox" id="autoForge" ${S.autoForge ? 'checked' : ''}> Use the Forge: salvage Epic and better junk into materials, and temper worn gear</label>
-      <label class="chk"><input type="checkbox" id="autoClaim" ${S.autoClaim ? 'checked' : ''}> Claim feats</label>
+      <label class="chk"><input type="checkbox" id="autoClaim" ${S.autoClaim ? 'checked' : ''}> Claim quests and feats</label>
       <h2>Records</h2><dl class="stats">
         <dt>Enemies defeated</dt><dd>${fmt(S.kills)}</dd><dt>Times fallen</dt><dd>${fmt(S.deaths)}</dd>
-        <dt>Furthest stage</dt><dd>${S.maxStage}</dd><dt>Travellers recruited</dt><dd>${S.recruited}</dd><dt>Time on the road</dt><dd>${dur(S.played)}</dd>
+        <dt>Furthest stage</dt><dd>${S.maxStage}</dd><dt>Time on the road</dt><dd>${dur(S.played)}</dd>
         <dt>Best find</dt><dd ${S.best ? `style="color:${RAR[S.best.r].col}"` : ''}>${S.best ? esc(S.best.name) + ' · GS ' + S.best.gs : '–'}</dd></dl>
       <h2>Save code</h2>
       <p class="sub">Your whole game as one line of text. Copy it to move your game to another device, or to share it. Loading a code replaces the game in this browser.</p>
@@ -3529,13 +3532,9 @@ function renderShop() {
     <div class="card"><h2>Boosts</h2><p class="sub">Faster gold and XP for a while. Free players reach every stage too; this only shortens the walls.</p><div class="shop">${boost(PROD.road_pass)}${boost(PROD.ember_charm)}</div></div>
     <div class="card"><h2>Lanterns</h2><p class="sub">Your lantern lights the whole road in its color.</p><div class="shop">${wares('lantern', LANTERNS)}</div></div>
     <div class="card"><h2>Heroes</h2><p class="sub">Each hero has their own walk and attack animations. The Swordswoman is free; the Elven Scout unlocks the Bow and the Plague Doctor the Lantern Staff. Try any of them for 5 minutes. Glacierbreaker, Swordswoman, Elven Scout and Plague Doctor art by elie automata.</p><div class="shop">${wares('char', CHARS)}</div></div>
-    <div class="card"><h2>Company slots</h2><p class="sub">Your first follower walks with you for free. Each slot lets one more follower fight beside you. The Supporter Pack also adds one. Up to ${1 + 4} can walk together.</p>
-      <div class="shop">${['company_slot_1', 'company_slot_2', 'company_slot_3'].map((id, i, all) => { const x = PROD[id], locked = i > 0 && !S.owned[all[i - 1]];
-        return `<article class="ware ${S.owned[id] ? 'owned' : ''}"><h3>${x.n}</h3><p>${x.d}</p><div class="row">${locked ? '<span class="sub">Unlocks after the slot before it.</span>' : btn(x)}</div></article>`; }).join('')}</div></div>
     <div class="card"><h2>Stash</h2><p class="sub">Safe storage that is never sold. 30 slots per page, bought in order.</p>
       <div class="shop">${STASH_IDS.map((id, i) => { const x = PROD[id], locked = i > 0 && !S.owned[STASH_IDS[i - 1]];
         return `<article class="ware ${S.owned[id] ? 'owned' : ''}"><h3>${x.n}</h3><p>${x.d}</p><div class="row">${locked ? '<span class="sub">Unlocks after the page before it.</span>' : btn(x)}</div></article>`; }).join('')}</div></div>
-    <div class="card"><h2>Company looks</h2><div class="shop">${wares('company', COMPANY_LOOKS)}</div></div>
     ${live ? '<div class="row"><button class="btn small" data-act="restore">Restore purchases</button></div>' : ''}`;
   panel.querySelectorAll('[data-prev]').forEach(d => { const [k, key] = d.dataset.prev.split(':'); d.appendChild(previewCanvas(k, key)); });
   S.shopNoted = true;
@@ -3583,7 +3582,7 @@ function claimDaily() {
 function dailyCard() {
   const free = dailyReward(false), pass = dailyReward(true);
   return `<div class="card daily"><div class="chest" aria-hidden="true"></div><div style="flex:1 1 200px;min-width:0"><h2>Daily chest</h2>
-    <p class="sub">${dailyReady() ? `Today: ${fmt(free.gold)} gold and ${fmt(free.shards)} shards.` : 'Claimed today. Come back tomorrow.'}${passActive() ? ' Road Pass: doubled, plus 3 starglass.' : ` With the Road Pass: ${fmt(pass.gold)} gold, ${fmt(pass.shards)} shards and 3 starglass.`}${S.daily.streak > 1 ? ` · ${S.daily.streak} days in a row` : ''}</p></div>
+    <p class="sub">${dailyReady() ? `Today: ${fmt(free.gold)} gold and 1 Lantern Ember.` : 'Claimed today. Come back tomorrow.'}${passActive() ? ' Road Pass: doubled.' : ` With the Road Pass: ${fmt(pass.gold)} gold and 2 Embers.`}${S.daily.streak > 1 ? ` · ${S.daily.streak} days in a row` : ''}</p></div>
     <button class="btn ${dailyReady() ? 'primary' : ''}" data-act="daily" ${dailyReady() ? '' : 'disabled'}>${dailyReady() ? 'Open chest' : 'Opened'}</button></div>`;
 }
 
@@ -3593,8 +3592,8 @@ function dailyCard() {
    and once a week after three "Not now" in a row. Never on the death screen, never blocking play. */
 const NUDGES = {
   stash: () => !stashMax() && S.soldFull >= 5 ? `Your bag was full, so ${S.soldFull} items were sold. A stash keeps the ones you care about, safe from every sell.` : null,
-  slot: () => nextSlotProduct() && S.roster.length > partySlots() ? `${S.roster.filter(f => !S.party.includes(f.id))[0].name} is waiting at camp. A company slot lets another follower fight beside you.` : null,
-  wall: () => (S.wall && S.wall.n >= 3 && S.maxStage <= S.wall.stage) ? `Stuck on Stage ${S.wall.stage}? Free ways forward: temper gear in the Forge and unlock waystones. Faster: the Ember Charm gives +50% gold for 7 days.` : null,
+  slot: () => false && nextSlotProduct() && S.roster.length > partySlots() ? `${S.roster.filter(f => !S.party.includes(f.id))[0].name} is waiting at camp. A company slot lets another follower fight beside you.` : null,
+  wall: () => (S.wall && S.wall.n >= 3 && S.maxStage <= S.wall.stage) ? `Stuck on Stage ${S.wall.stage}? Free ways forward: buy upgrades in the Hero tab and equip better gear. Faster: the Ember Charm gives +50% gold for 7 days.` : null,
 };
 let offeredThisVisit = false;
 function nudge(kind) {
@@ -3621,7 +3620,8 @@ function roadSeg() {
 function renderPanel() {
   dirtyPanel = false;
   document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === (TAB_GROUP[S.tab] || S.tab))));
-  ({ hero: renderHero, bag: renderBag, forge: renderForge, company: renderCompany, talents: renderTalents, map: renderMap, feats: renderFeats, journal: renderJournal, shop: renderShop }[S.tab] || renderHero)();
+  if (!['hero', 'bag', 'feats', 'journal', 'shop'].includes(S.tab)) S.tab = 'hero';
+  ({ hero: renderHero, bag: renderBag, feats: renderFeats, journal: renderJournal, shop: renderShop }[S.tab] || renderHero)();
   if ((TAB_GROUP[S.tab] || S.tab) === 'map') panel.insertAdjacentHTML('afterbegin', roadSeg());
   if (S.tab === 'journal') panel.insertAdjacentHTML('beforeend', '<div class="card"><h2>Credits</h2><p class="sub">Glacierbreaker, Swordswoman, Elven Scout and Plague Doctor art by elie automata.</p></div>');
   markTabs();
@@ -3637,8 +3637,8 @@ panel.addEventListener('change', e => {
   if (e.target.id === 'reforgePick') { forgeSel = e.target.value || null; renderPanel(); return; }
   if (e.target.id.startsWith('gfx-')) { S.gfx[e.target.id.slice(4)] = e.target.checked; SFX.applyPrefs(); document.documentElement.classList.toggle('big', !!S.gfx.big); }
   if (e.target.id === 'testShop') { S.testShop = e.target.checked; log(S.testShop ? 'Shop test mode on: purchases are fake.' : 'Shop test mode off.'); }
-  if (e.target.id === 'idleAll') { for (const k of ['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge']) S[k] = e.target.checked; log(e.target.checked ? 'Idle mode on: the game spends, equips and upgrades for you.' : 'Idle mode off: you choose every upgrade.'); autoPlay(); updateHud(); renderPanel(); }
-  if (['autoSpend', 'autoEquip', 'autoStones', 'autoCompany', 'autoClaim', 'autoForge'].includes(e.target.id)) { S[e.target.id] = e.target.checked; autoPlay(); updateHud(); renderPanel(); }
+  if (e.target.id === 'idleAll') { for (const k of IDLE_KEYS) S[k] = e.target.checked; log(e.target.checked ? 'Idle mode on: the game equips gear and claims rewards for you.' : 'Idle mode off.'); autoPlay(); updateHud(); renderPanel(); }
+  if (IDLE_KEYS.includes(e.target.id)) { S[e.target.id] = e.target.checked; autoPlay(); updateHud(); renderPanel(); }
   save();
 });
 panel.addEventListener('click', e => {
@@ -3669,6 +3669,7 @@ panel.addEventListener('click', e => {
   if (a === 'seleq') selEq = selEq === b.dataset.slot ? null : b.dataset.slot;
   if (a === 'tobag') S.tab = 'bag';
   if (a === 'unequip') { const s = b.dataset.slot; if (S.bag.length < bagMax() && S.equip[s]) { S.bag.push(S.equip[s]); S.equip[s] = null; dirtyStats = true; selEq = null; } else log('Bag is full. Sell something first.'); }
+  if (a === 'up') { if (buyUp(b.dataset.k)) SFX.play('coin'); }
   if (a === 'attr' && S.points > 0) { S.attrs[b.dataset.k]++; S.points--; dirtyStats = true; }
   if (a === 'path') setPath(b.dataset.p);
   if (a === 'seltal') selTal = id;
@@ -3691,7 +3692,7 @@ panel.addEventListener('click', e => {
   if (a === 'exportcode') { exportCode().then(c => { saveCodeOut = c; saveCodeMsg = ''; renderPanel(); }); return; }
   if (a === 'copycode') { const t = $('#saveOut'); navigator.clipboard.writeText(saveCodeOut).then(() => { saveCodeMsg = 'Copied.'; renderPanel(); }).catch(() => { t.select(); saveCodeMsg = 'Selected: copy it with your keyboard or long-press.'; renderPanel(); }); return; }
   if (a === 'importcode') {
-    importCode($('#saveIn').value).then(d => { S = d; S.lastSeen = Date.now(); saveCodeOut = ''; saveCodeMsg = `Loaded: Stage ${S.stage}, level ${S.level}.`; dirtyStats = true; sprCacheReset(); resetRuntime(); save(); updateHud(); renderPanel(); })
+    importCode($('#saveIn').value).then(d => { S = d; simplifySave(); S.lastSeen = Date.now(); saveCodeOut = ''; saveCodeMsg = `Loaded: Stage ${S.stage}, level ${S.level}.`; dirtyStats = true; sprCacheReset(); resetRuntime(); save(); updateHud(); renderPanel(); })
       .catch(() => { saveCodeMsg = 'That code did not load. Check that you copied all of it, from LR1: to the end.'; renderPanel(); });
     return;
   }
@@ -3904,7 +3905,7 @@ function buildLayout() {
     document.querySelector('.road').after(con);
     for (const sel of ['.hud', '#nudge', '#coach', '.tabs', '#panel']) { const el = document.querySelector(sel); if (el) con.appendChild(el); }
   }
-  const short = { company: 'Crew', talents: 'Stones', journal: 'Log', feats: 'Feats' };
+  const short = { journal: 'Menu' };
   document.querySelectorAll('.tab').forEach(b => {
     if (b.querySelector('.ti')) return;
     const rows = TAB_ICONS[b.dataset.tab]; if (!rows) return;
@@ -3986,6 +3987,7 @@ function start(data) {
   buildLayout();
   const saved = (data && data.S) ? migrate(data.S) : load();
   if (saved) S = saved; else newGame();
+  simplifySave();
   dirtyStats = true;
   resetRuntime();
   sizeCanvas();
