@@ -621,7 +621,7 @@ function simplifySave() {
 /* ---------- Rekindle (prestige) ---------- */
 const REK_FROM = 10, FLAME_PCT = 3;
 const bestStage = () => Math.max(S.bestStage || 0, S.maxStage);
-function flamesFor(m) { return m < REK_FROM ? 0 : Math.floor(Math.pow(m - 8, 1.6)); }
+function flamesFor(m) { return m < REK_FROM ? 0 : Math.floor(1.5 * Math.pow(m - 6, 1.5)); }
 function rekindle() {
   const gain = flamesFor(S.maxStage); if (!gain) return false;
   S.bestStage = bestStage(); S.flames = (S.flames || 0) + gain; S.rekindles = (S.rekindles || 0) + 1;
