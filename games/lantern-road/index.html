@@ -3286,7 +3286,6 @@ function renderHero() {
   <div class="card"><div class="row between"><h2>Bag · ${S.bag.length}/${bagMax()}</h2><button class="btn small primary" data-act="autoequip">Equip best</button></div><div class="bag">${bagCells.join('')}</div></div>
   ${selEq && S.equip[selEq] ? popWrap(itemCard(S.equip[selEq], 'eq')) : bagSel ? popWrap(itemCard(bagSel, 'bag')) : ''}
   <div class="card"><div class="row between"><h2>Hero</h2><span class="sub">Each hero fights with one path. The Swordswoman is free.</span></div><div class="shop chars">${charCards()}</div><div class="skillbox"><h3>${CHARS[activeChar()].n}: skills</h3>${skillLine(activeChar())}</div><p class="sub credit">Glacierbreaker, Swordswoman, Elven Scout and Plague Doctor art by elie automata.</p></div>
-  <div class="card"><div class="row between"><h2>Path</h2><span class="sub">Switch any time between paths you own. Each path's first visit gives you a weapon for it.</span></div><div class="paths">${paths}</div></div>
   <div class="split">
     <div class="card"><h2>${CHARS[activeChar()].n} · Lv ${S.level}</h2><p class="sub">Power rating ${fmt(rating(st))} · Renown ${renown()} (+${renown() * 2}% damage and gold)</p><dl class="stats">${rows}</dl></div>
   </div>
