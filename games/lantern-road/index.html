@@ -503,82 +503,6 @@ const isDay = stage => variantOf(stage) <= 2;
 const TIER_TITLE = ['', 'Feral ', 'Elder ', 'Dread ', 'Dread '];
 const zoneOf = s => Math.min(ZONES.length - 1, Math.floor((s - 1) / 5));
 
-/* Waystones: a 7×7 grid. North = offense, west = defense, east = speed, south = fortune, corners = company and elements. */
-const TALENTS = [
-  { id: 'hearth', x: 4, y: 4, n: 'Hearth', d: '+5% max HP. Your starting stone.', k: 'hp', v: .05 },
-  { id: 'whet', x: 4, y: 3, n: 'Whetstone', d: '+8% damage', k: 'dmg', v: .08 },
-  { id: 'exec', x: 4, y: 2, n: 'Executioner', d: '+25% crit damage', k: 'critd', v: 25 },
-  { id: 'edge', x: 4, y: 1, n: 'Edgemaster', d: '+15% damage', k: 'dmg', v: .15 },
-  { id: 'keen', x: 3, y: 2, n: 'Keen Eye', d: '+3% crit chance', k: 'crit', v: 3 },
-  { id: 'deadeye', x: 3, y: 1, n: 'Deadeye', d: '+4% crit chance', k: 'crit', v: 4 },
-  { id: 'thirst', x: 5, y: 2, n: 'Thirst', d: '+2% lifesteal', k: 'ls', v: 2 },
-  { id: 'bloodrite', x: 5, y: 1, n: 'Blood Rite', d: '+2% lifesteal', k: 'ls', v: 2 },
-  { id: 'skin', x: 3, y: 4, n: 'Iron Skin', d: '+12% defense', k: 'def', v: .12 },
-  { id: 'bulwark', x: 2, y: 4, n: 'Bulwark', d: '+6% block chance', k: 'block', v: 6 },
-  { id: 'rampart', x: 1, y: 4, n: 'Rampart', d: '+20% defense', k: 'def', v: .2 },
-  { id: 'stone', x: 2, y: 3, n: 'Stoneheart', d: '+12% max HP', k: 'hp', v: .12 },
-  { id: 'giant', x: 1, y: 3, n: 'Giant’s Blood', d: '+15% max HP', k: 'hp', v: .15 },
-  { id: 'wind', x: 2, y: 5, n: 'Second Wind', d: 'Regenerate 1% of max HP per second', k: 'regen', v: .01 },
-  { id: 'emberward', x: 1, y: 5, n: 'Ember Ward', d: '+15% fire resist', k: 'rFire', v: 15 },
-  { id: 'quick', x: 5, y: 4, n: 'Quickstep', d: '+8% attack speed', k: 'aspd', v: .08 },
-  { id: 'runner', x: 6, y: 4, n: 'Bulwark', d: '+4% block', k: 'block', v: 4 },
-  { id: 'tempest', x: 7, y: 4, n: 'Tempest', d: '+12% attack speed', k: 'aspd', v: .12 },
-  { id: 'flurry', x: 6, y: 3, n: 'Flurry', d: '+10% attack speed', k: 'aspd', v: .10 },
-  { id: 'frostward', x: 7, y: 3, n: 'Frost Ward', d: '+15% frost resist', k: 'rFrost', v: 15 },
-  { id: 'phantom', x: 6, y: 5, n: 'Iron Will', d: '+4% block', k: 'block', v: 4 },
-  { id: 'duskward', x: 7, y: 5, n: 'Dusk Ward', d: '+15% shadow resist', k: 'rShadow', v: 15 },
-  { id: 'purse', x: 4, y: 5, n: 'Coin Purse', d: '+15% gold', k: 'gold', v: .15 },
-  { id: 'scholar', x: 4, y: 6, n: 'Scholar', d: '+15% XP', k: 'xp', v: .15 },
-  { id: 'hoard', x: 4, y: 7, n: 'Hoard', d: '+25% gold', k: 'gold', v: .25 },
-  { id: 'magpie', x: 3, y: 6, n: 'Magpie', d: '+25% drop chance', k: 'drop', v: .25 },
-  { id: 'gleaner', x: 3, y: 7, n: 'Gleaner', d: '+20% drop chance', k: 'drop', v: .2 },
-  { id: 'sense', x: 5, y: 6, n: 'Treasure Sense', d: 'Shifts drop odds toward rarer items', k: 'luck', v: 1 },
-  { id: 'starsight', x: 5, y: 7, n: 'Starsight', d: 'Shifts drop odds toward rarer items', k: 'luck', v: 1 },
-  { id: 'kindred', x: 3, y: 3, n: 'Kindred', d: '+15% company power', k: 'comp', v: 15 },
-  { id: 'focus', x: 5, y: 3, n: 'Element Focus', d: '+15% elemental damage (any weapon element other than physical)', k: 'elem', v: 15 },
-  { id: 'banner', x: 3, y: 5, n: 'Banner', d: '+15% company power', k: 'comp', v: 15 },
-  { id: 'mentor', x: 5, y: 5, n: 'Mentor', d: '+15% company power', k: 'comp', v: 15 },
-];
-/* Fill every other cell of the 9×9 board with a smaller stone that fits its side of the board. */
-const MINOR = {
-  off: [['dmg', .05, 'Sharpness'], ['crit', 1.5, 'Precision'], ['critd', 12, 'Cruelty'], ['ls', .8, 'Hunger']],
-  def: [['hp', .06, 'Vigor'], ['def', .08, 'Plating'], ['block', 2.5, 'Guard'], ['rAll', 5, 'Warding']],
-  spd: [['aspd', .04, 'Swiftness'], ['block', 2, 'Guard'], ['regen', .004, 'Renewal'], ['elem', 6, 'Storm']],
-  fort: [['gold', .1, 'Greed'], ['xp', .1, 'Insight'], ['drop', .12, 'Fortune'], ['comp', 8, 'Fellowship']],
-};
-const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
-(() => {
-  const used = new Set(TALENTS.map(t => t.x + ',' + t.y)), count = {};
-  for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
-    if (used.has(x + ',' + y)) continue;
-    const dx = x - 4, dy = y - 4;
-    const region = Math.abs(dy) >= Math.abs(dx) ? (dy < 0 ? 'off' : 'fort') : (dx < 0 ? 'def' : 'spd');
-    const list = MINOR[region], [k, v, n] = list[(x * 7 + y * 3) % list.length];
-    count[n] = (count[n] || 0) + 1;
-    TALENTS.push({ id: `m${x}_${y}`, x, y, n: `${n} ${ROMAN[count[n] - 1] || count[n]}`, k, v, minor: true });
-  }
-})();
-const PCT_KEYS = ['hp', 'dmg', 'def', 'aspd', 'gold', 'xp', 'drop'];
-const ABBR = { dmg: 'DMG', hp: 'HP', crit: 'CRIT', critd: 'CRDMG', ls: 'LEECH', def: 'DEF', block: 'BLOCK', regen: 'REGEN', aspd: 'SPEED', gold: 'GOLD', xp: 'XP', drop: 'DROP', luck: 'LUCK', rFire: 'FIRE', rFrost: 'FROST', rShadow: 'SHADE', comp: 'CREW', elem: 'ELEM', slots: 'SLOT', rAll: 'RESIST' };
-function talValue(t) {
-  if (t.k === 'luck') return '★';
-  if (t.k === 'slots') return '+1';
-  if (t.k === 'regen') return `+${+(t.v * 100).toFixed(1)}%`;
-  return PCT_KEYS.includes(t.k) ? `+${Math.round(t.v * 100)}%` : `+${t.v}%`;
-}
-function talDesc(t) {
-  if (!t.minor) return t.d;
-  const what = { dmg: 'damage', hp: 'max HP', crit: 'crit chance', critd: 'crit damage', ls: 'lifesteal', def: 'defense', block: 'block chance', regen: 'of max HP regenerated per second', aspd: 'attack speed', gold: 'gold', xp: 'XP', drop: 'drop chance', comp: 'company power', elem: 'elemental damage', rAll: 'fire, frost and shadow resist' }[t.k];
-  return `${talValue(t)} ${what}`;
-}
-const TAL = Object.fromEntries(TALENTS.map(t => [t.id, t]));
-const ATTRS = [
-  { k: 'mig', n: 'Might', d: '+2.4 damage' },
-  { k: 'vit', n: 'Vitality', d: '+14 max HP, +0.5 defense' },
-  { k: 'agi', n: 'Agility', d: '+1.2% attack speed, +0.25% block' },
-  { k: 'for', n: 'Fortune', d: '+0.4% crit chance, +1% gold' },
-];
-
 /* Company: lost travellers who follow the lantern light. */
 const KINDS = {
   archer: { n: 'Wayfarer Archer', role: 'Shoots the front foe', cloak: '#4d6b3a', el: 'phys', atk: 1.5 },
@@ -609,11 +533,11 @@ function buyUp(k) { const u = UPG.find(x => x.k === k), c = u && upCost(k); if (
    added until the power rating is at least what it was. */
 function simplifySave() {
   if (S.simpleV1) return; S.simpleV1 = true; S.up = S.up || {};
-  const old = (S.level > 1 || S.kills > 0) ? rating(heroStats()) : 0;
+  const spent = Object.values(S.attrs || {}).reduce((a, b) => a + b, 0) + (S.points || 0), stones = Object.keys(S.talents || {}).length;
+  const want = Math.round(spent * .5 + stones * 1.2), order = ['dmg', 'hp', 'dmg', 'hp', 'aspd', 'crit'];
   for (const k in S.attrs) S.attrs[k] = 0;
   S.points = 0; S.talents = {}; for (const k of ['autoSpend', 'autoStones', 'autoCompany', 'autoForge']) S[k] = false;
-  let n = 0; const order = ['dmg', 'hp', 'dmg', 'hp', 'aspd', 'crit'];
-  while (old && n < 600 && rating(heroStats()) < old) { const k = order[n % order.length], u = UPG.find(x => x.k === k); S.up[upMaxed(u) ? 'dmg' : k] = upLvl(upMaxed(u) ? 'dmg' : k) + 1; n++; }
+  let n = 0; for (; n < want; n++) { const k = order[n % order.length]; S.up[k] = upLvl(k) + 1; }
   if (n) log(`The game got simpler: attribute points, Waystones and Forge became ${n} free levels in the new Upgrades list (Hero tab).`, '#f3b44a');
   if (!['hero', 'bag', 'company', 'map', 'feats', 'journal', 'shop'].includes(S.tab)) S.tab = 'hero';
   dirtyStats = true;
@@ -724,7 +648,7 @@ function fresh() {
 let S = fresh();
 let G, ST;
 let dirtyStats = true, dirtyPanel = true;
-let selBag = null, selEq = null, selTal = null, confirmReset = false, confirmDismiss = null, confirmSellAll = false, confirmRek = false;
+let selBag = null, selEq = null, confirmReset = false, confirmDismiss = null, confirmSellAll = false, confirmRek = false;
 
 function save() {
   S.lastSeen = Date.now();
@@ -983,75 +907,23 @@ function showTip() {
 }
 function doneTip(id) { S.tips[id] = true; tipQueue = tipQueue.filter(x => x !== id); showTip(); }
 
-/* ---------- Forge ----------
-   Salvaging gives Lantern Shards (every item) and Starglass (Epic and better).
-   Tempering adds 8% to all of an item's stats per level, up to +10. Salvaging a tempered item returns half
-   of the materials spent on it. Reforging rerolls an item's extra stats; crafting makes a new Rare-or-better item. */
-const MAX_UP = 10;
 const FOE_SCALE = 1.5; // monsters are drawn half again as large
 const ITEM_POWER = .7; // every item gives 70% of its listed base stats
 const itemStats = it => { const m = ITEM_POWER * (1 + .08 * (it.up || 0)); return Object.fromEntries(Object.entries(it.stats).map(([k, v]) => [k, roundStat(k, v * m)])); };
 const gsOf = it => Math.round(it.gs * (1 + .05 * (it.up || 0)));
 const itemName = it => it.name + (it.up ? ` +${it.up}` : '');
 const lvlMult = il => 1 + il / 8;
-function salvageYield(it) {
-  return { shards: Math.round((3 + it.r * 3) * lvlMult(it.il)) + Math.floor((it.spentS || 0) / 2), glass: (it.r >= 4 ? Math.round((it.r - 3) * (1 + it.il / 25)) : 0) + Math.floor((it.spentG || 0) / 2) };
-}
-function temperCost(it) { const u = it.up || 0; return { shards: Math.round(8 * Math.pow(1.35, u) * lvlMult(it.il)), glass: u >= 4 ? (u - 3) * 2 : 0 }; }
-const reforgeCost = it => ({ shards: Math.round(12 * lvlMult(it.il)), glass: 1 });
-const craftCost = () => ({ shards: Math.round(30 * lvlMult(S.stage)), glass: 2 });
-const canPay = c => S.shards >= c.shards && S.glass >= c.glass;
-function pay(c) { S.shards -= c.shards; S.glass -= c.glass; }
-function salvage(it) {
-  const y = salvageYield(it);
-  S.bag = S.bag.filter(b => b !== it); if (S.stash) S.stash = S.stash.filter(b => b !== it);
-  S.shards += y.shards; S.glass += y.glass; dirtyPanel = true;
-  return y;
-}
-function temper(it) {
-  const c = temperCost(it); if ((it.up || 0) >= MAX_UP || !canPay(c)) return false;
-  pay(c); it.up = (it.up || 0) + 1; it.spentS = (it.spentS || 0) + c.shards; it.spentG = (it.spentG || 0) + c.glass;
-  S.tempered++; dirtyStats = true; dirtyPanel = true;
-  if (G) { fx(HX, GY - 30, `+${it.up}`, '#f3b44a', 1.2, 6); burst(HX + 8, GY - 10, ['#f3b44a', '#fff2c0', '#ff8a3d'], 10, 50); }
-  return true;
-}
-function reforge(it) {
-  const c = reforgeCost(it); if (!canPay(c)) return false;
-  pay(c);
-  const fresh = makeItem(it.il, it.r, it.slot, it.path);
-  it.stats = fresh.stats; it.name = fresh.name; it.elem = fresh.elem; it.gs = fresh.gs;
-  dirtyStats = true; dirtyPanel = true; return true;
-}
-function craft(slot) {
-  const c = craftCost(); if (!canPay(c) || S.bag.length >= bagMax()) return null;
-  pay(c);
-  const it = makeItem(S.stage, Math.max(3, rollRarity(stats().luck + 1)), slot, slot === 'weapon' ? S.path : undefined);
-  S.bag.push(it); S.crafted++; dirtyPanel = true;
-  log(`Forged ${RAR[it.r].n}: ${it.name} (GS ${it.gs}).`, RAR[it.r].col);
-  return it;
-}
-const GRIND = 8; // shards per starglass
-function grind(n) { n = Math.min(n, S.glass); if (n <= 0) return 0; S.glass -= n; S.shards += n * GRIND; dirtyPanel = true; return n; }
-const matsTxt = c => [c.shards ? `${fmt(c.shards)} shards` : '', c.glass ? `${c.glass} starglass` : ''].filter(Boolean).join(' + ');
-
 /* ---------- Stats ---------- */
-function talentBonus() {
-  const t = { hp: 0, dmg: 0, critd: 0, crit: 0, ls: 0, def: 0, block: 0, regen: 0, aspd: 0, gold: 0, xp: 0, drop: 0, luck: 0, rFire: 0, rFrost: 0, rShadow: 0, rAll: 0, comp: 0, elem: 0, slots: 0 };
-  for (const id in S.talents) if (S.talents[id] && TAL[id]) t[TAL[id].k] += TAL[id].v;
-  return t;
-}
-const ownedCount = () => TALENTS.filter(t => S.talents[t.id]).length;
 const renown = () => Object.keys(S.feats).length;
 const paidSlots = () => ['company_slot_1', 'company_slot_2', 'company_slot_3'].filter(id => S.owned[id]).length + (hasSupporter() ? 1 : 0);
 const partySlots = () => 1 + paidSlots();
 const nextSlotProduct = () => ['company_slot_1', 'company_slot_2', 'company_slot_3'].find(id => !S.owned[id]);
 const partyMembers = () => S.party.map(id => S.roster.find(f => f.id === id)).filter(Boolean);
-function compPower(gearComp, t) { return 1 + ((gearComp || 0) + t.comp) / 100; }
 function folPower(f, cp) { return 5 * Math.pow(1.13, f.lvl - 1) * RAR[f.r].m * cp; }
 
 function heroStats(eq) {
   eq = eq || S.equip;
-  const a = S.attrs, t = talentBonus(), g = {}, P = PATHS[S.path], U = k => (S.up && S.up[k]) || 0;
+  const g = {}, P = PATHS[S.path], U = k => (S.up && S.up[k]) || 0;
   for (const s of SLOTS) {
     const it = eq[s]; if (!it) continue;
     const ist = itemStats(it);
@@ -1062,7 +934,7 @@ function heroStats(eq) {
     }
   }
   const G0 = k => g[k] || 0;
-  const cp = compPower(G0('comp'), t);
+  const cp = 1 + G0('comp') / 100;
   let fDef = 0, fBlock = 0, fHeal = 0, fGold = 0, fDrop = 0;
   for (const f of partyMembers()) {
     const p = folPower(f, cp);
@@ -1071,20 +943,20 @@ function heroStats(eq) {
     if (f.kind === 'lamp') { fGold += 10 + f.r * 5; fDrop += 5 + f.r * 3; }
   }
   const ren = renown();
-  const hp = (100 + a.vit * 14 + (S.level - 1) * 16 + G0('hp')) * (1 + t.hp) * (1 + U('hp') * .06) * (1 + (S.flames || 0) * FLAME_PCT / 100) * (S.path === 'blade' ? 1.2 : 1);
+  const hp = (100 + (S.level - 1) * 16 + G0('hp')) * (1 + U('hp') * .06) * (1 + (S.flames || 0) * FLAME_PCT / 100) * (S.path === 'blade' ? 1.2 : 1);
   const w = eq.weapon;
   const elem = (w && w.path === S.path && w.elem) || P.elem;
-  const rAll = G0('rAll') + t.rAll;
+  const rAll = G0('rAll');
   const pc = activeChar();
   return {
     hp, elem, cp,
-    dmg: (10 + a.mig * 2.4 + (S.level - 1) * 2.5 + G0('dmg')) * (1 + t.dmg) * (1 + U('dmg') * .06) * (1 + (S.flames || 0) * FLAME_PCT / 100) * P.mult * (1 + ren * .02) * (elem !== 'phys' ? 1 + (G0('elem') + t.elem) / 100 : 1),
-    aspd: Math.min(4, (1 + a.agi * .012 + G0('aspd') / 100 + t.aspd + U('aspd') * .015) * (S.path === 'bow' ? 1.15 : 1)),
-    crit: Math.min(75, 5 + a.for * .4 + G0('crit') + t.crit + U('crit') * .5 + (pc === 'swordswoman' ? 8 : pc === 'scout' ? 10 : 0)), critd: 150 + G0('critd') + t.critd + U('crit') * 4,
-    def: ((G0('def') + a.vit * .5 + (S.level - 1) * .5) * (1 + t.def) * (1 + U('hp') * .04) + fDef) * (S.path === 'blade' ? 1.15 : 1),
-    block: Math.min(60, a.agi * .25 + G0('block') + t.block + fBlock + (pc === 'glacier' ? 15 : 0)), regen: hp * .004 + G0('regen') + hp * t.regen + fHeal + (pc === 'plague' ? hp * .01 : 0),
-    ls: G0('ls') + t.ls, gold: G0('gold') + t.gold * 100 + a.for + fGold + ren * 2 + U('gold') * 4 + (S.flames || 0) * FLAME_PCT, xp: G0('xp') + t.xp * 100, drop: G0('drop') + t.drop * 100 + fDrop, luck: t.luck,
-    res: { phys: 0, fire: Math.min(75, G0('rFire') + rAll + t.rFire), frost: Math.min(75, G0('rFrost') + rAll + t.rFrost), shadow: Math.min(75, G0('rShadow') + rAll + t.rShadow) },
+    dmg: (10 + (S.level - 1) * 2.5 + G0('dmg')) * (1 + U('dmg') * .06) * (1 + (S.flames || 0) * FLAME_PCT / 100) * P.mult * (1 + ren * .02) * (elem !== 'phys' ? 1 + G0('elem') / 100 : 1),
+    aspd: Math.min(4, (1 + G0('aspd') / 100 + U('aspd') * .015) * (S.path === 'bow' ? 1.15 : 1)),
+    crit: Math.min(75, 5 + G0('crit') + U('crit') * .5 + (pc === 'swordswoman' ? 8 : pc === 'scout' ? 10 : 0)), critd: 150 + G0('critd') + U('crit') * 4,
+    def: ((G0('def') + (S.level - 1) * .5) * (1 + U('hp') * .04) + fDef) * (S.path === 'blade' ? 1.15 : 1),
+    block: Math.min(60, G0('block') + fBlock + (pc === 'glacier' ? 15 : 0)), regen: hp * .004 + G0('regen') + fHeal + (pc === 'plague' ? hp * .01 : 0),
+    ls: G0('ls'), gold: G0('gold') + fGold + ren * 2 + U('gold') * 4 + (S.flames || 0) * FLAME_PCT, xp: G0('xp'), drop: G0('drop') + fDrop, luck: 0,
+    res: { phys: 0, fire: Math.min(75, G0('rFire') + rAll), frost: Math.min(75, G0('rFrost') + rAll), shadow: Math.min(75, G0('rShadow') + rAll) },
     range: P.range,
   };
 }
@@ -1236,16 +1108,10 @@ function addXp(x) {
   S.xp += x;
   while (S.xp >= need(S.level)) {
     S.xp -= need(S.level); S.level++; dirtyStats = true;
-    log(`Reached level ${S.level}. +3 attribute points.`, '#f3b44a');
+    log(`Reached level ${S.level}.`, '#f3b44a');
     if (G) { SFX.play('level'); G.hero.hop = .35; fx(HX, GY - 26, 'LEVEL UP', '#f3b44a', 1.4, 6); burst(HX, GY - 10, ['#f3b44a', '#fff2c0'], 14, 70); }
   }
-  if (S.autoSpend) autoSpend();
   markTabs();
-}
-function autoSpend() {
-  const order = ['mig', 'vit', 'mig', 'agi', 'vit', 'for'];
-  while (S.points > 0) { S.attrs[order[(S.attrs.mig + S.attrs.vit + S.attrs.agi + S.attrs.for) % order.length]]++; S.points--; }
-  dirtyStats = true;
 }
 /* Enemy scaling. Defense is measured against the stage, so armor has to keep up with the road. */
 const HP_BASE = 30, HP_GROW = 1.24, DMG_BASE = 6, DMG_GROW = 1.23;
@@ -1493,7 +1359,7 @@ function damage(e, raw, el, crit, small) {
   e.hp -= d; e.flash = .09; e.hurtT = G.t; e.kb = Math.min(5, (e.kb || 0) + (crit ? 4 : 2)); e.sq = .1;
   G.parts.push({ k: 'spark', x: e.x - 3 + rnd(-2, 2), y: GY - (e.boss ? 14 : 7) + rnd(-3, 3), t: 0, life: .12, big: !!crit, c: crit ? '#ffe680' : '#ffffff' });
   if (crit) G.stop = Math.max(G.stop || 0, .05);
-  if (e.reflect > 0 && G.hero.dead <= 0) { G.hero.hp -= d * .3 * (1 - stats().res.fire / 100); if (G.hero.hp <= 0) heroDie(e); }
+  if (e.reflect > 0 && G.hero.dead <= 0) { G.hero.hp -= Math.min(d * .3, stats().hp * .04) * (1 - stats().res.fire / 100); if (G.hero.hp <= 0) heroDie(e); }   // capped at 4% of max HP a hit, so a strong hero is not killed by his own damage
   const col = crit ? '#f3b44a' : el === 'phys' ? '#ece4d0' : ELEM[el].col;
   if (S.gfx.numbers) fx(e.x + rnd(-3, 3), GY - (e.boss ? 44 : 28), fmt(d) + (m > 1.2 ? '!' : ''), col, .8, small ? 4 : crit ? 6 : 5);
   if (e.hp <= 0) kill(e);
@@ -3223,15 +3089,12 @@ function markTabs() {
   set('tab-hero', UPG.some(u => !upMaxed(u) && S.gold >= upCost(u.k)));
   set('tab-bag', S.bag.some(i => i.isNew));
   set('tab-company', S.roster.some(f => f.isNew));
-  set('tab-talents', TALENTS.some(t => !S.talents[t.id] && talAvail(t) && S.gold >= talCost()));
   set('tab-feats', FEATS.some(f => !S.feats[f.id] && featDone(f)) || questClaimable());
   set('tab-shop', (S.maxStage >= 2 && !S.shopNoted) || (S.maxStage >= 2 && dailyReady()));
 }
 
 /* ---------- Panels ---------- */
 const panel = $('#panel');
-function talAvail(t) { return TALENTS.some(o => S.talents[o.id] && Math.abs(o.x - t.x) + Math.abs(o.y - t.y) === 1); }
-function talCost() { return Math.round(10 * Math.pow(1.25, ownedCount() - 1)); }
 const elemTag = el => `<span class="el" style="color:${ELEM[el].col}">${ELEM[el].n}</span>`;
 
 function itemCard(it, mode) {
@@ -3259,8 +3122,8 @@ function itemCard(it, mode) {
   const btns = mode === 'bag'
     ? `<div class="row"><button class="btn primary" data-act="equip" data-id="${it.id}">Equip</button>${canStore ? `<button class="btn" data-act="store" data-id="${it.id}">Move to stash</button>` : ''}<button class="btn" data-act="sell" data-id="${it.id}">Sell for ${fmt(value(it))} gold</button></div>`
     : mode === 'stash'
-    ? `<div class="row"><button class="btn primary" data-act="equip" data-id="${it.id}">Equip</button><button class="btn" data-act="take" data-id="${it.id}" ${S.bag.length < bagMax() ? '' : 'disabled'}>Move to bag</button><button class="btn" data-act="sell" data-id="${it.id}">Sell for ${fmt(value(it))} gold</button><button class="btn" data-act="salvage" data-id="${it.id}">Salvage for ${matsTxt(salvageYield(it))}</button></div>${S.bag.length < bagMax() ? '' : '<p class="sub">Your bag is full.</p>'}`
-    : `<div class="row"><button class="btn primary" data-act="temper" data-id="${it.id}" ${(it.up || 0) < MAX_UP && canPay(temperCost(it)) ? '' : 'disabled'}>${(it.up || 0) >= MAX_UP ? 'Fully tempered' : `Temper to +${(it.up || 0) + 1} · ${matsTxt(temperCost(it))}`}</button><button class="btn" data-act="unequip" data-slot="${it.slot}">Move to bag</button></div>`;
+    ? `<div class="row"><button class="btn primary" data-act="equip" data-id="${it.id}">Equip</button><button class="btn" data-act="take" data-id="${it.id}" ${S.bag.length < bagMax() ? '' : 'disabled'}>Move to bag</button><button class="btn" data-act="sell" data-id="${it.id}">Sell for ${fmt(value(it))} gold</button></div>${S.bag.length < bagMax() ? '' : '<p class="sub">Your bag is full.</p>'}`
+    : `<div class="row"><button class="btn" data-act="unequip" data-slot="${it.slot}">Move to bag</button></div>`;
   return `<article class="item" style="--rc:${RAR[it.r].col}">
     <header><img class="icon" alt="" src="${itemIcon(it)}"><div><h3>${esc(itemName(it))}</h3>
     <div class="meta">${RAR[it.r].n} ${SLOT_LABEL[it.slot]} · Item level ${it.il} · Gearscore ${gsOf(it)}${it.up ? ` · Tempered +${it.up}` : ''}</div></div></header>
@@ -3408,29 +3271,6 @@ function renderCompany() {
   panel.querySelectorAll('canvas[data-por]').forEach(c => { const f = S.roster.find(x => x.id === c.dataset.por); if (f) portrait(c, f); });
   S.roster.forEach(f => { f.isNew = false; });
 }
-function renderTalents() {
-  const cost = talCost(), pos = t => [100 / 18 + t.x * 100 / 9, 100 / 18 + t.y * 100 / 9];
-  let lines = '';
-  for (const a of TALENTS) for (const b of TALENTS) if (a.id < b.id && Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1) {
-    const on = S.talents[a.id] && S.talents[b.id];
-    const [x1, y1] = pos(a), [x2, y2] = pos(b);
-    lines += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${on ? '#f3b44a' : '#2b3a42'}" stroke-width="${on ? 1.2 : .8}"/>`;
-  }
-  const nodes = TALENTS.map(t => {
-    const own = S.talents[t.id], av = !own && talAvail(t), [x, y] = pos(t);
-    return `<button class="node ${t.minor ? '' : 'major'} ${own ? 'owned' : av ? 'avail' : ''} ${selTal === t.id ? 'sel' : ''}" style="left:${x}%;top:${y}%" data-act="seltal" data-id="${t.id}" aria-label="${t.n}: ${talDesc(t)}, ${own ? 'unlocked' : av ? 'available' : 'locked'}"><span>${talValue(t)}</span><small>${ABBR[t.k]}</small></button>`;
-  }).join('');
-  const s = TAL[selTal];
-  let detail = '<p class="hint">North stones sharpen your attack, west ones harden you, east ones speed you up, south ones fill your purse. Gold-ringed stones are the big ones. Tap any stone to see what it does.</p>';
-  if (s) {
-    const own = S.talents[s.id], av = talAvail(s);
-    detail = `<div class="card"><h2>${s.n}${s.minor ? '' : ' ★'}</h2><p class="sub">${talDesc(s)}</p>${own ? '<p class="good verdict">Unlocked</p>' : av
-      ? `<button class="btn primary" data-act="unlock" data-id="${s.id}" ${S.gold >= cost ? '' : 'disabled'}>Unlock for ${fmt(cost)} gold</button>${S.gold < cost ? `<p class="sub">You need ${fmt(Math.ceil(cost - S.gold))} more gold.</p>` : ''}`
-      : '<p class="sub">Locked. Unlock a neighbouring stone first.</p>'}</div>`;
-  }
-  panel.innerHTML = `<div class="split"><div class="card"><h2>Waystones · ${ownedCount()}/${TALENTS.length}</h2><p class="sub">Next stone costs ${fmt(cost)} gold · you have ${fmt(Math.floor(S.gold))}</p>
-    <div class="tree"><svg viewBox="0 0 100 100" aria-hidden="true">${lines}</svg>${nodes}</div></div>${detail}</div>`;
-}
 function renderMap() {
   const cur = zoneOf(S.stage);
   const resTxt = f => { const e = Object.entries(f.res || {}); return e.length ? e.map(([k, v]) => `${v < 0 ? 'weak to' : 'resists'} ${elemTag(k)}`).join(', ') : 'no resistances'; };
@@ -3570,31 +3410,6 @@ function renderShop() {
   panel.querySelectorAll('[data-prev]').forEach(d => { const [k, key] = d.dataset.prev.split(':'); d.appendChild(previewCanvas(k, key)); });
   S.shopNoted = true;
 }
-let forgeSlot = 'weapon', forgeSel = null;
-function renderForge() {
-  const mats = `<div class="mats"><span class="mat shard"><i></i>${fmt(S.shards)} Lantern Shards</span><span class="mat glass"><i></i>${fmt(S.glass)} Starglass</span></div>`;
-  const pips = n => `<span class="up-pips">${Array.from({ length: MAX_UP }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
-  const worn = SLOTS.filter(s => S.equip[s]).map(s => {
-    const it = S.equip[s], c = temperCost(it), full = (it.up || 0) >= MAX_UP;
-    return `<div class="forge-row" style="--rc:${RAR[it.r].col}"><img alt="" src="${itemIcon(it)}"><div><b>${esc(itemName(it))}</b>${pips(it.up || 0)}<small>${SLOT_LABEL[s]} · GS ${gsOf(it)}${full ? ' · fully tempered' : ` · next: ${matsTxt(c)}`}</small></div>
-      <button class="btn small ${canPay(c) && !full ? 'primary' : ''}" data-act="temper" data-id="${it.id}" ${canPay(c) && !full ? '' : 'disabled'}>${full ? 'Max' : 'Temper'}</button></div>`;
-  }).join('') || '<p class="sub">Wear some gear first.</p>';
-  const pool = [...SLOTS.map(s => S.equip[s]).filter(Boolean), ...S.bag];
-  const sel = pool.find(x => x.id === forgeSel);
-  const rc = sel && reforgeCost(sel), cc = craftCost();
-  panel.innerHTML = `<div class="card"><div class="row between"><h2>Forge</h2>${mats}</div>
-      <p class="sub">Salvage items you don't need from the Bag to get materials. Every item gives shards; Epic and better also give starglass.</p></div>
-    <div class="card"><div class="row between"><div><h2>Grind starglass</h2><p class="sub">Turn spare starglass into ${GRIND} shards each.</p></div><div class="row"><button class="btn small" data-act="grind" data-n="1" ${S.glass >= 1 ? '' : 'disabled'}>Grind 1</button><button class="btn small" data-act="grind" data-n="10" ${S.glass >= 10 ? '' : 'disabled'}>Grind 10</button></div></div></div>
-    <div class="card"><h2>Temper worn gear</h2><p class="sub">Each level adds 8% to all of the item's stats, up to +10. From +5, tempering also needs starglass. Salvaging a tempered item returns half of what you spent.</p>${worn}</div>
-    <div class="split">
-      <div class="card"><h2>Reforge</h2><p class="sub">Reroll an item's stats and name. Rarity, item level and tempering stay.</p>
-        <label for="reforgePick">Item</label><select id="reforgePick"><option value="">Choose an item</option>${pool.map(x => `<option value="${x.id}" ${x.id === forgeSel ? 'selected' : ''}>${esc(itemName(x))} (${RAR[x.r].n} ${SLOT_LABEL[x.slot]})</option>`).join('')}</select>
-        ${sel ? `<div class="row"><button class="btn primary small" data-act="reforge" data-id="${sel.id}" ${canPay(rc) ? '' : 'disabled'}>Reforge · ${matsTxt(rc)}</button></div>` : ''}</div>
-      <div class="card"><h2>Craft</h2><p class="sub">Forge a new item for your current stage. It is always Rare or better.</p>
-        <div class="slotpick">${SLOTS.map(s => `<button class="btn small" data-act="forgeslot" data-slot="${s}" aria-pressed="${forgeSlot === s}">${SLOT_LABEL[s]}</button>`).join('')}</div>
-        <div class="row"><button class="btn primary small" data-act="craft" ${canPay(cc) && S.bag.length < bagMax() ? '' : 'disabled'}>Craft ${SLOT_LABEL[forgeSlot].toLowerCase()} · ${matsTxt(cc)}</button>${S.bag.length >= bagMax() ? '<span class="sub">Your bag is full.</span>' : ''}</div></div>
-    </div>`;
-}
 const today = () => new Date().toISOString().slice(0, 10);
 const dailyReady = () => S.daily.last !== today();
 function dailyReward(pass) {
@@ -3641,13 +3456,6 @@ function nudge(kind) {
 function newVisit() { offeredThisVisit = false; }
 function offerOnVisit() { for (const k of ['stash', 'slot', 'wall']) if (nudge(k)) break; }
 const TAB_GROUP = {};
-function roadSeg() {
-  const seg = [['map', 'Map'], ['talents', 'Waystones'], ['feats', 'Feats']].map(([t, n]) => {
-    const dot = t === 'talents' ? TALENTS.some(x => !S.talents[x.id] && talAvail(x) && S.gold >= talCost()) : t === 'feats' ? FEATS.some(f => !S.feats[f.id] && featDone(f)) : false;
-    return `<button class="btn small ${S.tab === t ? 'primary' : ''}" data-act="seg" data-t="${t}">${n}${dot ? ' •' : ''}</button>`;
-  }).join('');
-  return `<div class="row seg" role="tablist" aria-label="Road">${seg}</div>`;
-}
 function renderPanel() {
   dirtyPanel = false;
   document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === (TAB_GROUP[S.tab] || S.tab))));
@@ -3664,7 +3472,6 @@ document.querySelector('.tabs').addEventListener('click', e => {
 });
 panel.addEventListener('change', e => {
   if (e.target.id === 'autoSell') S.autoSell = +e.target.value;
-  if (e.target.id === 'reforgePick') { forgeSel = e.target.value || null; renderPanel(); return; }
   if (e.target.id.startsWith('gfx-')) { S.gfx[e.target.id.slice(4)] = e.target.checked; SFX.applyPrefs(); document.documentElement.classList.toggle('big', !!S.gfx.big); }
   if (e.target.id === 'testShop') { S.testShop = e.target.checked; log(S.testShop ? 'Shop test mode on: purchases are fake.' : 'Shop test mode off.'); }
   if (e.target.id === 'idleAll') { for (const k of IDLE_KEYS) S[k] = e.target.checked; log(e.target.checked ? 'Idle mode on: the game equips gear and claims rewards for you.' : 'Idle mode off.'); autoPlay(); updateHud(); renderPanel(); }
@@ -3674,17 +3481,9 @@ panel.addEventListener('change', e => {
 panel.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act, id = b.dataset.id;
-  if (a === 'seg') { S.tab = b.dataset.t; renderPanel(); if (tipQueue[0] && TIPS[tipQueue[0]].tab === S.tab) doneTip(tipQueue[0]); return; }
   if (a !== 'dismiss2' && a !== 'dismiss1') confirmDismiss = null;
   if (a !== 'sellall1') confirmSellAll = false;
   if (a === 'sellall1') confirmSellAll = true;
-  if (a === 'salvage') { const it = S.bag.find(x => x.id === id) || S.stash.find(x => x.id === id); if (it) { const y = salvage(it); log(`Salvaged ${itemName(it)}: +${matsTxt(y)}.`); selBag = null; } }
-  if (a === 'salvageall') { let n = 0, sh = 0, gl = 0; for (const it of S.bag.filter(x => !isUpgrade(x))) { const y = salvage(it); sh += y.shards; gl += y.glass; n++; } if (n) log(`Salvaged ${n} item${n > 1 ? 's' : ''}: +${fmt(sh)} shards${gl ? `, +${gl} starglass` : ''}.`); selBag = null; }
-  if (a === 'temper') { const it = SLOTS.map(s => S.equip[s]).find(x => x && x.id === id); if (it && temper(it)) log(`Tempered ${itemName(it)}.`, '#f3b44a'); }
-  if (a === 'reforge') { const it = [...SLOTS.map(s => S.equip[s]), ...S.bag].find(x => x && x.id === id); if (it && reforge(it)) log(`Reforged into ${itemName(it)}.`, RAR[it.r].col); }
-  if (a === 'grind') { const n = grind(+b.dataset.n); if (n) log(`Ground ${n} starglass into ${n * GRIND} shards.`); }
-  if (a === 'forgeslot') forgeSlot = b.dataset.slot;
-  if (a === 'craft') { const it = craft(forgeSlot); if (it) toast('Forged', it.name); }
   if (a === 'sellall2') { let g = 0, n = 0; S.bag = S.bag.filter(it => { if (!isUpgrade(it)) { g += value(it); n++; return false; } return true; }); S.gold += g; if (n) log(`Sold ${n} item${n > 1 ? 's' : ''} for ${fmt(g)} gold. Upgrades were kept.`); selBag = null; }
   if (a === 'closepop') { if (e.target.closest('.pop') && !e.target.matches('[data-act=closepop]')) return; selBag = null; selEq = null; renderPanel(); return; }
   if (a === 'strip') { setStrip(true); return; }
@@ -3703,10 +3502,6 @@ panel.addEventListener('click', e => {
   if (a === 'rek0') confirmRek = false;
   if (a === 'rek2') { confirmRek = false; rekindle(); }
   if (a === 'up') { if (buyUp(b.dataset.k)) SFX.play('coin'); }
-  if (a === 'attr' && S.points > 0) { S.attrs[b.dataset.k]++; S.points--; dirtyStats = true; }
-  if (a === 'path') setPath(b.dataset.p);
-  if (a === 'seltal') selTal = id;
-  if (a === 'unlock') { const c = talCost(); if (S.gold >= c && talAvail(TAL[id]) && !S.talents[id]) { S.gold -= c; S.talents[id] = true; dirtyStats = true; log(`Unlocked the ${TAL[id].n} waystone.`, '#f3b44a'); } }
   if (a === 'travel') { S.stage = +b.dataset.s; S.wave = 1; G.enemies = []; G.proj = []; G.phase = 'walk'; G.walkT = 1; banner(`Stage ${S.stage} · ${ZONES[zoneOf(S.stage)].name}`); }
   if (a === 'walk') { if (partyMembers().length < partySlots() && !S.party.includes(id)) { S.party.push(id); dirtyStats = true; } }
   if (a === 'rest') { S.party = S.party.filter(x => x !== id); dirtyStats = true; }
@@ -3731,7 +3526,7 @@ panel.addEventListener('click', e => {
   }
   if (a === 'reset1') confirmReset = true;
   if (a === 'reset0') confirmReset = false;
-  if (a === 'reset2') { S = newGame(); confirmReset = false; selBag = selEq = selTal = null; dirtyStats = true; resetRuntime(); }
+  if (a === 'reset2') { S = newGame(); confirmReset = false; selBag = selEq = null; dirtyStats = true; resetRuntime(); }
   save(); updateHud(); renderPanel();
 });
 $('#nudgeGo').addEventListener('click', () => { const k = $('#nudge').dataset.kind; if (S.nudges[k]) S.nudges[k].no = 0; $('#nudge').hidden = true; S.tab = 'shop'; renderPanel(); });
@@ -3764,11 +3559,9 @@ $('#exitStrip').addEventListener('click', () => setStrip(false));
 
 /* ---------- Automatic play ----------
    Runs every couple of seconds and after time away. Everything here can also be done by hand. */
-const STONE_ORDER = ['whet', 'quick', 'skin', 'stone', 'keen', 'purse', 'kindred', 'banner', 'mentor', 'exec', 'flurry', 'runner', 'wind', 'bulwark', 'magpie', 'scholar', 'thirst', 'focus', 'edge', 'deadeye', 'sense', 'tempest', 'phantom', 'giant', 'rampart', 'hoard', 'gleaner', 'emberward', 'frostward', 'duskward', 'bloodrite', 'starsight'];
 function autoPlay(quiet) {
   let changed = false;
   for (const f of FEATS) if (!S.featSeen[f.id] && featDone(f)) { S.featSeen[f.id] = true; if (!quiet) { toast('Feat complete', f.n); tip('feats'); } }
-  if (S.autoSpend && S.points) { autoSpend(); changed = true; }
   if (S.autoEquip) {
     const n = autoEquip();
     if (n) { changed = true; if (!quiet) log(`Equipped ${n} better item${n > 1 ? 's' : ''} automatically.`); }
@@ -3776,10 +3569,8 @@ function autoPlay(quiet) {
       let g = 0, k = 0;
       const spare = {};
       for (const it of S.bag) if (it.r >= 5 && !isUpgrade(it) && (!spare[it.slot] || it.gs > spare[it.slot].gs)) spare[it.slot] = it;
-      let sh = 0, gl = 0;
-      S.bag = S.bag.filter(it => { if (!isUpgrade(it) && spare[it.slot] !== it) { if (S.autoForge && it.r >= 4) { const y = salvageYield(it); sh += y.shards; gl += y.glass; } else g += value(it); k++; return false; } return true; });
-      S.shards += sh; S.glass += gl; if (sh) changed = true;
-      if (k) { S.gold += g; changed = true; if (!quiet) log(`Bag nearly full: cleared ${k} items you don't need (+${fmt(g)} gold${sh ? `, +${fmt(sh)} shards${gl ? `, +${gl} starglass` : ''}` : ''}). Kept upgrades and the best Mythic-or-better spare for each slot.`); }
+      S.bag = S.bag.filter(it => { if (!isUpgrade(it) && spare[it.slot] !== it) { g += value(it); k++; return false; } return true; });
+      if (k) { S.gold += g; changed = true; if (!quiet) log(`Bag nearly full: cleared ${k} items you don't need (+${fmt(g)} gold). Kept upgrades and the best Mythic-or-better spare for each slot.`); }
     }
   }
   if (S.autoClaim) { for (const q of questList()) if (q.done && !q.claimed && claimQuest(q.x.id, quiet)) changed = true; if (claimQuest('bonus', quiet)) changed = true; }
@@ -3787,31 +3578,12 @@ function autoPlay(quiet) {
     const g = Math.round(goldPer(S.maxStage) * 25); S.feats[f.id] = true; S.gold += g; dirtyStats = true; changed = true;
     if (!quiet) log(`Feat claimed: ${f.n}. +1 renown, +${fmt(g)} gold.`, '#f3b44a');
   }
-  if (S.autoForge) {
-    if (S.glass > 30) grind(S.glass - 30);
-    for (let guard = 0; guard < 30; guard++) {
-      const it = SLOTS.map(s => S.equip[s]).filter(x => x && (x.up || 0) < MAX_UP).sort((a, b) => temperCost(a).shards - temperCost(b).shards)[0];
-      if (!it || !canPay(temperCost(it))) break;
-      temper(it); changed = true; if (!quiet) log(`Tempered ${itemName(it)}.`, '#f3b44a');
-    }
-  }
-  if (S.autoStones) {
-    for (let guard = 0; guard < 40; guard++) {
-      const MINOR_PRIO = ['dmg', 'aspd', 'crit', 'critd', 'hp', 'def', 'comp', 'elem', 'rAll', 'gold', 'drop', 'xp', 'block', 'ls', 'regen'];
-      const id = STONE_ORDER.find(i => TAL[i] && !S.talents[i] && talAvail(TAL[i])) || (TALENTS.filter(t => t.minor && !S.talents[t.id] && talAvail(t)).sort((a, b) => MINOR_PRIO.indexOf(a.k) - MINOR_PRIO.indexOf(b.k))[0] || {}).id;
-      const c = talCost();
-      if (!id || S.gold < c) break;
-      S.gold -= c; S.talents[id] = true; dirtyStats = true; changed = true; tip('talents');
-      if (!quiet) log(`Unlocked the ${TAL[id].n} waystone.`, '#f3b44a');
-    }
-  }
   if (S.autoCompany && S.roster.length) {
     const cp = stats().cp, best = S.roster.slice().sort((a, b) => folPower(b, cp) * (KINDS[b.kind].atk ? 1.2 : 1) - folPower(a, cp) * (KINDS[a.kind].atk ? 1.2 : 1)).slice(0, partySlots()).map(f => f.id);
     if (best.join() !== S.party.join()) { S.party = best; dirtyStats = true; changed = true; }
-    const reserve = S.autoStones && TALENTS.some(t => !S.talents[t.id]) ? talCost() : 0;
     for (let guard = 0; guard < 50; guard++) {
       const f = partyMembers().sort((a, b) => trainCost(a) - trainCost(b))[0];
-      if (!f || S.gold - trainCost(f) < reserve) break;
+      if (!f || S.gold < trainCost(f)) break;
       S.gold -= trainCost(f); f.lvl++; dirtyStats = true; changed = true;
     }
   }
